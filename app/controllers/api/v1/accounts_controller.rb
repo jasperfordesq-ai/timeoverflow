@@ -10,8 +10,14 @@ module Api
 
       # GET /api/v1/accounts/:id
       def show
-        account = Account.find(params[:id])
-        movements = account.movements.order(created_at: :desc).limit(params[:limit] || 20)
+        # Scope to org if API key is org-specific
+        account = if @current_api_key.organization
+          @current_api_key.organization.all_accounts.find(params[:id])
+        else
+          Account.find(params[:id])
+        end
+        movements = account.movements.order(created_at: :desc)
+                      .limit([(params[:limit] || 20).to_i, 500].min)
 
         respond_with_data({
           id: account.id,

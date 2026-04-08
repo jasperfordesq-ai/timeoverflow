@@ -35,21 +35,20 @@ module Api
         @current_api_key.touch_last_used!
       end
 
-      # Accept API key from multiple sources to be compatible with Nexus's
-      # FederationExternalApiClient which sends "Authorization: Bearer <key>"
+      # Accept API key from header only. Supports both:
+      #   - X-Federation-Api-Key: <key> (TimeOverflow native)
+      #   - Authorization: Bearer <key> (Nexus api_key auth method)
+      # Query parameter auth removed for security (keys leak in logs/URLs).
       def extract_api_key
-        # 1. X-Federation-Api-Key header (TimeOverflow native)
         key = request.headers["X-Federation-Api-Key"]
         return key if key.present?
 
-        # 2. Authorization: Bearer <key> (Nexus api_key auth method)
         auth_header = request.headers["Authorization"]
         if auth_header.present? && auth_header.start_with?("Bearer ")
           return auth_header.sub("Bearer ", "")
         end
 
-        # 3. Query parameter fallback (for testing only)
-        params[:api_key]
+        nil
       end
 
       def require_permission!(permission)
@@ -58,9 +57,16 @@ module Api
         end
       end
 
-      # Resolve organization from the API key or from a query parameter
+      # Resolve organization. If the API key is scoped to an org, enforce it.
+      # If the key is global (no org), allow params[:organization_id] as a filter.
       def current_organization
-        @current_organization ||= @current_api_key.organization || Organization.find_by(id: params[:organization_id])
+        @current_organization ||= if @current_api_key.organization
+          # Key is org-specific — ignore params, enforce the key's org
+          @current_api_key.organization
+        else
+          # Global key — allow org selection via param
+          Organization.find_by(id: params[:organization_id])
+        end
       end
 
       def require_organization!
@@ -108,8 +114,8 @@ module Api
         render json: body, status: status
       end
 
-      def not_found(exception)
-        render json: { success: false, error: "Not found", message: exception.message }, status: :not_found
+      def not_found(_exception)
+        render json: { success: false, error: "Not found" }, status: :not_found
       end
 
       def unprocessable_entity(exception)
@@ -120,8 +126,8 @@ module Api
         }, status: :unprocessable_entity
       end
 
-      def bad_request(exception)
-        render json: { success: false, error: "Bad request", message: exception.message }, status: :bad_request
+      def bad_request(_exception)
+        render json: { success: false, error: "Bad request" }, status: :bad_request
       end
 
       # Pagination helper

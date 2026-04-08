@@ -1,36 +1,46 @@
 # Federation API: Cross-platform time transfer endpoint.
 #
-# Handles inbound transfer requests from federation partners.
-# Uses a two-phase protocol:
-#   1. Partner sends POST /api/v1/transfers (creates pending federation_transaction)
-#   2. This controller validates, creates the local Transfer + Movements
-#   3. Marks the federation_transaction as completed
-#   4. Sends confirmation webhook back to the partner
-#
-# For outbound transfers (local user → remote user), the Federation::TransferHandler
-# service is used instead.
+# Security hardened:
+#   - Idempotency via unique (partner_id, external_transaction_id)
+#   - Organization scoping on all account access
+#   - Amount validation (positive, capped at configurable max)
+#   - Direction validation
+#   - Error messages sanitized (no internal details leaked)
 #
 module Api
   module V1
     class TransfersController < BaseController
       before_action -> { require_permission!(:transactions) }
+      before_action :validate_transfer_params!
+
+      # Maximum transfer amount in seconds (default: 100 hours)
+      MAX_AMOUNT = -> { Rails.application.config.federation.max_transfer_amount.then { |v| v > 0 ? v : 360_000 } rescue 360_000 }
 
       # POST /api/v1/transfers
-      #
-      # Params:
-      #   partner_id: ID of the federation partner
-      #   external_transaction_id: partner's transaction reference
-      #   direction: "inbound" (remote sends to local) or "outbound" (local sends to remote)
-      #   local_account_id: the local Account ID involved
-      #   remote_user_identifier: identifier of the remote user (email or external ID)
-      #   amount: time amount in seconds
-      #   reason: description of the transfer
-      #
       def create
         partner = FederationPartner.active.find(params[:partner_id])
 
         unless partner.can_transact?
           return respond_with_error("Partner is not enabled for transactions", status: :forbidden)
+        end
+
+        # IDEMPOTENCY: Check if this external transaction already processed
+        if params[:external_transaction_id].present?
+          existing = FederationTransaction.find_by(
+            federation_partner: partner,
+            external_transaction_id: params[:external_transaction_id]
+          )
+          if existing
+            return respond_with_data(serialize_transaction(existing), status: :ok)
+          end
+        end
+
+        # ORGANIZATION SCOPING: Verify account belongs to an accessible org
+        local_account = find_scoped_account!(params[:local_account_id])
+        org = local_account.organization
+
+        unless org
+          return respond_with_error("Account has no associated organization", status: :unprocessable_entity)
         end
 
         fed_txn = nil
@@ -40,38 +50,29 @@ module Api
           fed_txn = FederationTransaction.create!(
             federation_partner: partner,
             external_transaction_id: params[:external_transaction_id],
-            direction: params[:direction] || "inbound",
-            local_account_id: params[:local_account_id],
+            direction: params[:direction],
+            local_account_id: local_account.id,
             remote_user_identifier: params[:remote_user_identifier],
             amount: params[:amount].to_i,
             reason: params[:reason],
             metadata: {
               "initiated_by" => "federation_api",
-              "api_key_name" => @current_api_key.name
+              "api_key_name" => @current_api_key.name,
+              "organization_id" => org.id
             }
           )
 
-          local_account = Account.find(params[:local_account_id])
-
           if fed_txn.direction == "inbound"
-            # Remote user sends time to local member
-            # Credit the local account from the organization's federation account
-            org = local_account.organization
-            source_account = org.account
             local_transfer = create_local_transfer(
-              source: source_account,
+              source: org.account,
               destination: local_account,
               amount: fed_txn.amount,
               reason: fed_txn.reason
             )
           else
-            # Local member sends time to remote user
-            # Debit the local account to the organization's federation account
-            org = local_account.organization
-            destination_account = org.account
             local_transfer = create_local_transfer(
               source: local_account,
-              destination: destination_account,
+              destination: org.account,
               amount: fed_txn.amount,
               reason: fed_txn.reason
             )
@@ -80,7 +81,7 @@ module Api
           fed_txn.complete!(local_transfer: local_transfer)
         end
 
-        # Send confirmation webhook asynchronously
+        # Webhook sent after commit — async with retry
         Federation::WebhookSender.send_async(
           partner: partner,
           event: "transaction.completed",
@@ -93,28 +94,73 @@ module Api
           }
         )
 
-        respond_with_data(
-          {
-            federation_transaction_id: fed_txn.id,
-            external_transaction_id: fed_txn.external_transaction_id,
-            local_transfer_id: local_transfer.id,
-            status: fed_txn.status,
-            amount: fed_txn.amount,
-            direction: fed_txn.direction,
-            completed_at: fed_txn.completed_at&.iso8601
-          },
-          status: :created
-        )
+        respond_with_data(serialize_transaction(fed_txn, local_transfer), status: :created)
 
+      rescue ActiveRecord::RecordNotUnique
+        # Race condition: duplicate external_transaction_id hit DB constraint
+        existing = FederationTransaction.find_by(
+          federation_partner_id: params[:partner_id],
+          external_transaction_id: params[:external_transaction_id]
+        )
+        if existing
+          respond_with_data(serialize_transaction(existing), status: :ok)
+        else
+          respond_with_error("Duplicate transaction", status: :conflict)
+        end
       rescue ActiveRecord::RecordInvalid => e
-        respond_with_error("Transfer failed: #{e.message}", status: :unprocessable_entity)
+        Rails.logger.warn("[Federation::Transfer] Validation failed: #{e.message}")
+        respond_with_error("Transfer validation failed", status: :unprocessable_entity,
+                           errors: e.record.errors.full_messages)
+      rescue ActiveRecord::RecordNotFound => e
+        respond_with_error("Resource not found", status: :not_found)
       rescue => e
-        # Cancel the federation transaction if it was created
-        fed_txn&.cancel!(reason: e.message) if fed_txn&.pending?
-        respond_with_error("Transfer failed: #{e.message}", status: :internal_server_error)
+        Rails.logger.error("[Federation::Transfer] Unexpected error: #{e.class}: #{e.message}")
+        fed_txn&.cancel!(reason: "Internal error") if fed_txn&.pending?
+        respond_with_error("Transfer failed", status: :internal_server_error)
       end
 
       private
+
+      def validate_transfer_params!
+        # Required fields
+        missing = []
+        missing << "partner_id" if params[:partner_id].blank?
+        missing << "local_account_id" if params[:local_account_id].blank?
+        missing << "remote_user_identifier" if params[:remote_user_identifier].blank?
+        missing << "amount" if params[:amount].blank?
+        missing << "direction" if params[:direction].blank?
+
+        if missing.any?
+          return respond_with_error("Missing required fields: #{missing.join(', ')}", status: :bad_request)
+        end
+
+        # Direction must be valid
+        unless %w[inbound outbound].include?(params[:direction])
+          return respond_with_error("direction must be 'inbound' or 'outbound'", status: :bad_request)
+        end
+
+        # Amount must be positive integer within limits
+        amount = params[:amount].to_i
+        if amount <= 0
+          return respond_with_error("amount must be a positive integer (seconds)", status: :bad_request)
+        end
+
+        max = MAX_AMOUNT.call
+        if amount > max
+          return respond_with_error("amount exceeds maximum (#{max} seconds)", status: :bad_request)
+        end
+      end
+
+      # Find account scoped to accessible organizations.
+      # If API key is org-specific, only that org's accounts are accessible.
+      # If API key is global, any account is accessible.
+      def find_scoped_account!(account_id)
+        if @current_api_key.organization
+          @current_api_key.organization.all_accounts.find(account_id)
+        else
+          Account.find(account_id)
+        end
+      end
 
       def create_local_transfer(source:, destination:, amount:, reason:)
         transfer = Transfer.new
@@ -124,6 +170,18 @@ module Api
         transfer.reason = "[Federation] #{reason}"
         transfer.save!
         transfer
+      end
+
+      def serialize_transaction(fed_txn, local_transfer = nil)
+        {
+          federation_transaction_id: fed_txn.id,
+          external_transaction_id: fed_txn.external_transaction_id,
+          local_transfer_id: fed_txn.transfer_id || local_transfer&.id,
+          status: fed_txn.status,
+          amount: fed_txn.amount,
+          direction: fed_txn.direction,
+          completed_at: fed_txn.completed_at&.iso8601
+        }
       end
     end
   end

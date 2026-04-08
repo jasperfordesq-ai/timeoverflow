@@ -89,7 +89,12 @@ module Api
         when "partnership.terminated"
           partner.update!(status: "terminated")
         when "partnership.level_changed"
-          partner.update!(partnership_level: payload["level"].to_i) if payload["level"]
+          level = payload["level"].to_i
+          if level.between?(1, 4) # Validate within allowed range
+            partner.update!(partnership_level: level)
+          else
+            Rails.logger.warn("[Federation] Invalid partnership level: #{level}")
+          end
         when "transaction.requested"
           # A remote user wants to initiate a transfer — queue for processing
           Federation::TransferHandler.handle_inbound_request(partner, payload)

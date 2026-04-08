@@ -15,9 +15,11 @@ class FederationTransaction < ApplicationRecord
   DIRECTIONS = %w[inbound outbound].freeze
 
   validates :direction, presence: true, inclusion: { in: DIRECTIONS }
-  validates :amount, presence: true, numericality: { greater_than: 0 }
+  validates :amount, presence: true, numericality: { greater_than: 0, less_than_or_equal_to: 360_000 }
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :remote_user_identifier, presence: true
+  validates :external_transaction_id, uniqueness: { scope: :federation_partner_id },
+            allow_nil: true
 
   scope :pending, -> { where(status: "pending") }
   scope :completed, -> { where(status: "completed") }

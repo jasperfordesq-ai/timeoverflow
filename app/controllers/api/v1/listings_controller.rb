@@ -16,35 +16,30 @@ module Api
 
       # GET /api/v1/listings?organization_id=X
       def index
-        offers = current_organization.offers.active.of_active_members.includes(:user, :category)
-        inquiries = current_organization.inquiries.active.of_active_members.includes(:user, :category)
-
-        if params[:category_id].present?
-          offers = offers.by_category(params[:category_id])
-          inquiries = inquiries.by_category(params[:category_id])
-        end
-
-        if params[:search].present?
-          offers = offers.search_by_query(params[:search])
-          inquiries = inquiries.search_by_query(params[:search])
-        end
+        # Query Post table directly instead of fragile UNION.
+        # Post uses STI with type column: "Offer" or "Inquiry"
+        posts = current_organization.posts
+                  .active
+                  .of_active_members
+                  .includes(:user, :category)
 
         # Filter by type if requested
         case params[:type]
         when "offer"
-          all_posts = offers
+          posts = posts.where(type: "Offer")
         when "inquiry"
-          all_posts = inquiries
+          posts = posts.where(type: "Inquiry")
         else
-          all_posts = Post.from(
-            "(#{offers.reorder(nil).to_sql} UNION ALL #{inquiries.reorder(nil).to_sql}) AS posts"
-          ).order(updated_at: :desc)
+          posts = posts.where(type: %w[Offer Inquiry])
         end
 
-        all_posts, meta = paginate(all_posts)
+        posts = posts.by_category(params[:category_id]) if params[:category_id].present?
+        posts = posts.search_by_query(params[:search]) if params[:search].present?
+
+        posts, meta = paginate(posts)
 
         respond_with_data(
-          all_posts.map { |p| serialize_listing(p) },
+          posts.map { |p| serialize_listing(p) },
           meta: meta
         )
       end

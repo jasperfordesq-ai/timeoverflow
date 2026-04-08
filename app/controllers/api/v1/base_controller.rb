@@ -8,6 +8,7 @@ module Api
   module V1
     class BaseController < ActionController::API
       before_action :authenticate_api_key!
+      before_action :enforce_rate_limit!
       before_action :set_default_format
 
       rescue_from ActiveRecord::RecordNotFound, with: :not_found
@@ -59,6 +60,28 @@ module Api
       def require_organization!
         unless current_organization
           render json: { error: "Bad Request", message: "organization_id is required" }, status: :bad_request
+        end
+      end
+
+      # Simple sliding-window rate limiter using Rails cache.
+      # Limits each API key to N requests per minute.
+      def enforce_rate_limit!
+        return unless @current_api_key # skip if auth failed (will 401 anyway)
+
+        limit = Rails.application.config.federation.rate_limit rescue 100
+        cache_key = "federation_rate:#{@current_api_key.id}:#{Time.current.to_i / 60}"
+
+        count = Rails.cache.increment(cache_key, 1, expires_in: 2.minutes) || 1
+
+        response.set_header("X-RateLimit-Limit", limit.to_s)
+        response.set_header("X-RateLimit-Remaining", [limit - count, 0].max.to_s)
+
+        if count > limit
+          render json: {
+            success: false,
+            error: "Rate limit exceeded",
+            message: "Maximum #{limit} requests per minute"
+          }, status: :too_many_requests
         end
       end
 

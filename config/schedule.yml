@@ -10,3 +10,7 @@ membership_warning:
   cron: 'every day at 10am'
   class: 'MembershipWarningJob'
   queue: cron
+federation_reconciliation:
+  cron: 'every day at 3am'
+  class: 'Federation::ReconciliationJob'
+  queue: cron

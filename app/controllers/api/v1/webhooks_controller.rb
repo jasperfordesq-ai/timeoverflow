@@ -43,7 +43,8 @@ module Api
       private
 
       def verify_webhook_signature!
-        signature = request.headers["X-Webhook-Signature"]
+        # Accept either Nexus-style (X-Federation-Signature) or simple (X-Webhook-Signature)
+        signature = request.headers["X-Federation-Signature"] || request.headers["X-Webhook-Signature"]
         return respond_with_error("Missing signature", status: :unauthorized) if signature.blank?
 
         body = request.raw_post
@@ -52,8 +53,29 @@ module Api
 
         return respond_with_error("Unknown partner", status: :unauthorized) unless partner
 
-        expected = OpenSSL::HMAC.hexdigest("SHA256", partner.webhook_secret.to_s, body)
-        unless ActiveSupport::SecurityUtils.secure_compare(signature, expected)
+        # Try Nexus HMAC format first: METHOD\nPATH\nTIMESTAMP\nBODY
+        timestamp = request.headers["X-Federation-Timestamp"]
+        if timestamp.present?
+          string_to_sign = [
+            request.method.upcase,
+            request.fullpath,
+            timestamp,
+            body
+          ].join("\n")
+          expected = OpenSSL::HMAC.hexdigest("SHA256", partner.webhook_secret.to_s, string_to_sign)
+
+          if ActiveSupport::SecurityUtils.secure_compare(signature, expected)
+            # Check timestamp freshness (5 minute window)
+            if (Time.current.to_i - timestamp.to_i).abs > 300
+              return respond_with_error("Timestamp expired", status: :unauthorized)
+            end
+            return # signature valid
+          end
+        end
+
+        # Fallback: simple body-only signature (TO native webhooks)
+        expected_simple = OpenSSL::HMAC.hexdigest("SHA256", partner.webhook_secret.to_s, body)
+        unless ActiveSupport::SecurityUtils.secure_compare(signature, expected_simple)
           respond_with_error("Invalid signature", status: :unauthorized)
         end
       end

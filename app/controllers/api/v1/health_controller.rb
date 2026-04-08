@@ -9,13 +9,14 @@ module Api
       # Skip auth for health checks — Nexus needs to ping even if
       # credentials are misconfigured
       skip_before_action :authenticate_api_key!
+      skip_before_action :enforce_rate_limit!
 
       # GET /api/v1/health
       def show
         db_ok = begin
-          ActiveRecord::Base.connection.execute("SELECT 1")
-          true
-        rescue
+          ActiveRecord::Base.connection_pool.with_connection { |c| c.active? }
+        rescue => e
+          Rails.logger.error("[Federation Health] DB check failed: #{e.message}")
           false
         end
 
@@ -32,8 +33,8 @@ module Api
               database: db_ok ? "ok" : "error",
               federation_api: "ok"
             },
-            organizations_count: Organization.count,
-            federation_partners_count: FederationPartner.active.count
+            organizations_count: (Organization.count rescue 0),
+            federation_partners_count: (FederationPartner.active.count rescue 0)
           }
         }, status: status
       end

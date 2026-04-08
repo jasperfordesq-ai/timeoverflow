@@ -15,19 +15,25 @@ services:
   app:
     volumes:
       - ./app:/app/app
-      - ./config:/app/config
+      - ./config/initializers/0_api_controller_fix.rb:/app/config/initializers/0_api_controller_fix.rb
+      - ./config/initializers/federation_api.rb:/app/config/initializers/federation_api.rb
+      - ./config/routes.rb:/app/config/routes.rb
+      - ./config/schedule.yml:/app/config/schedule.yml
       - ./db/migrate:/app/db/migrate
       - ./lib:/app/lib
     environment:
       - FEDERATION_ENABLED=true
       - FEDERATION_WEBHOOK_TIMEOUT=10
       - FEDERATION_RATE_LIMIT=100
+      - ALLOWED_HOSTS=localhost 172.18.0.8 timeoverflow-develop-app-1
     labels:
       - "federation=enabled"
   sidekiq:
     volumes:
       - ./app:/app/app
-      - ./config:/app/config
+      - ./config/initializers/0_api_controller_fix.rb:/app/config/initializers/0_api_controller_fix.rb
+      - ./config/initializers/federation_api.rb:/app/config/initializers/federation_api.rb
+      - ./config/schedule.yml:/app/config/schedule.yml
       - ./lib:/app/lib
     environment:
       - FEDERATION_ENABLED=true

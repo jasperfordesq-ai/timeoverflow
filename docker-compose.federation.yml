@@ -1,0 +1,21 @@
+# Docker Compose overlay for federation testing.
+#
+# Runs a local TimeOverflow instance with federation enabled,
+# ready to connect to a Nexus instance.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.federation.yml up
+#
+# Then:
+#   docker compose exec app rake federation:setup
+#   docker compose exec app rake federation:status
+#
+version: '3'
+services:
+  app:
+    environment:
+      - FEDERATION_ENABLED=true
+      - FEDERATION_WEBHOOK_TIMEOUT=10
+      - FEDERATION_RATE_LIMIT=100
+    labels:
+      - "federation=enabled"

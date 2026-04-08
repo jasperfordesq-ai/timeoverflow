@@ -132,8 +132,8 @@ module Api
 
       # Pagination helper
       def paginate(scope)
-        page = (params[:page] || 1).to_i
-        per_page = [(params[:per_page] || 25).to_i, 100].min
+        page = [(params[:page] || 1).to_i, 1].max
+        per_page = [[(params[:per_page] || 25).to_i, 1].max, 100].min
         paginated = scope.page(page).per(per_page)
 
         meta = {

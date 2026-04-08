@@ -1,0 +1,25 @@
+# Omakase Ruby styling for Rails
+inherit_gem:
+  rubocop-rails-omakase: rubocop.yml
+
+# Your own specialized rules go here
+AllCops:
+  Exclude:
+    - "db/**/*"
+    - "config/**/*"
+
+Layout/SpaceInsideArrayLiteralBrackets:
+  Enabled: false
+Layout/SpaceInsidePercentLiteralDelimiters:
+  Enabled: false
+Layout/CaseIndentation:
+  Enabled: false
+Layout/EndAlignment:
+  Enabled: false
+Layout/ElseAlignment:
+  Enabled: false
+
+Style/PercentLiteralDelimiters:
+  Enabled: false
+Style/StringLiterals:
+  Enabled: false

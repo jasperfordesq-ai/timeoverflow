@@ -1,0 +1,22 @@
+defaults: &defaults
+  adapter: postgresql
+  username: <%= ENV['DATABASE_USER'] || ENV["POSTGRES_USER"] || ENV["DATABASE_USERNAME"] %>
+  password: <%= ENV['DATABASE_PASSWORD'] || ENV["POSTGRES_PASSWORD"] %>
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV.fetch("DATABASE_HOST") { "localhost" } %>
+  port: <%= ENV.fetch("DATABASE_PORT") { "5432" } %>
+  template: 'template0'
+  encoding: unicode
+
+development:
+  <<: *defaults
+  database: <%= ENV.fetch('DATABASE_NAME', 'timeoverflow_development') %>
+
+test:
+  <<: *defaults
+  database: timeoverflow_test
+
+production:
+  <<: *defaults
+  <%= "url: #{ENV['DATABASE_URL']}" if ENV['DATABASE_URL'].present? %>
+  <%= "database: #{ENV.fetch('DATABASE_NAME', 'timeoverflow_production')}" unless ENV['DATABASE_URL'].present? %>

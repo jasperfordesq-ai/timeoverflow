@@ -7,7 +7,7 @@ module Api
   module V1
     class MembersController < BaseController
       before_action :require_organization!
-      before_action :require_permission!, with: :profiles
+      before_action -> { require_permission!(:profiles) }
 
       # GET /api/v1/members?organization_id=X
       def index
@@ -35,10 +35,6 @@ module Api
       end
 
       private
-
-      def require_permission!(**_args)
-        super(:profiles)
-      end
 
       def serialize_member(member, detailed: false)
         user = member.user

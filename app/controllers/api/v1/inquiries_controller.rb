@@ -26,7 +26,7 @@ module Api
 
       # GET /api/v1/inquiries/:id
       def show
-        inquiry = current_organization.inquiries.active.find(params[:id])
+        inquiry = current_organization.inquiries.active.find_by!(id: params[:id])
         respond_with_data(serialize_post(inquiry, detailed: true))
       end
 

@@ -26,7 +26,7 @@ module Api
 
       # GET /api/v1/offers/:id
       def show
-        offer = current_organization.offers.active.find(params[:id])
+        offer = current_organization.offers.active.find_by!(id: params[:id])
         respond_with_data(serialize_post(offer, detailed: true))
       end
 

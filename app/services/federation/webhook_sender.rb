@@ -44,16 +44,21 @@ module Federation
       )
 
       begin
-        response = Net::HTTP.post(
-          URI(@partner.webhook_url),
-          body,
-          {
-            "Content-Type" => "application/json",
-            "X-Webhook-Signature" => signature,
-            "X-Webhook-Event" => @event,
-            "User-Agent" => "TimeOverflow-Federation/1.0"
-          }
-        )
+        uri = URI(@partner.webhook_url)
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.use_ssl = uri.scheme == "https"
+        http.open_timeout = TIMEOUT
+        http.read_timeout = TIMEOUT
+
+        request = Net::HTTP::Post.new(uri.request_uri)
+        request["Content-Type"] = "application/json"
+        request["X-Webhook-Signature"] = signature
+        request["X-Federation-Signature"] = signature
+        request["X-Webhook-Event"] = @event
+        request["User-Agent"] = "TimeOverflow-Federation/1.0"
+        request.body = body
+
+        response = http.request(request)
 
         log.update!(
           status: response.code.to_i < 300 ? "success" : "failed",

@@ -14,7 +14,7 @@ module Api
       # GET /api/v1/health
       def show
         db_ok = begin
-          ActiveRecord::Base.connection.select_value("SELECT 1") == 1
+          ActiveRecord::Base.connection.select_value("SELECT 1").to_i == 1
         rescue => e
           Rails.logger.error("[Federation Health] DB check failed: #{e.class}: #{e.message}")
           false

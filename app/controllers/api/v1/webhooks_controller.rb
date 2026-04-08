@@ -27,7 +27,7 @@ module Api
           event_type: event_type,
           direction: "inbound",
           status: "pending",
-          payload: params.to_unsafe_h.except(:controller, :action)
+          payload: { event: event_type, partner_id: partner_id, data: payload.to_h }
         )
 
         begin
@@ -35,8 +35,9 @@ module Api
           log.update!(status: "success")
           respond_with_data({ received: true, event: event_type })
         rescue => e
-          log.update!(status: "failed", response_body: e.message)
-          respond_with_error("Webhook processing failed: #{e.message}")
+          Rails.logger.error("[Federation::Webhook] Processing failed: #{e.class}: #{e.message}")
+          log.update!(status: "failed", response_body: e.message&.truncate(500))
+          respond_with_error("Webhook processing failed")
         end
       end
 
@@ -67,10 +68,14 @@ module Api
           if ActiveSupport::SecurityUtils.secure_compare(signature, expected)
             # Check timestamp freshness (5 minute window)
             if (Time.current.to_i - timestamp.to_i).abs > 300
-              return respond_with_error("Timestamp expired", status: :unauthorized)
+              respond_with_error("Webhook timestamp expired", status: :unauthorized)
+              return
             end
-            return # signature valid
+            return # signature valid, timestamp fresh
           end
+          # Nexus format signature didn't match — don't fall through, reject immediately
+          respond_with_error("Invalid signature", status: :unauthorized)
+          return
         end
 
         # Fallback: simple body-only signature (TO native webhooks)

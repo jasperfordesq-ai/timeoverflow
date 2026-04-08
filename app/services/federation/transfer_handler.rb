@@ -8,6 +8,15 @@ module Federation
   class TransferHandler
     # Handle an inbound transfer request from a webhook
     def self.handle_inbound_request(partner, payload)
+      # Validate required fields
+      %w[local_organization_id remote_user_identifier amount].each do |field|
+        raise ArgumentError, "Missing required field: #{field}" if payload[field].blank?
+      end
+      raise ArgumentError, "Must provide local_member_email or local_member_uid" if payload["local_member_email"].blank? && payload["local_member_uid"].blank?
+
+      amount = payload["amount"].to_i
+      raise ArgumentError, "Amount must be positive" if amount <= 0
+
       handler = new(partner: partner)
       handler.process_inbound(
         external_transaction_id: payload["external_transaction_id"],
@@ -15,7 +24,7 @@ module Federation
         local_member_uid: payload["local_member_uid"],
         local_organization_id: payload["local_organization_id"],
         remote_user_identifier: payload["remote_user_identifier"],
-        amount: payload["amount"].to_i,
+        amount: amount,
         reason: payload["reason"]
       )
     end
@@ -93,7 +102,7 @@ module Federation
         transfer.reason = "[Federation] #{reason}"
         transfer.save!
 
-        fed_txn.update!(transfer: transfer)
+        fed_txn.complete!(local_transfer: transfer)
 
         # Request remote partner to credit the remote user
         WebhookSender.send_async(

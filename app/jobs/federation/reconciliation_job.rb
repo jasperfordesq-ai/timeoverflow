@@ -78,6 +78,18 @@ module Federation
         very_stale.find_each do |txn|
           txn.cancel!(reason: "Auto-cancelled: pending for over 24 hours")
           Rails.logger.warn("[Federation::Reconciliation] Auto-cancelled stale transaction #{txn.id}")
+
+          # Notify the partner about the cancellation
+          Federation::WebhookSender.send_async(
+            partner: txn.federation_partner,
+            event: "transaction.cancelled",
+            payload: {
+              external_transaction_id: txn.external_transaction_id,
+              federation_transaction_id: txn.id,
+              reason: "Auto-cancelled: pending for over 24 hours",
+              cancelled_at: txn.cancelled_at&.iso8601
+            }
+          ) rescue nil # Don't let webhook failure break reconciliation
         end
       end
 

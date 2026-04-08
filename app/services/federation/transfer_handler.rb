@@ -42,6 +42,8 @@ module Federation
       org = Organization.find(local_organization_id)
       member = find_local_member(org, email: local_member_email, member_uid: local_member_uid)
 
+      fed_txn = nil
+
       ActiveRecord::Base.transaction do
         fed_txn = FederationTransaction.create!(
           federation_partner: @partner,
@@ -62,20 +64,20 @@ module Federation
         transfer.save!
 
         fed_txn.complete!(local_transfer: transfer)
-
-        # Notify partner of completion
-        WebhookSender.send_async(
-          partner: @partner,
-          event: "transaction.completed",
-          payload: {
-            external_transaction_id: external_transaction_id,
-            federation_transaction_id: fed_txn.id,
-            status: "completed"
-          }
-        )
-
-        fed_txn
       end
+
+      # Notify partner AFTER transaction commits
+      WebhookSender.send_async(
+        partner: @partner,
+        event: "transaction.completed",
+        payload: {
+          external_transaction_id: external_transaction_id,
+          federation_transaction_id: fed_txn.id,
+          status: "completed"
+        }
+      )
+
+      fed_txn
     end
 
     # Initiate an outbound transfer (local → remote)
@@ -83,6 +85,7 @@ module Federation
       validate_partner_can_transact!
 
       org = local_account.organization
+      fed_txn = nil
 
       ActiveRecord::Base.transaction do
         fed_txn = FederationTransaction.create!(
@@ -103,24 +106,24 @@ module Federation
         transfer.save!
 
         fed_txn.complete!(local_transfer: transfer)
-
-        # Request remote partner to credit the remote user
-        WebhookSender.send_async(
-          partner: @partner,
-          event: "transaction.requested",
-          payload: {
-            external_transaction_id: fed_txn.id.to_s,
-            remote_user_identifier: remote_user_identifier,
-            amount: amount,
-            reason: reason,
-            source_platform: "timeoverflow",
-            source_organization_id: org.id,
-            source_organization_name: org.name
-          }
-        )
-
-        fed_txn
       end
+
+      # Request remote partner to credit the remote user AFTER commit
+      WebhookSender.send_async(
+        partner: @partner,
+        event: "transaction.requested",
+        payload: {
+          external_transaction_id: fed_txn.id.to_s,
+          remote_user_identifier: remote_user_identifier,
+          amount: amount,
+          reason: reason,
+          source_platform: "timeoverflow",
+          source_organization_id: org.id,
+          source_organization_name: org.name
+        }
+      )
+
+      fed_txn
     end
 
     private

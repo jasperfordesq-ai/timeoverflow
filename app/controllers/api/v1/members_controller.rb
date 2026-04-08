@@ -30,7 +30,7 @@ module Api
 
       # GET /api/v1/members/:id
       def show
-        member = current_organization.members.active.includes(:user, :account).find(params[:id])
+        member = current_organization.members.active.includes(:user, :account).find_by!(id: params[:id])
         respond_with_data(serialize_member(member, detailed: true))
       end
 

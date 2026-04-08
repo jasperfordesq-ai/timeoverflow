@@ -8,6 +8,8 @@ module Api
     class WebhooksController < BaseController
       # Skip standard API key auth for webhooks — use HMAC signature instead
       skip_before_action :authenticate_api_key!
+      skip_before_action :enforce_rate_limit!
+      before_action :enforce_webhook_rate_limit!
       before_action :verify_webhook_signature!
 
       # POST /api/v1/webhooks/receive
@@ -42,6 +44,17 @@ module Api
       end
 
       private
+
+      # Rate limit webhooks by IP (not by API key since webhooks skip auth)
+      def enforce_webhook_rate_limit!
+        ip = request.remote_ip
+        cache_key = "federation_webhook_rate:#{ip}:#{Time.current.to_i / 60}"
+        count = Rails.cache.increment(cache_key, 1, expires_in: 2.minutes) || 1
+
+        if count > 200 # webhooks get higher limit than API calls
+          render json: { success: false, error: "Rate limit exceeded" }, status: :too_many_requests
+        end
+      end
 
       def verify_webhook_signature!
         # Accept either Nexus-style (X-Federation-Signature) or simple (X-Webhook-Signature)

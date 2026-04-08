@@ -28,7 +28,7 @@ module Api
         @current_api_key = FederationApiKey.authenticate(raw_key)
 
         unless @current_api_key
-          render json: { error: "Unauthorized", message: "Invalid or expired API key" }, status: :unauthorized
+          render json: { success: false, error: "Unauthorized", message: "Invalid or expired API key" }, status: :unauthorized
           return
         end
 
@@ -53,7 +53,7 @@ module Api
 
       def require_permission!(permission)
         unless @current_api_key.has_permission?(permission)
-          render json: { error: "Forbidden", message: "API key lacks '#{permission}' permission" }, status: :forbidden
+          render json: { success: false, error: "Forbidden", message: "API key lacks '#{permission}' permission" }, status: :forbidden
         end
       end
 
@@ -71,7 +71,7 @@ module Api
 
       def require_organization!
         unless current_organization
-          render json: { error: "Bad Request", message: "organization_id is required" }, status: :bad_request
+          render json: { success: false, error: "Bad Request", message: "organization_id is required" }, status: :bad_request
         end
       end
 

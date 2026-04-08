@@ -17,7 +17,7 @@ module Api
       private
 
       def authenticate_api_key!
-        raw_key = request.headers["X-Federation-Api-Key"]
+        raw_key = extract_api_key
         @current_api_key = FederationApiKey.authenticate(raw_key)
 
         unless @current_api_key
@@ -26,6 +26,23 @@ module Api
         end
 
         @current_api_key.touch_last_used!
+      end
+
+      # Accept API key from multiple sources to be compatible with Nexus's
+      # FederationExternalApiClient which sends "Authorization: Bearer <key>"
+      def extract_api_key
+        # 1. X-Federation-Api-Key header (TimeOverflow native)
+        key = request.headers["X-Federation-Api-Key"]
+        return key if key.present?
+
+        # 2. Authorization: Bearer <key> (Nexus api_key auth method)
+        auth_header = request.headers["Authorization"]
+        if auth_header.present? && auth_header.start_with?("Bearer ")
+          return auth_header.sub("Bearer ", "")
+        end
+
+        # 3. Query parameter fallback (for testing only)
+        params[:api_key]
       end
 
       def require_permission!(permission)

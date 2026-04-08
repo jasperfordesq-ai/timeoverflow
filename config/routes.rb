@@ -102,6 +102,11 @@ Rails.application.routes.draw do
   # Federation API v1
   namespace :api do
     namespace :v1 do
+      # Nexus-compatible endpoints (match FederationExternalApiClient methods)
+      resources :listings, only: [:index, :show]  # Combined offers + inquiries
+      get "health", to: "health#show"             # Health check
+
+      # Native TimeOverflow endpoints
       resources :organizations, only: [:index, :show]
       resources :members, only: [:index, :show]
       resources :offers, only: [:index, :show]

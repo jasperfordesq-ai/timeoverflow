@@ -44,8 +44,8 @@ module Api
             email: org.email,
             account_balance: org.account&.balance,
             reg_number_seq: org.reg_number_seq,
-            active_offers_count: org.offers.active.of_active_members.count,
-            active_inquiries_count: org.inquiries.active.of_active_members.count
+            active_offers_count: org.offers.active.count,
+            active_inquiries_count: org.inquiries.active.count
           )
         end
 

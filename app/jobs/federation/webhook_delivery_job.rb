@@ -3,7 +3,7 @@
 # Retries up to 3 times with exponential backoff.
 #
 module Federation
-  class WebhookDeliveryJob < ApplicationJob
+  class WebhookDeliveryJob < ActiveJob::Base
     queue_as :default
     retry_on StandardError, wait: :polynomially_longer, attempts: 3
 

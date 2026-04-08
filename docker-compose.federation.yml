@@ -13,9 +13,21 @@
 version: '3'
 services:
   app:
+    volumes:
+      - ./app:/app/app
+      - ./config:/app/config
+      - ./db/migrate:/app/db/migrate
+      - ./lib:/app/lib
     environment:
       - FEDERATION_ENABLED=true
       - FEDERATION_WEBHOOK_TIMEOUT=10
       - FEDERATION_RATE_LIMIT=100
     labels:
       - "federation=enabled"
+  sidekiq:
+    volumes:
+      - ./app:/app/app
+      - ./config:/app/config
+      - ./lib:/app/lib
+    environment:
+      - FEDERATION_ENABLED=true

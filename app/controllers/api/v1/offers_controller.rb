@@ -43,7 +43,7 @@ module Api
           user_id: post.user_id,
           organization_id: post.organization_id,
           is_group: post.is_group,
-          global: post.global,
+          global: post.try(:global),
           created_at: post.created_at.iso8601,
           updated_at: post.updated_at.iso8601
         }

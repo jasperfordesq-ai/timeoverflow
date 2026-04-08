@@ -7,6 +7,12 @@
 module Api
   module V1
     class BaseController < ActionController::API
+      # devise-i18n's Railtie calls `helper` on all controllers,
+      # but ActionController::API doesn't support helpers.
+      # This no-op prevents the NoMethodError.
+      def self.helper(*); end
+      def self.helper_method(*); end
+
       before_action :authenticate_api_key!
       before_action :enforce_rate_limit!
       before_action :set_default_format

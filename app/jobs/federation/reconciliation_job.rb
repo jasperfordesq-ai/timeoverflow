@@ -10,7 +10,7 @@
 # Schedule: Run daily via Sidekiq-cron
 #
 module Federation
-  class ReconciliationJob < ApplicationJob
+  class ReconciliationJob < ActiveJob::Base
     queue_as :default
 
     # Transactions pending longer than this are flagged

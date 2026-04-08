@@ -13,17 +13,17 @@ module Api
         account = Account.find(params[:id])
         movements = account.movements.order(created_at: :desc).limit(params[:limit] || 20)
 
-        respond_with_data(
+        respond_with_data({
           id: account.id,
           accountable_type: account.accountable_type,
           accountable_id: account.accountable_id,
           organization_id: account.organization_id,
           balance: account.balance,
           flagged: account.flagged,
-          max_allowed_balance: account.max_allowed_balance,
-          min_allowed_balance: account.min_allowed_balance,
+          max_allowed_balance: account.read_attribute(:max_allowed_balance),
+          min_allowed_balance: account.read_attribute(:min_allowed_balance),
           recent_movements: movements.map { |m| serialize_movement(m) }
-        )
+        })
       end
 
       private

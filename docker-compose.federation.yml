@@ -25,7 +25,7 @@ services:
       - FEDERATION_ENABLED=true
       - FEDERATION_WEBHOOK_TIMEOUT=10
       - FEDERATION_RATE_LIMIT=100
-      - ALLOWED_HOSTS=localhost 172.18.0.8 timeoverflow-develop-app-1
+      - ALLOWED_HOSTS=localhost 34.175.14.41 timeoverflow.exchangemembers.com timeoverflow-develop-app-1 timeoverflow-app
     labels:
       - "federation=enabled"
   sidekiq:

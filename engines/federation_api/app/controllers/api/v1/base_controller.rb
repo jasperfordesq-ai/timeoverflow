@@ -68,6 +68,12 @@ module Api
       def require_organization!
         unless current_organization
           respond_with_error("organization_id is required", status: :bad_request)
+          return
+        end
+        # Enforce org-level federation setting: if the org has explicitly
+        # disabled federation, reject the request.
+        unless Federation::AccessControl.org_enabled?(current_organization)
+          respond_with_error("Federation is not enabled for this organization", status: :forbidden)
         end
       end
 

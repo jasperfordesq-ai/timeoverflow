@@ -120,9 +120,16 @@ module Federation
               if txn.outbound?
                 if txn.transfer.present?
                   original = txn.transfer
+                  # Transfer#source and #destination are attr_accessors (not DB columns)
+                  # and are nil when loaded from the database. Use movements instead.
+                  debit_movement  = original.movements.find_by("amount < 0") # source
+                  credit_movement = original.movements.find_by("amount > 0") # destination
+                  unless debit_movement && credit_movement
+                    raise "Cannot reverse transfer #{original.id}: missing movements"
+                  end
                   reversal = Transfer.new
-                  reversal.source      = original.destination # org pool → member
-                  reversal.destination = original.source      # member gets credited back
+                  reversal.source      = credit_movement.account_id  # was destination → now source
+                  reversal.destination = debit_movement.account_id   # was source → now destination
                   reversal.amount      = txn.amount
                   reversal.reason      = "[Federation Reversal] #{txn.reason} — webhook delivery failed"
                   reversal.save!

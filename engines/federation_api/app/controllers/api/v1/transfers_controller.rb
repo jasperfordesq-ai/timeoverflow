@@ -54,63 +54,47 @@ module Api
           return respond_with_error("Organization has no federation pool account", status: :unprocessable_entity)
         end
 
+        # Verify federation is enabled for this organization.
+        unless Federation::AccessControl.org_enabled?(org)
+          return respond_with_error("Federation is not enabled for this organization", status: :forbidden)
+        end
+
         # Verify the partner is authorized to transact with this organization.
         unless partner.can_access_organization?(org)
           return respond_with_error("Partner is not authorized for this organization", status: :forbidden)
         end
 
-        fed_txn = nil
-        local_transfer = nil
+        handler = Federation::TransferHandler.new(partner: partner)
 
-        ActiveRecord::Base.transaction do
-          fed_txn = FederationTransaction.create!(
-            federation_partner: partner,
+        if params[:direction] == "inbound"
+          # Inbound: remote user sends time to local member.
+          # Resolve the member from the local account (the account is already
+          # verified to belong to the correct org via find_scoped_account!).
+          member = local_account.accountable
+          member_uid = member.respond_to?(:member_uid) ? member.member_uid : nil
+
+          fed_txn = handler.process_inbound(
             external_transaction_id: params[:external_transaction_id],
-            direction: params[:direction],
-            local_account_id: local_account.id,
+            local_member_uid: member_uid,
+            local_member_email: nil,
+            local_organization_id: org.id,
             remote_user_identifier: params[:remote_user_identifier],
             amount: params[:amount].to_i,
-            reason: params[:reason],
-            metadata: {
-              "initiated_by" => "federation_api",
-              "api_key_name" => @current_api_key.name,
-              "organization_id" => org.id
-            }
+            reason: params[:reason]
           )
-
-          if fed_txn.direction == "inbound"
-            local_transfer = create_local_transfer(
-              source: org.account,
-              destination: local_account,
-              amount: fed_txn.amount,
-              reason: fed_txn.reason
-            )
-          else
-            local_transfer = create_local_transfer(
-              source: local_account,
-              destination: org.account,
-              amount: fed_txn.amount,
-              reason: fed_txn.reason
-            )
-          end
-
-          fed_txn.complete!(local_transfer: local_transfer)
+          respond_with_data(serialize_transaction(fed_txn, fed_txn.transfer), status: :created)
+        else
+          # Outbound: local member sends time to remote user.
+          # Debits locally, leaves as "pending", notifies partner via webhook.
+          # Partner must acknowledge before we mark completed.
+          fed_txn = handler.initiate_outbound(
+            local_account: local_account,
+            remote_user_identifier: params[:remote_user_identifier],
+            amount: params[:amount].to_i,
+            reason: params[:reason]
+          )
+          respond_with_data(serialize_transaction(fed_txn, fed_txn.transfer), status: :created)
         end
-
-        # Webhook sent after commit — async with retry
-        Federation::WebhookSender.send_async(
-          partner: partner,
-          event: "transaction.completed",
-          payload: {
-            external_transaction_id: fed_txn.external_transaction_id,
-            federation_transaction_id: fed_txn.id,
-            local_transfer_id: local_transfer.id,
-            status: "completed",
-            completed_at: fed_txn.completed_at.iso8601
-          }
-        )
-
-        respond_with_data(serialize_transaction(fed_txn, local_transfer), status: :created)
 
       rescue ActiveRecord::RecordNotUnique
         # Race condition: duplicate external_transaction_id hit DB constraint
@@ -129,11 +113,10 @@ module Api
                            errors: e.record.errors.full_messages)
       rescue ActiveRecord::RecordNotFound => e
         respond_with_error("Resource not found", status: :not_found)
+      rescue ArgumentError => e
+        respond_with_error(e.message, status: :unprocessable_entity)
       rescue => e
         Rails.logger.error("[Federation::Transfer] Unexpected error: #{e.class}: #{e.message}")
-        begin; fed_txn&.cancel!(reason: "Internal error") if fed_txn&.pending?; rescue => cancel_err
-          Rails.logger.error("[Federation::Transfer] cancel! also failed: #{cancel_err.message}")
-        end
         respond_with_error("Transfer failed", status: :internal_server_error)
       end
 

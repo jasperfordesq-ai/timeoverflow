@@ -23,6 +23,15 @@ class FederationPartner < ActiveRecord::Base
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :partnership_level, inclusion: { in: PARTNERSHIP_LEVELS }
   validates :feature_gates, presence: true   # nil feature_gates crashes can_transact? et al.
+  validate :valid_status_transition, if: :status_changed?
+
+  # Valid status transitions. Terminated partners cannot be reactivated.
+  VALID_TRANSITIONS = {
+    "pending"    => %w[active suspended terminated],
+    "active"     => %w[suspended terminated],
+    "suspended"  => %w[active terminated],
+    "terminated" => []  # terminal state
+  }.freeze
 
   scope :active, -> { where(status: "active") }
   scope :by_platform, ->(type) { where(platform_type: type) }
@@ -71,5 +80,16 @@ class FederationPartner < ActiveRecord::Base
 
   def level_name
     { 1 => "Discovery", 2 => "Social", 3 => "Economic", 4 => "Integrated" }[partnership_level]
+  end
+
+  private
+
+  def valid_status_transition
+    return if new_record?
+    old_status = status_was
+    allowed = VALID_TRANSITIONS[old_status] || []
+    unless allowed.include?(status)
+      errors.add(:status, "cannot transition from '#{old_status}' to '#{status}'")
+    end
   end
 end

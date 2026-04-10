@@ -31,16 +31,20 @@ module FederationAdmin
     end
 
     def export
-      @transactions = FederationTransaction.includes(:federation_partner).order(created_at: :desc)
-      @transactions = @transactions.where(status: params[:status]) if params[:status].present?
-      @transactions = @transactions.where(direction: params[:direction]) if params[:direction].present?
-      @transactions = @transactions.where(federation_partner_id: params[:partner_id]) if params[:partner_id].present?
-      @transactions = @transactions.where(organization_id: params[:organization_id]) if params[:organization_id].present?
-      @transactions = @transactions.where("external_transaction_id ILIKE ?", "%#{params[:search]}%") if params[:search].present?
+      transactions = FederationTransaction.includes(:federation_partner)
+      transactions = transactions.where(status: params[:status]) if params[:status].present?
+      transactions = transactions.where(direction: params[:direction]) if params[:direction].present?
+      transactions = transactions.where(federation_partner_id: params[:partner_id]) if params[:partner_id].present?
+      transactions = transactions.where(organization_id: params[:organization_id]) if params[:organization_id].present?
+      transactions = transactions.where("external_transaction_id ILIKE ?", "%#{params[:search]}%") if params[:search].present?
+
+      # Cap export at 10,000 rows to prevent memory issues.
+      # Order by ID desc (chronological) since find_each overrides order.
+      transactions = transactions.order(id: :desc).limit(10_000)
 
       csv_data = CSV.generate do |csv|
         csv << ["ID", "External ID", "Partner", "Direction", "Amount (seconds)", "Amount (hours)", "Status", "Org ID", "Remote User", "Reason", "Created At", "Completed At"]
-        @transactions.find_each do |txn|
+        transactions.each do |txn|
           csv << [txn.id, txn.external_transaction_id, txn.federation_partner&.name, txn.direction, txn.amount, (txn.amount.to_f / 3600).round(2), txn.status, txn.organization_id, txn.remote_user_identifier, txn.reason, txn.created_at&.iso8601, txn.completed_at&.iso8601]
         end
       end

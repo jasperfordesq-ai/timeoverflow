@@ -36,7 +36,10 @@ services:
     labels:
       - "federation=enabled"
     # Resolve the federation engine gem before the normal entrypoint.
+    # Explicitly set command because overriding entrypoint can drop the
+    # Dockerfile CMD on some Docker Compose versions.
     entrypoint: ["/bin/bash", "/app/engines/federation_api/entrypoint-federation.sh"]
+    command: ["/usr/bin/supervisord"]
   sidekiq:
     volumes:
       - ./engines/federation_api:/app/engines/federation_api
@@ -47,6 +50,7 @@ services:
       - SKIP_DATABASE_SETUP=1
       - SKIP_MIGRATIONS=1
     entrypoint: ["/bin/bash", "/app/engines/federation_api/entrypoint-federation.sh"]
+    command: ["/usr/bin/supervisord"]
     # Override the Dockerfile HEALTHCHECK (which hits port 3000/HTTP).
     # Sidekiq doesn't serve HTTP. Check via /proc that the sidekiq process
     # is alive — works without ps, pgrep, or redis-cli in the minimal image.

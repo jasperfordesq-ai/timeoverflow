@@ -76,20 +76,43 @@ module Federation
         # Auto-cancel very old pending transactions (> 24 hours)
         very_stale = stale.where("created_at < ?", 24.hours.ago)
         very_stale.find_each do |txn|
-          txn.cancel!(reason: "Auto-cancelled: pending for over 24 hours")
-          Rails.logger.warn("[Federation::Reconciliation] Auto-cancelled stale transaction #{txn.id}")
+          begin
+            ActiveRecord::Base.transaction do
+              # For outbound transactions: the local Transfer was committed when the
+              # transaction was created (member was debited). If the webhook delivery
+              # failed and we're now cancelling, we must reverse that debit so the
+              # member's balance is restored.
+              if txn.outbound? && txn.transfer.present?
+                original = txn.transfer
+                reversal = Transfer.new
+                reversal.source      = original.destination # org pool → member
+                reversal.destination = original.source      # member gets credited back
+                reversal.amount      = txn.amount
+                reversal.reason      = "[Federation Reversal] #{txn.reason} — webhook delivery failed"
+                reversal.save!
 
-          # Notify the partner about the cancellation
-          Federation::WebhookSender.send_async(
-            partner: txn.federation_partner,
-            event: "transaction.cancelled",
-            payload: {
-              external_transaction_id: txn.external_transaction_id,
-              federation_transaction_id: txn.id,
-              reason: "Auto-cancelled: pending for over 24 hours",
-              cancelled_at: txn.cancelled_at&.iso8601
-            }
-          ) rescue nil # Don't let webhook failure break reconciliation
+                Rails.logger.warn("[Federation::Reconciliation] Reversed transfer #{original.id} via reversal #{reversal.id} for stale outbound fed_txn #{txn.id}")
+              end
+
+              txn.cancel!(reason: "Auto-cancelled: pending for over 24 hours")
+            end
+
+            Rails.logger.warn("[Federation::Reconciliation] Auto-cancelled stale #{txn.direction} transaction #{txn.id}")
+
+            # Notify the partner about the cancellation
+            Federation::WebhookSender.send_async(
+              partner: txn.federation_partner,
+              event: "transaction.cancelled",
+              payload: {
+                external_transaction_id: txn.external_transaction_id,
+                federation_transaction_id: txn.id,
+                reason: "Auto-cancelled: pending for over 24 hours",
+                cancelled_at: txn.cancelled_at&.iso8601
+              }
+            )
+          rescue => e
+            Rails.logger.error("[Federation::Reconciliation] Failed to cancel/reverse stale fed_txn #{txn.id}: #{e.class}: #{e.message}")
+          end
         end
       end
 

@@ -37,8 +37,13 @@ module Api
           log.update!(status: "success")
           respond_with_data({ received: true, event: event_type })
         rescue => e
-          Rails.logger.error("[Federation::Webhook] Processing failed: #{e.class}: #{e.message}")
-          log.update!(status: "failed", response_body: e.message&.truncate(500))
+          # Log full details server-side; store class + message in the log record
+          # (backtrace is in the Rails log, not exposed to the calling partner).
+          Rails.logger.error("[Federation::Webhook] Processing failed: #{e.class}: #{e.message}\n#{e.backtrace&.first(10)&.join("\n")}")
+          log.update!(
+            status: "failed",
+            response_body: "#{e.class}: #{e.message}"
+          )
           respond_with_error("Webhook processing failed")
         end
       end
@@ -62,10 +67,18 @@ module Api
         return respond_with_error("Missing signature", status: :unauthorized) if signature.blank?
 
         body = request.raw_post
-        partner_id = JSON.parse(body)["partner_id"] || JSON.parse(body)["tenant_id"] rescue nil
+        parsed = JSON.parse(body) rescue nil
+        partner_id = parsed&.dig("partner_id") || parsed&.dig("tenant_id")
         partner = FederationPartner.find_by(id: partner_id)
 
         return respond_with_error("Unknown partner", status: :unauthorized) unless partner
+
+        # Fix #2: Reject partners with no webhook_secret — HMAC with empty key
+        # can be forged by anyone who knows the request body format.
+        if partner.webhook_secret.blank?
+          Rails.logger.error("[Federation::Webhook] Partner #{partner.id} has no webhook_secret configured")
+          return respond_with_error("Partner webhook not configured", status: :unauthorized)
+        end
 
         # Try Nexus HMAC format first: METHOD\nPATH\nTIMESTAMP\nBODY
         timestamp = request.headers["X-Federation-Timestamp"]
@@ -108,20 +121,40 @@ module Api
           partner.update!(status: "terminated")
         when "partnership.level_changed"
           level = payload["level"].to_i
-          if level.between?(1, 4) # Validate within allowed range
-            partner.update!(partnership_level: level)
+          # Fix #11: Only allow level decreases via webhook (downgrades).
+          # Upgrades require admin approval on both sides — a partner should
+          # not be able to self-promote to level 4 (Integrated) by sending
+          # a webhook. Downgrades (e.g., suspending economic access) are
+          # permitted unilaterally since they reduce privilege.
+          if level.between?(1, 4)
+            if level <= partner.partnership_level
+              partner.update!(partnership_level: level)
+              Rails.logger.info("[Federation] Partner #{partner.id} level changed to #{level} (downgrade/same)")
+            else
+              Rails.logger.warn("[Federation] Rejected level upgrade attempt for partner #{partner.id}: #{partner.partnership_level} → #{level} (requires admin approval)")
+            end
           else
-            Rails.logger.warn("[Federation] Invalid partnership level: #{level}")
+            Rails.logger.warn("[Federation] Invalid partnership level in webhook: #{level}")
           end
         when "transaction.requested"
-          # A remote user wants to initiate a transfer — queue for processing
+          # A remote user wants to initiate a transfer — handle idempotently.
+          # handle_inbound_request now checks for existing records before
+          # entering the transaction block, returning the existing record
+          # rather than raising RecordNotUnique (which caused 500s on retry).
           Federation::TransferHandler.handle_inbound_request(partner, payload)
         when "transaction.cancelled"
           fed_txn = FederationTransaction.find_by(
             external_transaction_id: payload["external_transaction_id"],
             federation_partner: partner
           )
-          fed_txn&.cancel!(reason: payload["reason"])
+          # Fix #7: Only cancel if still pending — cancel! now raises on
+          # completed/cancelled records so we guard here instead of relying
+          # on a bare &.cancel! to silently corrupt accounting.
+          if fed_txn&.pending?
+            fed_txn.cancel!(reason: payload["reason"])
+          elsif fed_txn
+            Rails.logger.warn("[Federation::Webhook] Ignoring cancellation for #{fed_txn.status} transaction #{fed_txn.id}")
+          end
         when "health_check"
           partner.record_success!
         else

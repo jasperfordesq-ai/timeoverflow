@@ -35,6 +35,14 @@ class FederationTransaction < ApplicationRecord
   end
 
   def cancel!(reason: nil)
+    # Guard: only pending transactions can be cancelled.
+    # Cancelling a completed transaction would leave the local Transfer intact
+    # (balance already moved) while marking the federation record cancelled —
+    # creating an accounting inconsistency.
+    unless pending?
+      raise "Cannot cancel a #{status} federation transaction (id=#{id})"
+    end
+
     update!(
       status: "cancelled",
       cancelled_at: Time.current,
@@ -48,5 +56,17 @@ class FederationTransaction < ApplicationRecord
 
   def completed?
     status == "completed"
+  end
+
+  def cancelled?
+    status == "cancelled"
+  end
+
+  def inbound?
+    direction == "inbound"
+  end
+
+  def outbound?
+    direction == "outbound"
   end
 end

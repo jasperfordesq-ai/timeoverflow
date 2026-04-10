@@ -12,12 +12,15 @@ module Federation
       new(partner: partner, event: event, payload: payload).deliver
     end
 
-    # Queue a webhook for async delivery via Sidekiq
-    def self.send_async(partner:, event:, payload: {})
+    # Queue a webhook for async delivery via Sidekiq.
+    # Pass fed_txn_id for "transaction.requested" outbound events so
+    # WebhookDeliveryJob can call complete! on confirmed delivery.
+    def self.send_async(partner:, event:, payload: {}, fed_txn_id: nil)
       Federation::WebhookDeliveryJob.perform_later(
         partner.id,
         event,
-        payload.as_json
+        payload.as_json,
+        fed_txn_id
       )
     rescue => e
       Rails.logger.error("[Federation] Failed to queue webhook: #{e.message}")

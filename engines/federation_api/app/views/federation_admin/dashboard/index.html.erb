@@ -6,7 +6,7 @@
     <h1 class="text-2xl font-bold text-gray-900">Federation Dashboard</h1>
     <p class="mt-1 text-sm text-gray-500">Overview of federation activity across all partners and organisations.</p>
   </div>
-  <form method="post" action="/federation-admin/reconcile">
+  <form method="post" action="<%= federation_admin_reconcile_path %>">
     <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
     <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-federation-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-federation-700 transition-colors"
             onclick="return confirm('Run reconciliation job now?')">
@@ -162,7 +162,7 @@
           <h2 class="text-base font-semibold text-gray-900">Recent Transactions</h2>
           <p class="text-sm text-gray-500 mt-0.5">Last 10 cross-platform transfers</p>
         </div>
-        <a href="/federation-admin/transactions" class="text-sm font-medium text-federation-600 hover:text-federation-800 transition-colors">
+        <a href="<%= federation_admin_transactions_path %>" class="text-sm font-medium text-federation-600 hover:text-federation-800 transition-colors">
           View all &rarr;
         </a>
       </div>
@@ -182,7 +182,7 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
               <% @recent_transactions.each do |txn| %>
-                <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location='<%= "/federation-admin/transactions/#{txn.id}" %>'">
+                <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location='<%= federation_admin_transaction_path(txn) %>'">
                   <td class="px-6 py-3.5 whitespace-nowrap text-sm font-mono text-gray-600">
                     #<%= txn.id %>
                   </td>
@@ -247,7 +247,7 @@
           <h2 class="text-base font-semibold text-gray-900">Partner Health</h2>
           <p class="text-sm text-gray-500 mt-0.5"><%= @partners.count %> registered partner<%= @partners.count == 1 ? '' : 's' %></p>
         </div>
-        <a href="/federation-admin/partners" class="text-sm font-medium text-federation-600 hover:text-federation-800 transition-colors">
+        <a href="<%= federation_admin_partners_path %>" class="text-sm font-medium text-federation-600 hover:text-federation-800 transition-colors">
           Manage &rarr;
         </a>
       </div>
@@ -300,7 +300,7 @@
           </svg>
           <p class="mt-3 text-sm text-gray-500">No partners configured yet.</p>
           <p class="text-xs text-gray-400 mt-1">
-            <a href="/federation-admin/partners" class="text-federation-600 hover:underline">Add your first partner</a> to start federating.
+            <a href="<%= federation_admin_partners_path %>" class="text-federation-600 hover:underline">Add your first partner</a> to start federating.
           </p>
         </div>
       <% end %>

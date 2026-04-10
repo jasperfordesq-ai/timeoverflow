@@ -120,7 +120,7 @@ module FederationApi
     # app/services/ is not a Rails default autoload directory.
     # Explicitly add it so Federation::TransferHandler and
     # Federation::WebhookSender are found by Zeitwerk.
-    initializer "federation_api.autoload_paths", before: :set_autoload_paths do |app|
+    initializer "federation_api.autoload_paths" do |app|
       app.config.autoload_paths    += Dir[root.join("app", "services")]
       app.config.eager_load_paths  += Dir[root.join("app", "services")]
     end

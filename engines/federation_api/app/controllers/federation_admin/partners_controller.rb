@@ -1,7 +1,10 @@
 module FederationAdmin
   class PartnersController < BaseController
     def index
-      @partners = FederationPartner.order(created_at: :desc)
+      @partners = FederationPartner.all
+      sort_col = %w[id name status platform_type created_at].include?(params[:sort]) ? params[:sort] : "created_at"
+      sort_dir = params[:dir] == "asc" ? :asc : :desc
+      @partners = @partners.order(sort_col => sort_dir)
     end
 
     def show
@@ -42,12 +45,15 @@ module FederationAdmin
       flash[:notice] = "Partner '#{@partner.name}' created successfully. The webhook secret is shown on the partner detail page."
       redirect_to federation_admin_partner_path(@partner)
     rescue ActiveRecord::RecordInvalid => e
-      flash[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
-      redirect_to new_federation_admin_partner_path
+      flash.now[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
+      @organizations = Organization.order(:name)
+      @partner = e.record
+      render :new
     rescue => e
       Rails.logger.error("[FederationAdmin] Partner create failed: #{e.class}: #{e.message}")
-      flash[:alert] = "Failed to create partner. Check the server logs for details."
-      redirect_to new_federation_admin_partner_path
+      flash.now[:alert] = "Failed to create partner. Check the server logs for details."
+      @organizations = Organization.order(:name)
+      render :new
     end
 
     def edit
@@ -81,12 +87,15 @@ module FederationAdmin
       flash[:notice] = "Partner '#{@partner.name}' updated."
       redirect_to federation_admin_partner_path(@partner)
     rescue ActiveRecord::RecordInvalid => e
-      flash[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
-      redirect_to edit_federation_admin_partner_path(@partner)
+      flash.now[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
+      @organizations = Organization.order(:name)
+      @partner = e.record
+      render :edit
     rescue => e
       Rails.logger.error("[FederationAdmin] Partner update failed: #{e.class}: #{e.message}")
-      flash[:alert] = "Failed to update partner. Check the server logs for details."
-      redirect_to edit_federation_admin_partner_path(@partner)
+      flash.now[:alert] = "Failed to update partner. Check the server logs for details."
+      @organizations = Organization.order(:name)
+      render :edit
     end
 
     # POST /federation-admin/partners/:id/test_webhook

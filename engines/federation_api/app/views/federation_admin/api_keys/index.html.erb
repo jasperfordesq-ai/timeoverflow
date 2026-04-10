@@ -15,9 +15,22 @@
 
 <div class="bg-white shadow rounded-lg overflow-hidden">
   <% if @api_keys.any? %>
+    <form method="post" action="<%= bulk_revoke_federation_admin_api_keys_path %>" id="bulk-revoke-form">
+      <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+      <div class="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-3">
+        <button type="submit" class="inline-flex items-center gap-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium py-1.5 px-3 text-sm transition-colors disabled:opacity-50"
+                onclick="return confirm('Revoke all selected API keys? This cannot be undone.')">
+          Revoke Selected
+        </button>
+        <span class="text-xs text-gray-500">Select keys using the checkboxes below</span>
+      </div>
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <input type="checkbox" id="select-all-keys" class="rounded border-gray-300"
+                   onchange="document.querySelectorAll('.key-checkbox').forEach(c => c.checked = this.checked)">
+          </th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prefix</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
@@ -31,6 +44,9 @@
       <tbody class="bg-white divide-y divide-gray-200">
         <% @api_keys.each do |key| %>
           <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <input type="checkbox" name="ids[]" value="<%= key.id %>" class="key-checkbox rounded border-gray-300">
+            </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900"><%= key.key_prefix %>...</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= key.name %></td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -79,6 +95,7 @@
         <% end %>
       </tbody>
     </table>
+    </form>
   <% else %>
     <div class="text-center py-12">
       <p class="text-sm text-gray-500">No API keys have been created yet.</p>

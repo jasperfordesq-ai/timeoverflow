@@ -1,11 +1,18 @@
+require "csv"
+
 module FederationAdmin
   class TransactionsController < BaseController
     def index
-      @transactions = FederationTransaction.includes(:federation_partner).order(created_at: :desc)
+      @transactions = FederationTransaction.includes(:federation_partner)
       @transactions = @transactions.where(status: params[:status]) if params[:status].present?
       @transactions = @transactions.where(direction: params[:direction]) if params[:direction].present?
       @transactions = @transactions.where(federation_partner_id: params[:partner_id]) if params[:partner_id].present?
       @transactions = @transactions.where(organization_id: params[:organization_id]) if params[:organization_id].present?
+      @transactions = @transactions.where("external_transaction_id ILIKE ?", "%#{params[:search]}%") if params[:search].present?
+
+      sort_col = %w[id status direction amount created_at].include?(params[:sort]) ? params[:sort] : "created_at"
+      sort_dir = params[:dir] == "asc" ? :asc : :desc
+      @transactions = @transactions.order(sort_col => sort_dir)
 
       @total_count = @transactions.count
 
@@ -21,6 +28,24 @@ module FederationAdmin
 
     def show
       @transaction = FederationTransaction.find(params[:id])
+    end
+
+    def export
+      @transactions = FederationTransaction.includes(:federation_partner).order(created_at: :desc)
+      @transactions = @transactions.where(status: params[:status]) if params[:status].present?
+      @transactions = @transactions.where(direction: params[:direction]) if params[:direction].present?
+      @transactions = @transactions.where(federation_partner_id: params[:partner_id]) if params[:partner_id].present?
+      @transactions = @transactions.where(organization_id: params[:organization_id]) if params[:organization_id].present?
+      @transactions = @transactions.where("external_transaction_id ILIKE ?", "%#{params[:search]}%") if params[:search].present?
+
+      csv_data = CSV.generate do |csv|
+        csv << ["ID", "External ID", "Partner", "Direction", "Amount (seconds)", "Amount (hours)", "Status", "Org ID", "Remote User", "Reason", "Created At", "Completed At"]
+        @transactions.find_each do |txn|
+          csv << [txn.id, txn.external_transaction_id, txn.federation_partner&.name, txn.direction, txn.amount, (txn.amount.to_f / 3600).round(2), txn.status, txn.organization_id, txn.remote_user_identifier, txn.reason, txn.created_at&.iso8601, txn.completed_at&.iso8601]
+        end
+      end
+
+      send_data csv_data, filename: "federation_transactions_#{Date.current}.csv", type: "text/csv"
     end
   end
 end

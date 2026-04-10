@@ -182,7 +182,7 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
               <% @recent_transactions.each do |txn| %>
-                <tr class="hover:bg-gray-50 transition-colors">
+                <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location='<%= "/federation-admin/transactions/#{txn.id}" %>'">
                   <td class="px-6 py-3.5 whitespace-nowrap text-sm font-mono text-gray-600">
                     #<%= txn.id %>
                   </td>

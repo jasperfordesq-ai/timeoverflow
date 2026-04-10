@@ -72,7 +72,11 @@ module FederationApi
         namespace :federation_admin, path: "federation-admin" do
           root to: "dashboard#index"
           post "reconcile", to: "dashboard#reconcile"
-          resources :api_keys, only: [:index, :new, :create, :show, :destroy]
+          resources :api_keys, only: [:index, :new, :create, :show, :destroy] do
+            collection do
+              post :bulk_revoke
+            end
+          end
           resources :partners, only: [:index, :new, :create, :show, :edit, :update] do
             member do
               post :test_webhook
@@ -80,10 +84,20 @@ module FederationApi
               post :health_check
             end
           end
-          resources :transactions, only: [:index, :show]
-          resources :webhook_logs, only: [:index, :show]
+          resources :transactions, only: [:index, :show] do
+            collection do
+              get :export
+            end
+          end
+          resources :webhook_logs, only: [:index, :show] do
+            member do
+              post :retry_delivery
+            end
+          end
           resources :messages, only: [:index, :show]
           resources :org_settings, only: [:index, :edit, :update]
+          resources :member_preferences, only: [:index, :show, :update]
+          resources :activity, only: [:index]
         end
 
         # --- Federation UI API (session-authenticated, for host app JS) ---

@@ -5,6 +5,14 @@
      class="inline-flex items-center text-sm font-medium text-federation-600 hover:text-federation-800">
     &larr; Back to Webhook Logs
   </a>
+  <% if @log.status == "failed" %>
+    <form method="post" action="<%= retry_delivery_federation_admin_webhook_log_path(@log) %>" class="inline ml-4">
+      <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+      <button type="submit" class="inline-flex items-center gap-1.5 rounded-md bg-federation-600 hover:bg-federation-700 text-white font-medium py-1.5 px-3 text-sm transition-colors">
+        🔄 Retry Delivery
+      </button>
+    </form>
+  <% end %>
 </div>
 
 <div class="sm:flex sm:items-center sm:justify-between mb-8">

@@ -35,5 +35,16 @@ module FederationAdmin
       return "0h" unless seconds
       "#{(seconds.to_f / 3600).round(1)}h"
     end
+
+    def sort_link(label, column, current_sort, current_dir)
+      new_dir = (current_sort == column.to_s && current_dir != "asc") ? "asc" : "desc"
+      arrow = if current_sort == column.to_s
+        current_dir == "asc" ? " ↑" : " ↓"
+      else
+        ""
+      end
+      params_hash = request.query_parameters.merge(sort: column, dir: new_dir)
+      "<a href=\"?#{params_hash.to_query}\" class=\"hover:text-federation-600\">#{label}#{arrow}</a>".html_safe
+    end
   end
 end

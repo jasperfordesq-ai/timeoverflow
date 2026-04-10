@@ -1,7 +1,10 @@
 module FederationAdmin
   class ApiKeysController < BaseController
     def index
-      @api_keys = FederationApiKey.order(created_at: :desc)
+      @api_keys = FederationApiKey.all
+      sort_col = %w[id name active created_at expires_at].include?(params[:sort]) ? params[:sort] : "created_at"
+      sort_dir = params[:dir] == "asc" ? :asc : :desc
+      @api_keys = @api_keys.order(sort_col => sort_dir)
     end
 
     def new
@@ -26,12 +29,14 @@ module FederationAdmin
       flash[:notice] = "API key generated successfully. Copy the raw key now — it cannot be retrieved later."
       render :show
     rescue ActiveRecord::RecordInvalid => e
-      flash[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
-      redirect_to new_federation_admin_api_key_path
+      flash.now[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
+      @organizations = Organization.order(:name)
+      render :new
     rescue => e
       Rails.logger.error("[FederationAdmin] API key creation failed: #{e.class}: #{e.message}")
-      flash[:alert] = "Failed to create API key. Check the server logs for details."
-      redirect_to new_federation_admin_api_key_path
+      flash.now[:alert] = "Failed to create API key. Check the server logs for details."
+      @organizations = Organization.order(:name)
+      render :new
     end
 
     def show
@@ -42,6 +47,17 @@ module FederationAdmin
       key = FederationApiKey.find(params[:id])
       key.update!(active: false)
       flash[:notice] = "API key '#{key.name}' has been deactivated."
+      redirect_to federation_admin_api_keys_path
+    end
+
+    def bulk_revoke
+      ids = (params[:ids] || []).map(&:to_i).reject(&:zero?)
+      if ids.any?
+        count = FederationApiKey.where(id: ids, active: true).update_all(active: false)
+        flash[:notice] = "#{count} API key(s) revoked."
+      else
+        flash[:alert] = "No keys selected."
+      end
       redirect_to federation_admin_api_keys_path
     end
   end

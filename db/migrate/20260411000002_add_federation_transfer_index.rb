@@ -13,6 +13,7 @@ class AddFederationTransferIndex < ActiveRecord::Migration[7.2]
   def change
     add_index :federation_transactions, :transfer_id,
               name: "index_federation_transactions_on_transfer_id",
-              where: "transfer_id IS NOT NULL"
+              where: "transfer_id IS NOT NULL",
+              if_not_exists: true
   end
 end

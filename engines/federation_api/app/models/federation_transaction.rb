@@ -7,7 +7,7 @@
 # The local Transfer record (if created) is linked via transfer_id.
 # The remote platform's transaction ID is stored in external_transaction_id.
 #
-class FederationTransaction < ApplicationRecord
+class FederationTransaction < ActiveRecord::Base
   belongs_to :federation_partner
   belongs_to :transfer, optional: true
 

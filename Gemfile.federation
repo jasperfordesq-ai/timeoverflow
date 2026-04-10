@@ -1,0 +1,16 @@
+# Federation Gemfile overlay.
+#
+# Loads the original TimeOverflow Gemfile (unmodified) and adds
+# the FederationApi engine as a path-based gem.
+#
+# Usage:
+#   BUNDLE_GEMFILE=Gemfile.federation bundle install
+#   BUNDLE_GEMFILE=Gemfile.federation bundle exec rails server
+#
+# In Docker, set via docker-compose.federation.yml:
+#   environment:
+#     - BUNDLE_GEMFILE=/app/Gemfile.federation
+#
+eval_gemfile File.join(__dir__, "Gemfile")
+
+gem "federation_api", path: "engines/federation_api"

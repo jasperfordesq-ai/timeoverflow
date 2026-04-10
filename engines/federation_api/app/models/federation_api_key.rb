@@ -3,7 +3,7 @@
 # Keys are stored as SHA-256 hashes. The raw key is only shown once
 # at creation time. A short prefix is stored for identification.
 #
-class FederationApiKey < ApplicationRecord
+class FederationApiKey < ActiveRecord::Base
   belongs_to :organization, optional: true
 
   scope :active, -> { where(active: true).where("expires_at IS NULL OR expires_at > ?", Time.current) }

@@ -99,24 +99,6 @@ Rails.application.routes.draw do
     end
   end
 
-  # Federation API v1
-  namespace :api do
-    namespace :v1 do
-      # Nexus-compatible endpoints (match FederationExternalApiClient methods)
-      resources :listings, only: [:index, :show]  # Combined offers + inquiries
-      get "health", to: "health#show"             # Health check
-
-      # Native TimeOverflow endpoints
-      resources :organizations, only: [:index, :show]
-      resources :members, only: [:index, :show]
-      resources :offers, only: [:index, :show]
-      resources :inquiries, only: [:index, :show]
-      resources :transfers, only: [:create]
-      resources :accounts, only: [:show]
-      post "webhooks/receive", to: "webhooks#receive"
-    end
-  end
-
   match '/404', to: 'errors#not_found', via: :all
   match '/500', to: 'errors#internal_server_error', via: :all
 end

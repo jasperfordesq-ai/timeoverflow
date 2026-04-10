@@ -7,7 +7,7 @@
 #   3 = Economic (cross-platform time transfers)
 #   4 = Integrated (full feature access)
 #
-class FederationPartner < ApplicationRecord
+class FederationPartner < ActiveRecord::Base
   has_many :federation_transactions, dependent: :restrict_with_error
   has_many :federation_webhook_logs, dependent: :destroy
 

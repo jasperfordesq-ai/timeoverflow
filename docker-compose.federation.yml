@@ -1,10 +1,11 @@
 # Docker Compose overlay for federation testing.
 #
-# Runs a local TimeOverflow instance with federation enabled,
-# ready to connect to a Nexus instance.
+# Activates the FederationApi engine without modifying any original
+# TimeOverflow file.  The engine is mounted as a local gem via
+# Gemfile.federation, and all federation code lives under engines/.
 #
 # Usage:
-#   docker compose -f docker-compose.yml -f docker-compose.federation.yml up
+#   docker compose -f docker-compose.yml -f docker-compose.federation.yml up --build
 #
 # Then:
 #   docker compose exec app rake federation:setup
@@ -14,29 +15,43 @@ version: '3'
 services:
   app:
     volumes:
-      - ./app:/app/app
-      - ./config/initializers/0_api_controller_fix.rb:/app/config/initializers/0_api_controller_fix.rb
-      - ./config/initializers/federation_api.rb:/app/config/initializers/federation_api.rb
-      - ./config/routes.rb:/app/config/routes.rb
-      - ./config/schedule.yml:/app/config/schedule.yml
-      - ./db/migrate:/app/db/migrate
-      - ./lib:/app/lib
+      # Mount the engine source and the federation Gemfile overlay
+      - ./engines/federation_api:/app/engines/federation_api
+      - ./Gemfile.federation:/app/Gemfile.federation
     environment:
+      # Use the federation Gemfile (original Gemfile + engine gem)
+      - BUNDLE_GEMFILE=/app/Gemfile.federation
+      # Federation feature flags
       - FEDERATION_ENABLED=true
       - FEDERATION_WEBHOOK_TIMEOUT=10
       - FEDERATION_RATE_LIMIT=100
       - ALLOWED_HOSTS=localhost 34.175.14.41 timeoverflow.exchangemembers.com timeoverflow-develop-app-1 timeoverflow-app
     labels:
       - "federation=enabled"
+    # Run `bundle install` (resolves the path gem) before the normal entrypoint.
+    # The base image already has all host gems cached; only the path reference
+    # to the engine is new, so this is near-instant.
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        bundle install --quiet 2>/dev/null
+        exec /app/entrypoint.sh "$$@"
+      - --
   sidekiq:
     volumes:
-      - ./app:/app/app
-      - ./config/initializers/0_api_controller_fix.rb:/app/config/initializers/0_api_controller_fix.rb
-      - ./config/initializers/federation_api.rb:/app/config/initializers/federation_api.rb
-      - ./config/schedule.yml:/app/config/schedule.yml
-      - ./lib:/app/lib
+      - ./engines/federation_api:/app/engines/federation_api
+      - ./Gemfile.federation:/app/Gemfile.federation
     environment:
+      - BUNDLE_GEMFILE=/app/Gemfile.federation
       - FEDERATION_ENABLED=true
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        bundle install --quiet 2>/dev/null
+        exec /app/entrypoint.sh "$$@"
+      - --
     # Override the Dockerfile HEALTHCHECK (which hits port 3000/HTTP).
     # Sidekiq doesn't serve HTTP. Check via /proc that the sidekiq process
     # is alive — works without ps, pgrep, or redis-cli in the minimal image.

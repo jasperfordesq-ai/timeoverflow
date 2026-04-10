@@ -1,6 +1,5 @@
 :concurrency: <%= ENV.fetch("SIDEKIQ_CONCURRENCY", "5").to_i %>
 :queues:
-  - federation  # M6: dedicated queue for federation jobs (delivery, reconciliation)
   - default
   - cron
   - mailers

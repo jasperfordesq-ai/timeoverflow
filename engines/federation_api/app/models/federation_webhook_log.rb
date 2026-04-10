@@ -1,6 +1,6 @@
 # Audit log for webhook deliveries to/from federation partners.
 #
-class FederationWebhookLog < ApplicationRecord
+class FederationWebhookLog < ActiveRecord::Base
   belongs_to :federation_partner
 
   STATUSES = %w[pending success failed].freeze

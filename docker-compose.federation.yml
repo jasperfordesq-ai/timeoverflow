@@ -5,7 +5,7 @@
 # Gemfile.federation, and all federation code lives under engines/.
 #
 # Usage:
-#   docker compose -f docker-compose.yml -f docker-compose.federation.yml up --build
+#   docker compose -f docker-compose.yml -f docker-compose.federation.yml up
 #
 # Then:
 #   docker compose exec app rake federation:setup
@@ -28,16 +28,8 @@ services:
       - ALLOWED_HOSTS=localhost 34.175.14.41 timeoverflow.exchangemembers.com timeoverflow-develop-app-1 timeoverflow-app
     labels:
       - "federation=enabled"
-    # Run `bundle install` (resolves the path gem) before the normal entrypoint.
-    # The base image already has all host gems cached; only the path reference
-    # to the engine is new, so this is near-instant.
-    entrypoint:
-      - /bin/bash
-      - -c
-      - |
-        bundle install --quiet 2>/dev/null
-        exec /app/entrypoint.sh "$$@"
-      - --
+    # Resolve the federation engine gem before the normal entrypoint.
+    entrypoint: ["/bin/bash", "/app/engines/federation_api/entrypoint-federation.sh"]
   sidekiq:
     volumes:
       - ./engines/federation_api:/app/engines/federation_api
@@ -45,13 +37,7 @@ services:
     environment:
       - BUNDLE_GEMFILE=/app/Gemfile.federation
       - FEDERATION_ENABLED=true
-    entrypoint:
-      - /bin/bash
-      - -c
-      - |
-        bundle install --quiet 2>/dev/null
-        exec /app/entrypoint.sh "$$@"
-      - --
+    entrypoint: ["/bin/bash", "/app/engines/federation_api/entrypoint-federation.sh"]
     # Override the Dockerfile HEALTHCHECK (which hits port 3000/HTTP).
     # Sidekiq doesn't serve HTTP. Check via /proc that the sidekiq process
     # is alive — works without ps, pgrep, or redis-cli in the minimal image.

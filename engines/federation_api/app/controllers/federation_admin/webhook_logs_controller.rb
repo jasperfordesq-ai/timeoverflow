@@ -1,7 +1,7 @@
 module FederationAdmin
   class WebhookLogsController < BaseController
     def index
-      @logs = FederationWebhookLog.order(created_at: :desc)
+      @logs = FederationWebhookLog.includes(:federation_partner).order(created_at: :desc)
       @logs = @logs.where(status: params[:status]) if params[:status].present?
       @logs = @logs.where(direction: params[:direction]) if params[:direction].present?
       @logs = @logs.where(federation_partner_id: params[:partner_id]) if params[:partner_id].present?

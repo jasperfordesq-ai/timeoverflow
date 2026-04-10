@@ -65,9 +65,16 @@ module Api
           return respond_with_data(serialize_message(existing)) if existing
         end
 
-        # Resolve the local recipient
+        # Resolve the local recipient's organization.
+        # Priority: explicit param > API key's org > resolved from member.
         org_id = params[:organization_id] || params[:local_organization_id]
-        org = org_id.present? ? Organization.find_by(id: org_id) : nil
+        org = if org_id.present?
+          Organization.find_by(id: org_id)
+        elsif @current_api_key&.organization
+          @current_api_key.organization
+        else
+          nil  # will be filled from member below
+        end
 
         member = resolve_local_member(partner, org)
         return respond_with_error("Could not resolve local recipient", status: :unprocessable_entity) unless member
@@ -133,20 +140,30 @@ module Api
       def resolve_partner
         if params[:partner_id].present?
           FederationPartner.active.find_by(id: params[:partner_id])
+        elsif @current_api_key&.organization
+          # Nexus doesn't send partner_id. Infer from the API key's org:
+          # find the active partner that is permitted for this org.
+          FederationPartner.active.for_organization(@current_api_key.organization.id).first
         else
-          # Do not guess — require explicit partner identification.
-          nil
+          # Global key with no partner_id: find the single active partner
+          # (only safe when there's exactly one).
+          partners = FederationPartner.active
+          partners.count == 1 ? partners.first : nil
         end
       end
 
       def resolve_local_member(partner, org)
-        # Try multiple lookup strategies (Nexus sends recipient_id or we accept member fields)
+        # Try multiple lookup strategies. Nexus sends recipient_id which is a TO member ID.
         if params[:local_member_id].present?
           Member.find_by(id: params[:local_member_id], active: true)
-        elsif params[:recipient_id].present? && org
-          # Nexus sends recipient_id which maps to member_uid or member ID
-          org.members.active.find_by(id: params[:recipient_id]) ||
-            org.members.active.find_by(member_uid: params[:recipient_id])
+        elsif params[:recipient_id].present?
+          if org
+            org.members.active.find_by(id: params[:recipient_id]) ||
+              org.members.active.find_by(member_uid: params[:recipient_id])
+          else
+            # No org context — look up globally (Nexus sends the actual member ID)
+            Member.find_by(id: params[:recipient_id], active: true)
+          end
         elsif params[:local_member_uid].present? && org
           org.members.active.find_by(member_uid: params[:local_member_uid])
         elsif params[:local_member_email].present?
@@ -174,6 +191,7 @@ module Api
       def serialize_message(message)
         {
           id: message.id,
+          message_id: message.id,  # Nexus reads this field
           federation_partner_id: message.federation_partner_id,
           organization_id: message.organization_id,
           local_member_id: message.local_member_id,

@@ -1,7 +1,7 @@
 module FederationAdmin
   class TransactionsController < BaseController
     def index
-      @transactions = FederationTransaction.order(created_at: :desc)
+      @transactions = FederationTransaction.includes(:federation_partner).order(created_at: :desc)
       @transactions = @transactions.where(status: params[:status]) if params[:status].present?
       @transactions = @transactions.where(direction: params[:direction]) if params[:direction].present?
       @transactions = @transactions.where(federation_partner_id: params[:partner_id]) if params[:partner_id].present?

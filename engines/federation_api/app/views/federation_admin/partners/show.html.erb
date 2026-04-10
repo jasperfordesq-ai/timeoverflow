@@ -5,11 +5,33 @@
     <a href="<%= federation_admin_partners_path %>" class="text-sm text-federation-600 hover:text-federation-800">&larr; Back to Partners</a>
     <h1 class="mt-2 text-2xl font-bold text-gray-900"><%= @partner.name %></h1>
   </div>
-  <div class="mt-4 sm:mt-0">
+  <div class="mt-4 sm:mt-0 flex flex-wrap gap-2">
     <a href="<%= edit_federation_admin_partner_path(@partner) %>"
        class="inline-flex items-center bg-federation-600 hover:bg-federation-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
       Edit Partner
     </a>
+    <form method="post" action="<%= test_webhook_federation_admin_partner_path(@partner) %>" class="inline">
+      <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+      <button type="submit"
+              class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+        Test Webhook
+      </button>
+    </form>
+    <form method="post" action="<%= regenerate_secret_federation_admin_partner_path(@partner) %>" class="inline"
+          onsubmit="return confirm('Are you sure you want to regenerate the webhook secret? The current secret will be invalidated immediately.');">
+      <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+      <button type="submit"
+              class="inline-flex items-center bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-md transition-colors">
+        Regenerate Secret
+      </button>
+    </form>
+    <form method="post" action="<%= health_check_federation_admin_partner_path(@partner) %>" class="inline">
+      <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+      <button type="submit"
+              class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+        Health Check
+      </button>
+    </form>
   </div>
 </div>
 

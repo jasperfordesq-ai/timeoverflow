@@ -88,5 +88,45 @@ module FederationAdmin
       flash[:alert] = "Failed to update partner. Check the server logs for details."
       redirect_to edit_federation_admin_partner_path(@partner)
     end
+
+    # POST /federation-admin/partners/:id/test_webhook
+    def test_webhook
+      @partner = FederationPartner.find(params[:id])
+      Federation::WebhookSender.send_now(
+        partner: @partner,
+        event: "partnership.test",
+        payload: { test: true, timestamp: Time.current.iso8601 }
+      )
+      flash[:notice] = "Test webhook sent to #{@partner.name}. Check webhook logs for delivery status."
+      redirect_to federation_admin_partner_path(@partner)
+    rescue => e
+      flash[:alert] = "Webhook test failed: #{e.message}"
+      redirect_to federation_admin_partner_path(@partner)
+    end
+
+    # POST /federation-admin/partners/:id/regenerate_secret
+    def regenerate_secret
+      @partner = FederationPartner.find(params[:id])
+      new_secret = SecureRandom.hex(32)
+      @partner.update_column(:webhook_secret, new_secret)
+      flash[:notice] = "Webhook secret regenerated for #{@partner.name}. New secret is visible on the partner detail page."
+      redirect_to federation_admin_partner_path(@partner)
+    end
+
+    # POST /federation-admin/partners/:id/health_check
+    def health_check
+      @partner = FederationPartner.find(params[:id])
+      client = Federation::PartnerApiClient.new(partner: @partner)
+      result = client.health_check
+      if result["success"] != false
+        flash[:notice] = "Health check passed for #{@partner.name}."
+      else
+        flash[:alert] = "Health check failed for #{@partner.name}: #{result['error']}"
+      end
+      redirect_to federation_admin_partner_path(@partner)
+    rescue => e
+      flash[:alert] = "Health check failed: #{e.message}"
+      redirect_to federation_admin_partner_path(@partner)
+    end
   end
 end

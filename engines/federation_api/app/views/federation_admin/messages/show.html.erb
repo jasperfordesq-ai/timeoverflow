@@ -2,7 +2,7 @@
 
 <!-- Page header -->
 <div class="mb-8">
-  <a href="<%= federation_admin_messages_path %>" class="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-900 mb-3">
+  <a href="<%= federation_admin_messages_path %>" class="inline-flex items-center text-sm text-federation-600 hover:text-federation-900 mb-3">
     <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
     </svg>
@@ -34,7 +34,7 @@
         <% if @message.direction == 'inbound' %>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Inbound</span>
         <% else %>
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Outbound</span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Outbound</span>
         <% end %>
       </dd>
     </div>
@@ -79,7 +79,7 @@
         <% when 'delivered' %>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Delivered</span>
         <% when 'read' %>
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">Read</span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-federation-100 text-federation-800">Read</span>
         <% when 'failed' %>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Failed</span>
         <% else %>

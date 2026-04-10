@@ -2,7 +2,7 @@
 
 <!-- Page header -->
 <div class="mb-8">
-  <a href="<%= federation_admin_org_settings_path %>" class="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-900 mb-3">
+  <a href="<%= federation_admin_org_settings_path %>" class="inline-flex items-center text-sm text-federation-600 hover:text-federation-900 mb-3">
     <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
     </svg>
@@ -43,7 +43,7 @@
                    name="<%= toggle[:key] %>"
                    value="1"
                    <%= 'checked' if @settings.respond_to?(toggle[:key]) && @settings.send(toggle[:key]) %>
-                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                   class="h-4 w-4 text-federation-600 focus:ring-federation-500 border-gray-300 rounded">
           </div>
           <div class="ml-3">
             <label for="<%= toggle[:key] %>" class="text-sm font-medium text-gray-900"><%= toggle[:label] %></label>
@@ -82,7 +82,7 @@
   <!-- Actions -->
   <div class="flex items-center gap-3">
     <button type="submit"
-            class="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            class="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-federation-600 hover:bg-federation-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-federation-500">
       Save Settings
     </button>
     <a href="<%= federation_admin_org_settings_path %>"

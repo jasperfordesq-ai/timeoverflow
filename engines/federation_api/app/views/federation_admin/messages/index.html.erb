@@ -12,7 +12,7 @@
     <!-- Direction -->
     <div>
       <label class="block text-xs font-medium text-gray-500 mb-1">Direction</label>
-      <select name="direction" class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+      <select name="direction" class="rounded-lg border-gray-300 text-sm focus:ring-federation-500 focus:border-federation-500">
         <option value="">All</option>
         <option value="inbound" <%= 'selected' if params[:direction] == 'inbound' %>>Inbound</option>
         <option value="outbound" <%= 'selected' if params[:direction] == 'outbound' %>>Outbound</option>
@@ -22,7 +22,7 @@
     <!-- Status -->
     <div>
       <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
-      <select name="status" class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+      <select name="status" class="rounded-lg border-gray-300 text-sm focus:ring-federation-500 focus:border-federation-500">
         <option value="">All</option>
         <% %w[pending delivered read failed].each do |s| %>
           <option value="<%= s %>" <%= 'selected' if params[:status] == s %>><%= s.capitalize %></option>
@@ -33,7 +33,7 @@
     <!-- Partner -->
     <div>
       <label class="block text-xs font-medium text-gray-500 mb-1">Partner</label>
-      <select name="partner_id" class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+      <select name="partner_id" class="rounded-lg border-gray-300 text-sm focus:ring-federation-500 focus:border-federation-500">
         <option value="">All Partners</option>
         <% @partners.each do |p| %>
           <option value="<%= p.id %>" <%= 'selected' if params[:partner_id].to_s == p.id.to_s %>><%= p.name %></option>
@@ -44,7 +44,7 @@
     <!-- Organization -->
     <div>
       <label class="block text-xs font-medium text-gray-500 mb-1">Organization</label>
-      <select name="organization_id" class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+      <select name="organization_id" class="rounded-lg border-gray-300 text-sm focus:ring-federation-500 focus:border-federation-500">
         <option value="">All Organizations</option>
         <% @organizations.each do |o| %>
           <option value="<%= o.id %>" <%= 'selected' if params[:organization_id].to_s == o.id.to_s %>><%= o.name %></option>
@@ -53,7 +53,7 @@
     </div>
 
     <div>
-      <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+      <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-federation-600 hover:bg-federation-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-federation-500">
         Filter
       </button>
       <a href="<%= federation_admin_messages_path %>" class="ml-2 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50">
@@ -84,14 +84,14 @@
           <% @messages.each do |msg| %>
             <tr class="hover:bg-gray-50">
               <td class="px-4 py-3 text-sm font-mono text-gray-900">
-                <a href="<%= federation_admin_message_path(msg) %>" class="text-indigo-600 hover:text-indigo-900"><%= msg.id %></a>
+                <a href="<%= federation_admin_message_path(msg) %>" class="text-federation-600 hover:text-federation-900"><%= msg.id %></a>
               </td>
               <td class="px-4 py-3 text-sm text-gray-700"><%= msg.federation_partner&.name || 'N/A' %></td>
               <td class="px-4 py-3 text-sm">
                 <% if msg.direction == 'inbound' %>
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Inbound</span>
                 <% else %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Outbound</span>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Outbound</span>
                 <% end %>
               </td>
               <td class="px-4 py-3 text-sm text-gray-700"><%= msg.remote_user_identifier || '-' %></td>
@@ -103,7 +103,7 @@
                 <% when 'delivered' %>
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Delivered</span>
                 <% when 'read' %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">Read</span>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-federation-100 text-federation-800">Read</span>
                 <% when 'failed' %>
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Failed</span>
                 <% else %>

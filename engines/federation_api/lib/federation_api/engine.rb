@@ -73,7 +73,13 @@ module FederationApi
           root to: "dashboard#index"
           post "reconcile", to: "dashboard#reconcile"
           resources :api_keys, only: [:index, :new, :create, :show, :destroy]
-          resources :partners, only: [:index, :new, :create, :show, :edit, :update]
+          resources :partners, only: [:index, :new, :create, :show, :edit, :update] do
+            member do
+              post :test_webhook
+              post :regenerate_secret
+              post :health_check
+            end
+          end
           resources :transactions, only: [:index, :show]
           resources :webhook_logs, only: [:index, :show]
           resources :messages, only: [:index, :show]

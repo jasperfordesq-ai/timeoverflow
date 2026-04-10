@@ -152,10 +152,15 @@ module Api
           return respond_with_error("Could not resolve recipient member or account", status: :unprocessable_entity)
         end
 
-        # Infer partner from API key or first active partner
+        # Infer partner from API key's org context, or single-partner shortcut.
         partner_id = params[:partner_id]
         if partner_id.blank?
-          partner = FederationPartner.active.first
+          if @current_api_key&.organization
+            partner = FederationPartner.active.for_organization(@current_api_key.organization.id).first
+          else
+            partners = FederationPartner.active
+            partner = partners.first if partners.count == 1
+          end
           partner_id = partner&.id
         end
 
@@ -251,6 +256,7 @@ module Api
       def serialize_transaction(fed_txn, local_transfer = nil)
         {
           federation_transaction_id: fed_txn.id,
+          transaction_id: fed_txn.id,  # Nexus reads this field
           external_transaction_id: fed_txn.external_transaction_id,
           local_transfer_id: fed_txn.transfer_id || local_transfer&.id,
           status: fed_txn.status,

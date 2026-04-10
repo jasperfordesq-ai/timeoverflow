@@ -1,25 +1,5 @@
 <% content_for(:title, "Transaction ##{@transaction.id}") %>
 
-<%
-  def status_badge_class(status)
-    case status.to_s
-    when "active", "completed", "success" then "bg-green-100 text-green-800"
-    when "pending" then "bg-yellow-100 text-yellow-800"
-    when "suspended", "cancelled" then "bg-gray-100 text-gray-800"
-    when "terminated", "failed", "disputed" then "bg-red-100 text-red-800"
-    else "bg-gray-100 text-gray-600"
-    end
-  end
-
-  def direction_badge_class(direction)
-    case direction.to_s
-    when "inbound" then "bg-blue-100 text-blue-800"
-    when "outbound" then "bg-purple-100 text-purple-800"
-    else "bg-gray-100 text-gray-600"
-    end
-  end
-%>
-
 <div class="mb-6">
   <a href="<%= federation_admin_transactions_path %>"
      class="inline-flex items-center text-sm font-medium text-federation-600 hover:text-federation-800">

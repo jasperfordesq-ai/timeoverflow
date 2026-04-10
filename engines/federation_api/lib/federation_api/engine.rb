@@ -87,6 +87,7 @@ module FederationApi
           get  "status",          to: "status#show"
           resource :organization_settings, only: [:show, :update], path: "org-settings"
           resource :member_preferences,    only: [:show, :update], path: "my-preferences"
+          resources :messages, only: [:index, :create]
         end
       end
     end

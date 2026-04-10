@@ -46,7 +46,7 @@ module Api
 
       # GET /api/v1/listings/:id
       def show
-        post = current_organization.posts.active
+        post = current_organization.posts.active.of_active_members
                  .where(type: %w[Offer Inquiry]).find_by!(id: params[:id])
         respond_with_data(serialize_listing(post, detailed: true))
       end
@@ -64,7 +64,6 @@ module Api
           user_id: post.user_id,
           organization_id: post.organization_id,
           is_group: post.try(:is_group),
-          global: post.try(:global),
           created_at: post.created_at&.iso8601,
           updated_at: post.updated_at&.iso8601
         }

@@ -36,6 +36,10 @@ class FederationApiKey < ActiveRecord::Base
     update_column(:last_used_at, Time.current)
   end
 
+  def active?
+    active && !expired?
+  end
+
   def expired?
     expires_at.present? && expires_at < Time.current
   end

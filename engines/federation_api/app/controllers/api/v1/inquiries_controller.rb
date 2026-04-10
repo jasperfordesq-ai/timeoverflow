@@ -26,7 +26,7 @@ module Api
 
       # GET /api/v1/inquiries/:id
       def show
-        inquiry = current_organization.inquiries.active.find_by!(id: params[:id])
+        inquiry = current_organization.inquiries.active.of_active_members.find_by!(id: params[:id])
         respond_with_data(serialize_post(inquiry, detailed: true))
       end
 
@@ -43,7 +43,6 @@ module Api
           user_id: post.user_id,
           organization_id: post.organization_id,
           is_group: post.is_group,
-          global: post.try(:global),
           created_at: post.created_at.iso8601,
           updated_at: post.updated_at.iso8601
         }

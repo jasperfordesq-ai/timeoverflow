@@ -43,7 +43,11 @@ module FederationAdmin
         transactions_total: FederationTransaction.count,
         transactions_pending: FederationTransaction.pending.count,
         api_keys_active: FederationApiKey.active.count,
-        webhook_logs_failed: FederationWebhookLog.failed.count
+        webhook_logs_failed: FederationWebhookLog.failed.count,
+        messages_total: (FederationMessage.count rescue 0),
+        messages_pending: (FederationMessage.pending.count rescue 0),
+        orgs_federation_enabled: (FederationOrganizationSetting.where(federation_enabled: true).count rescue 0),
+        members_opted_in: (FederationMemberPreference.opted_in.count rescue 0)
       }
     end
   end

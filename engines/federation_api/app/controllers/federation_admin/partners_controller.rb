@@ -43,6 +43,7 @@ module FederationAdmin
       redirect_to federation_admin_partner_path(@partner)
     rescue ActiveRecord::RecordInvalid => e
       flash[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
+      redirect_to new_federation_admin_partner_path
     rescue => e
       Rails.logger.error("[FederationAdmin] Partner create failed: #{e.class}: #{e.message}")
       flash[:alert] = "Failed to create partner. Check the server logs for details."
@@ -81,6 +82,7 @@ module FederationAdmin
       redirect_to federation_admin_partner_path(@partner)
     rescue ActiveRecord::RecordInvalid => e
       flash[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
+      redirect_to edit_federation_admin_partner_path(@partner)
     rescue => e
       Rails.logger.error("[FederationAdmin] Partner update failed: #{e.class}: #{e.message}")
       flash[:alert] = "Failed to update partner. Check the server logs for details."

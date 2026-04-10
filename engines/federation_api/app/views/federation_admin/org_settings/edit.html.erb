@@ -1,0 +1,93 @@
+<% content_for(:title) { "Edit Federation Settings — #{@org.name}" } %>
+
+<!-- Page header -->
+<div class="mb-8">
+  <a href="<%= federation_admin_org_settings_path %>" class="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-900 mb-3">
+    <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Back to Organization Settings
+  </a>
+  <h1 class="text-2xl font-bold text-gray-900">Federation Settings</h1>
+  <p class="mt-1 text-sm text-gray-500">Configure federation for <strong><%= @org.name %></strong></p>
+</div>
+
+<form action="<%= federation_admin_org_setting_path(@org) %>" method="post">
+  <input type="hidden" name="_method" value="patch">
+  <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+    <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
+      <h2 class="text-lg font-semibold text-gray-900">General Settings</h2>
+    </div>
+
+    <div class="px-6 py-5 space-y-5">
+      <%
+        toggles = [
+          { key: "federation_enabled",         label: "Federation Enabled",         desc: "Enable federation features for this organization" },
+          { key: "discoverable_by_partners",   label: "Discoverable by Partners",   desc: "Allow external partners to discover this organization" },
+          { key: "allow_inbound_transfers",    label: "Allow Inbound Transfers",    desc: "Accept incoming time transfers from federation partners" },
+          { key: "allow_outbound_transfers",   label: "Allow Outbound Transfers",   desc: "Allow members to send time to federation partners" },
+          { key: "share_member_count",         label: "Share Member Count",         desc: "Share the number of active members with partners" },
+          { key: "share_listings",             label: "Share Listings",             desc: "Make service offers and inquiries visible to partners" },
+          { key: "share_member_profiles",      label: "Share Member Profiles",      desc: "Allow partners to view member profile details" },
+          { key: "auto_approve_partnerships",  label: "Auto-approve Partnerships",  desc: "Automatically approve incoming partnership requests" },
+        ]
+      %>
+      <% toggles.each do |toggle| %>
+        <div class="flex items-start">
+          <div class="flex items-center h-5">
+            <input type="hidden" name="<%= toggle[:key] %>" value="0">
+            <input type="checkbox"
+                   id="<%= toggle[:key] %>"
+                   name="<%= toggle[:key] %>"
+                   value="1"
+                   <%= 'checked' if @settings.respond_to?(toggle[:key]) && @settings.send(toggle[:key]) %>
+                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+          </div>
+          <div class="ml-3">
+            <label for="<%= toggle[:key] %>" class="text-sm font-medium text-gray-900"><%= toggle[:label] %></label>
+            <p class="text-xs text-gray-500"><%= toggle[:desc] %></p>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Blocked partners -->
+  <% if @partners.any? %>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+      <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
+        <h2 class="text-lg font-semibold text-gray-900">Blocked Partners</h2>
+        <p class="mt-1 text-xs text-gray-500">Select partners to block from interacting with this organization.</p>
+      </div>
+
+      <div class="px-6 py-5 space-y-3">
+        <% blocked_ids = (@settings.respond_to?(:blocked_partner_ids) ? @settings.blocked_partner_ids : []) || [] %>
+        <% @partners.each do |partner| %>
+          <div class="flex items-center">
+            <input type="checkbox"
+                   id="blocked_partner_<%= partner.id %>"
+                   name="blocked_partner_ids[]"
+                   value="<%= partner.id %>"
+                   <%= 'checked' if blocked_ids.include?(partner.id) %>
+                   class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+            <label for="blocked_partner_<%= partner.id %>" class="ml-3 text-sm text-gray-700"><%= partner.name %></label>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Actions -->
+  <div class="flex items-center gap-3">
+    <button type="submit"
+            class="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+      Save Settings
+    </button>
+    <a href="<%= federation_admin_org_settings_path %>"
+       class="inline-flex items-center px-5 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 shadow-sm">
+      Cancel
+    </a>
+  </div>
+</form>

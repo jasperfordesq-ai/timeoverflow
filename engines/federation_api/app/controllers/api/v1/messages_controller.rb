@@ -10,6 +10,13 @@ module Api
   module V1
     class MessagesController < BaseController
       before_action -> { require_permission!(:profiles) }
+      before_action :validate_message_params!, only: [:create]
+
+      # GET /api/v1/messages/:id
+      def show
+        message = FederationMessage.find(params[:id])
+        respond_with_data(serialize_message(message))
+      end
 
       # GET /api/v1/messages?organization_id=X&member_id=Y
       # Returns messages for a specific member or organization.
@@ -95,12 +102,15 @@ module Api
         respond_with_data(serialize_message(message), status: :created)
 
       rescue ActiveRecord::RecordNotUnique
-        # Race condition on external_message_id
         existing = FederationMessage.find_by(
           federation_partner_id: partner&.id,
           external_message_id: params[:external_message_id]
         )
-        respond_with_data(serialize_message(existing)) if existing
+        if existing
+          respond_with_data(serialize_message(existing))
+        else
+          respond_with_error("Duplicate message", status: :conflict)
+        end
       rescue ActiveRecord::RecordInvalid => e
         respond_with_error("Message validation failed", status: :unprocessable_entity,
                            errors: e.record.errors.full_messages)
@@ -111,10 +121,8 @@ module Api
       def resolve_partner
         if params[:partner_id].present?
           FederationPartner.active.find_by(id: params[:partner_id])
-        elsif @current_api_key.organization
-          # Infer partner from API key context
-          FederationPartner.active.first
         else
+          # Do not guess — require explicit partner identification.
           nil
         end
       end
@@ -134,6 +142,20 @@ module Api
           user&.members&.active&.find_by(organization: org) if user && org
         else
           nil
+        end
+      end
+
+      def validate_message_params!
+        sender = params[:sender_id] || params[:remote_user_identifier]
+        if sender.blank?
+          return respond_with_error("Missing sender_id or remote_user_identifier", status: :bad_request)
+        end
+        if params[:body].blank?
+          return respond_with_error("Missing required field: body", status: :bad_request)
+        end
+        recipient = params[:recipient_id] || params[:local_member_id] || params[:local_member_uid] || params[:local_member_email]
+        if recipient.blank?
+          return respond_with_error("Missing recipient identifier (recipient_id, local_member_id, local_member_uid, or local_member_email)", status: :bad_request)
         end
       end
 

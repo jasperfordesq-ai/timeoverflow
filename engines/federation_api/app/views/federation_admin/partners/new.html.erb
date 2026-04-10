@@ -8,7 +8,7 @@
 
 <div class="bg-white shadow rounded-lg p-6 max-w-2xl">
   <form action="<%= federation_admin_partners_path %>" method="post">
-    <%= hidden_field_tag :authenticity_token, form_authenticity_token rescue "" %>
+    <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
 
     <div class="space-y-6">
       <!-- Name -->

@@ -16,8 +16,18 @@ module FederationAdmin
         active_api_keys: FederationApiKey.active.count,
         total_inbound: FederationTransaction.completed.inbound.sum(:amount),
         total_outbound: FederationTransaction.completed.outbound.sum(:amount),
-        failed_webhooks_24h: FederationWebhookLog.failed.where("created_at > ?", 24.hours.ago).count
+        failed_webhooks_24h: FederationWebhookLog.failed.where("created_at > ?", 24.hours.ago).count,
+        messages_total: (FederationMessage.count rescue 0),
+        messages_inbound: (FederationMessage.inbound.count rescue 0),
+        orgs_federation_enabled: (FederationOrganizationSetting.where(federation_enabled: true).count rescue 0),
+        members_opted_in: (FederationMemberPreference.opted_in.count rescue 0)
       }
+    end
+
+    def reconcile
+      Federation::ReconciliationJob.perform_later
+      flash[:notice] = "Reconciliation job queued. Results will appear in the server logs."
+      redirect_to federation_admin_root_path
     end
   end
 end

@@ -9,6 +9,7 @@
 #
 class FederationPartner < ActiveRecord::Base
   has_many :federation_transactions, dependent: :restrict_with_error
+  has_many :federation_messages, dependent: :restrict_with_error
   has_many :federation_webhook_logs, dependent: :destroy
 
   STATUSES = %w[pending active suspended terminated].freeze

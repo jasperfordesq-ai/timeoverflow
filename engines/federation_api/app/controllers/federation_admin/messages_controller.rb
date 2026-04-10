@@ -1,0 +1,25 @@
+module FederationAdmin
+  class MessagesController < BaseController
+    def index
+      @messages = FederationMessage.includes(:federation_partner).order(created_at: :desc)
+      @messages = @messages.where(direction: params[:direction]) if params[:direction].present?
+      @messages = @messages.where(status: params[:status]) if params[:status].present?
+      @messages = @messages.where(federation_partner_id: params[:partner_id]) if params[:partner_id].present?
+      @messages = @messages.where(organization_id: params[:organization_id]) if params[:organization_id].present?
+
+      @total_count = @messages.count
+      page = [(params[:page] || 1).to_i, 1].max
+      per_page = 25
+      @messages = @messages.limit(per_page).offset((page - 1) * per_page)
+      @current_page = page
+      @total_pages = @total_count.zero? ? 0 : (@total_count.to_f / per_page).ceil
+
+      @partners = FederationPartner.order(:name)
+      @organizations = Organization.order(:name)
+    end
+
+    def show
+      @message = FederationMessage.find(params[:id])
+    end
+  end
+end

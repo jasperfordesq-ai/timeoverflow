@@ -1,0 +1,153 @@
+<% content_for(:title) { "Federation Messages" } %>
+
+<!-- Page header -->
+<div class="mb-8">
+  <h1 class="text-2xl font-bold text-gray-900">Federation Messages</h1>
+  <p class="mt-1 text-sm text-gray-500"><%= @total_count %> message<%= @total_count == 1 ? '' : 's' %> total</p>
+</div>
+
+<!-- Filter bar -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 px-5 py-4 mb-6">
+  <form method="get" class="flex flex-wrap items-end gap-4">
+    <!-- Direction -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Direction</label>
+      <select name="direction" class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+        <option value="">All</option>
+        <option value="inbound" <%= 'selected' if params[:direction] == 'inbound' %>>Inbound</option>
+        <option value="outbound" <%= 'selected' if params[:direction] == 'outbound' %>>Outbound</option>
+      </select>
+    </div>
+
+    <!-- Status -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+      <select name="status" class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+        <option value="">All</option>
+        <% %w[pending delivered read failed].each do |s| %>
+          <option value="<%= s %>" <%= 'selected' if params[:status] == s %>><%= s.capitalize %></option>
+        <% end %>
+      </select>
+    </div>
+
+    <!-- Partner -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Partner</label>
+      <select name="partner_id" class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+        <option value="">All Partners</option>
+        <% @partners.each do |p| %>
+          <option value="<%= p.id %>" <%= 'selected' if params[:partner_id].to_s == p.id.to_s %>><%= p.name %></option>
+        <% end %>
+      </select>
+    </div>
+
+    <!-- Organization -->
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Organization</label>
+      <select name="organization_id" class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+        <option value="">All Organizations</option>
+        <% @organizations.each do |o| %>
+          <option value="<%= o.id %>" <%= 'selected' if params[:organization_id].to_s == o.id.to_s %>><%= o.name %></option>
+        <% end %>
+      </select>
+    </div>
+
+    <div>
+      <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        Filter
+      </button>
+      <a href="<%= federation_admin_messages_path %>" class="ml-2 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50">
+        Clear
+      </a>
+    </div>
+  </form>
+</div>
+
+<!-- Messages table -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <% if @messages.any? %>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Partner</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Direction</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remote User</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Org ID</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @messages.each do |msg| %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-3 text-sm font-mono text-gray-900">
+                <a href="<%= federation_admin_message_path(msg) %>" class="text-indigo-600 hover:text-indigo-900"><%= msg.id %></a>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-700"><%= msg.federation_partner&.name || 'N/A' %></td>
+              <td class="px-4 py-3 text-sm">
+                <% if msg.direction == 'inbound' %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Inbound</span>
+                <% else %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Outbound</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-700"><%= msg.remote_user_identifier || '-' %></td>
+              <td class="px-4 py-3 text-sm text-gray-700"><%= truncate(msg.subject.to_s, length: 40) %></td>
+              <td class="px-4 py-3 text-sm">
+                <% case msg.status %>
+                <% when 'pending' %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pending</span>
+                <% when 'delivered' %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Delivered</span>
+                <% when 'read' %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">Read</span>
+                <% when 'failed' %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Failed</span>
+                <% else %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"><%= msg.status %></span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-500"><%= msg.organization_id %></td>
+              <td class="px-4 py-3 text-sm text-gray-500"><%= msg.created_at.strftime('%Y-%m-%d %H:%M') %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <% if @total_pages > 1 %>
+      <div class="bg-gray-50 px-5 py-3 flex items-center justify-between border-t border-gray-200">
+        <div class="text-sm text-gray-500">
+          Page <%= @current_page %> of <%= @total_pages %> (<%= @total_count %> messages)
+        </div>
+        <div class="flex gap-2">
+          <% if @current_page > 1 %>
+            <a href="<%= federation_admin_messages_path(request.query_parameters.merge(page: @current_page - 1)) %>"
+               class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50">
+              Previous
+            </a>
+          <% end %>
+          <% if @current_page < @total_pages %>
+            <a href="<%= federation_admin_messages_path(request.query_parameters.merge(page: @current_page + 1)) %>"
+               class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50">
+              Next
+            </a>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+  <% else %>
+    <div class="text-center py-12">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No messages found</h3>
+      <p class="mt-1 text-sm text-gray-500">No federation messages match the current filters.</p>
+    </div>
+  <% end %>
+</div>

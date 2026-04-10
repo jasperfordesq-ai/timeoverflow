@@ -67,6 +67,17 @@ module Federation
       prefs.opted_in? && prefs.share_listings
     end
 
+    # Can this member receive cross-platform messages?
+    def self.member_can_receive_messages?(member, partner: nil)
+      return false unless org_enabled?(member.organization)
+      return false if partner && !partner.feature_gates&.dig("messaging_enabled")
+      return false if partner && FederationOrganizationSetting.for(member.organization).blocks_partner?(partner.id)
+      prefs = FederationMemberPreference.for(member)
+      return false unless prefs.opted_in?
+      return false if partner && prefs.blocks_partner?(partner.id)
+      true
+    end
+
     # --- Bulk queries (for controller filters) ---
 
     # IDs of members who have opted in for a given organization.

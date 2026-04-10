@@ -58,7 +58,7 @@ module FederationApi
             resources :inquiries, only: [:index, :show]
             resources :transfers, only: [:create, :show]
             resources :accounts, only: [:show]
-            resources :messages, only: [:index, :create]
+            resources :messages, only: [:index, :create, :show]
             post "webhooks/receive", to: "webhooks#receive"
 
             # Nexus compatibility aliases — Nexus calls /transactions, TO uses /transfers
@@ -71,10 +71,13 @@ module FederationApi
         # Separate from TimeOverflow's /admin — completely self-contained.
         namespace :federation_admin, path: "federation-admin" do
           root to: "dashboard#index"
+          post "reconcile", to: "dashboard#reconcile"
           resources :api_keys, only: [:index, :new, :create, :show, :destroy]
           resources :partners, only: [:index, :new, :create, :show, :edit, :update]
           resources :transactions, only: [:index, :show]
           resources :webhook_logs, only: [:index, :show]
+          resources :messages, only: [:index, :show]
+          resources :org_settings, only: [:index, :edit, :update]
         end
 
         # --- Federation UI API (session-authenticated, for host app JS) ---

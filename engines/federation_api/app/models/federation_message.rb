@@ -34,8 +34,12 @@ class FederationMessage < ActiveRecord::Base
   end
 
   def mark_read!
-    update!(read_at: Time.current) unless read_at.present?
+    update!(status: "read", read_at: Time.current) unless read_at.present?
   end
+
+  # Validate body length to prevent abuse
+  validates :body, length: { maximum: 10_000 }
+  validates :local_member_id, presence: true, if: -> { direction == "inbound" }
 
   def inbound?
     direction == "inbound"

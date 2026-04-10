@@ -1,9 +1,18 @@
 <% content_for(:title) { "Dashboard" } %>
 
-<!-- Page header -->
-<div class="mb-8">
-  <h1 class="text-2xl font-bold text-gray-900">Federation Dashboard</h1>
-  <p class="mt-1 text-sm text-gray-500">Overview of federation activity across all partners and organisations.</p>
+<!-- Page header with reconciliation trigger -->
+<div class="mb-8 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Federation Dashboard</h1>
+    <p class="mt-1 text-sm text-gray-500">Overview of federation activity across all partners and organisations.</p>
+  </div>
+  <form method="post" action="/federation-admin/reconcile">
+    <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+    <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-federation-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-federation-700 transition-colors"
+            onclick="return confirm('Run reconciliation job now?')">
+      🔄 Run Reconciliation
+    </button>
+  </form>
 </div>
 
 <!-- Stats cards -->
@@ -123,6 +132,22 @@
     <p class="text-3xl font-bold <%= @stats[:failed_webhooks_24h] > 0 ? 'text-red-600' : 'text-gray-900' %>">
       <%= @stats[:failed_webhooks_24h] %>
     </p>
+  </div>
+</div>
+
+<!-- Consent & Messaging row -->
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-10">
+  <div class="bg-white overflow-hidden rounded-xl shadow-sm border border-gray-200 px-5 py-5">
+    <span class="text-sm font-medium text-gray-500">Orgs Federation-Enabled</span>
+    <p class="text-3xl font-bold text-gray-900 mt-1"><%= @stats[:orgs_federation_enabled] %> <span class="text-base font-normal text-gray-400">/ <%= @stats[:organizations] %></span></p>
+  </div>
+  <div class="bg-white overflow-hidden rounded-xl shadow-sm border border-gray-200 px-5 py-5">
+    <span class="text-sm font-medium text-gray-500">Members Opted In</span>
+    <p class="text-3xl font-bold text-gray-900 mt-1"><%= @stats[:members_opted_in] %></p>
+  </div>
+  <div class="bg-white overflow-hidden rounded-xl shadow-sm border border-gray-200 px-5 py-5">
+    <span class="text-sm font-medium text-gray-500">Federation Messages</span>
+    <p class="text-3xl font-bold text-gray-900 mt-1"><%= @stats[:messages_total] %> <span class="text-base font-normal text-gray-400">(<%= @stats[:messages_inbound] %> inbound)</span></p>
   </div>
 </div>
 

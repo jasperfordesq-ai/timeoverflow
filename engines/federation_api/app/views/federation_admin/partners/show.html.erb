@@ -81,13 +81,12 @@
     <div>
       <dt class="text-sm font-medium text-gray-500">Permitted Organizations</dt>
       <dd class="mt-1 text-sm text-gray-900">
-        <% if @partner.permitted_organization_ids.blank? || @partner.permitted_organization_ids.empty? %>
+        <% if @permitted_orgs.blank? && (@partner.permitted_organization_ids.blank? || @partner.permitted_organization_ids.empty?) %>
           <span class="text-federation-600 font-medium">All organizations</span>
         <% else %>
-          <% @partner.permitted_organization_ids.each do |org_id| %>
-            <% org = Organization.find_by(id: org_id) %>
+          <% (@permitted_orgs || []).each do |org| %>
             <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 mr-1 mb-1">
-              <%= org&.name || "Org ##{org_id}" %>
+              <%= org.name %>
             </span>
           <% end %>
         <% end %>

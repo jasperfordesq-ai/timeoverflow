@@ -59,7 +59,10 @@ module Api
           account_id: member.account&.id,
           balance: member.account&.balance,
           tags: member.tag_list,
-          created_at: member.created_at.iso8601
+          created_at: member.created_at.iso8601,
+          # Federation capability flags — Nexus reads these to show UI indicators.
+          accepts_messages: Federation::AccessControl.member_can_receive_messages?(member),
+          accepts_transactions: Federation::AccessControl.member_can_receive?(member)
         }
 
         if detailed

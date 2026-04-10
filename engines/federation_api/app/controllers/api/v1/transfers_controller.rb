@@ -11,6 +11,7 @@ module Api
   module V1
     class TransfersController < BaseController
       before_action -> { require_permission!(:transactions) }
+      before_action :normalize_nexus_params!, only: [:create]
       before_action :validate_transfer_params!, only: [:create]
 
       # Maximum transfer amount in seconds (default: 100 hours)
@@ -121,6 +122,56 @@ module Api
       end
 
       private
+
+      # Nexus payload compatibility layer.
+      #
+      # Nexus sends: { sender_id, recipient_id, amount (hours), description }
+      # TO expects:  { partner_id, direction, local_account_id, remote_user_identifier, amount (seconds), reason }
+      #
+      # Detect the Nexus format (has recipient_id but no direction) and translate.
+      def normalize_nexus_params!
+        return unless params[:recipient_id].present? && params[:direction].blank?
+
+        Rails.logger.info("[Federation::Transfer] Detected Nexus payload format, normalizing")
+
+        # This is an inbound transfer from a Nexus user to a local TO member.
+        # recipient_id = the local TO member (by ID or member_uid)
+        # sender_id = the remote Nexus user identifier
+        org = @current_api_key.organization
+        recipient = nil
+
+        if org
+          recipient = org.members.active.find_by(id: params[:recipient_id]) ||
+                      org.members.active.find_by(member_uid: params[:recipient_id])
+        else
+          # Global key: try to find the member across all orgs
+          recipient = Member.find_by(id: params[:recipient_id], active: true)
+        end
+
+        unless recipient&.account
+          return respond_with_error("Could not resolve recipient member or account", status: :unprocessable_entity)
+        end
+
+        # Infer partner from API key or first active partner
+        partner_id = params[:partner_id]
+        if partner_id.blank?
+          partner = FederationPartner.active.first
+          partner_id = partner&.id
+        end
+
+        # Convert Nexus hours to TO seconds
+        nexus_amount = params[:amount].to_i
+        amount_seconds = nexus_amount * 3600
+
+        # Rewrite params to TO native format
+        params[:partner_id] = partner_id
+        params[:direction] = "inbound"
+        params[:local_account_id] = recipient.account.id
+        params[:remote_user_identifier] = params[:sender_id] || "nexus_user_#{params[:sender_id]}"
+        params[:amount] = amount_seconds.to_s
+        params[:reason] = params[:description] if params[:reason].blank?
+        params[:external_transaction_id] ||= "nexus_#{SecureRandom.hex(8)}"
+      end
 
       def validate_transfer_params!
         # Required fields

@@ -52,32 +52,48 @@ module Federation
         }
       end
 
-      # Check 2: Balance consistency per partner
+      # Check 2: Balance consistency per partner, broken down by organization.
+      # Groups by (partner, org) so multi-org instances see per-timebank drift.
       FederationPartner.active.find_each do |partner|
-        inbound_total = partner.federation_transactions
-          .completed.inbound
-          .sum(:amount)
-        outbound_total = partner.federation_transactions
-          .completed.outbound
+        # Group completed transactions by organization_id
+        org_groups = partner.federation_transactions.completed
+          .group(:organization_id, :direction)
           .sum(:amount)
 
-        net = inbound_total - outbound_total
+        # Pivot into per-org summaries
+        org_ids = org_groups.keys.map(&:first).uniq.compact
+        org_ids.each do |org_id|
+          inbound  = org_groups[[org_id, "inbound"]]  || 0
+          outbound = org_groups[[org_id, "outbound"]] || 0
+          net = inbound - outbound
 
-        # The org account should reflect this net via movements
-        # (inbound credits the member, debits the org → org goes negative by inbound_total)
-        # (outbound debits the member, credits the org → org goes positive by outbound_total)
-        # So org's federation net impact = outbound_total - inbound_total = -net
+          issues << {
+            type: "balance_report",
+            severity: "info",
+            partner: partner.name,
+            partner_id: partner.id,
+            organization_id: org_id,
+            inbound_total: inbound,
+            outbound_total: outbound,
+            net_flow: net,
+            message: "Partner #{partner.name} / Org #{org_id}: in=#{inbound}, out=#{outbound}, net=#{net}"
+          }
+        end
 
-        issues << {
-          type: "balance_report",
-          severity: "info",
-          partner: partner.name,
-          partner_id: partner.id,
-          inbound_total: inbound_total,
-          outbound_total: outbound_total,
-          net_flow: net,
-          message: "Partner #{partner.name}: inbound=#{inbound_total}, outbound=#{outbound_total}, net=#{net}"
-        }
+        # Also report transactions with no org_id (legacy or data issue)
+        unscoped_in  = org_groups[[nil, "inbound"]]  || 0
+        unscoped_out = org_groups[[nil, "outbound"]] || 0
+        if unscoped_in > 0 || unscoped_out > 0
+          issues << {
+            type: "unscoped_transactions",
+            severity: "warning",
+            partner: partner.name,
+            partner_id: partner.id,
+            inbound_total: unscoped_in,
+            outbound_total: unscoped_out,
+            message: "Partner #{partner.name} has #{unscoped_in + unscoped_out} transaction(s) with no organization_id"
+          }
+        end
       end
 
       # Check 3: Stale pending transactions (two thresholds — see constants above)

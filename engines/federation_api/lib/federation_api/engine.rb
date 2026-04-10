@@ -47,13 +47,11 @@ module FederationApi
     # so they cannot collide with existing paths.
     initializer "federation_api.routes", after: :add_routing_paths do |app|
       app.routes.append do
+        # --- JSON REST API (machine-to-machine) ---
         namespace :api do
           namespace :v1 do
-            # Nexus-compatible
             resources :listings, only: [:index, :show]
             get "health", to: "health#show"
-
-            # Native TimeOverflow endpoints
             resources :organizations, only: [:index, :show]
             resources :members, only: [:index, :show]
             resources :offers, only: [:index, :show]
@@ -62,6 +60,16 @@ module FederationApi
             resources :accounts, only: [:show]
             post "webhooks/receive", to: "webhooks#receive"
           end
+        end
+
+        # --- Federation Admin UI (human-facing) ---
+        # Separate from TimeOverflow's /admin — completely self-contained.
+        namespace :federation_admin, path: "federation-admin" do
+          root to: "dashboard#index"
+          resources :api_keys, only: [:index, :new, :create, :show, :destroy]
+          resources :partners, only: [:index, :new, :create, :show, :edit, :update]
+          resources :transactions, only: [:index, :show]
+          resources :webhook_logs, only: [:index, :show]
         end
       end
     end

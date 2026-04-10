@@ -47,6 +47,11 @@ module Api
           return respond_with_error("Organization has no federation pool account", status: :unprocessable_entity)
         end
 
+        # Verify the partner is authorized to transact with this organization.
+        unless partner.can_access_organization?(org)
+          return respond_with_error("Partner is not authorized for this organization", status: :forbidden)
+        end
+
         fed_txn = nil
         local_transfer = nil
 

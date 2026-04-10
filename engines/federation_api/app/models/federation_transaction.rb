@@ -25,6 +25,18 @@ class FederationTransaction < ActiveRecord::Base
   scope :completed, -> { where(status: "completed") }
   scope :inbound, -> { where(direction: "inbound") }
   scope :outbound, -> { where(direction: "outbound") }
+  scope :for_organization, ->(org_id) { where(organization_id: org_id) }
+
+  # Auto-populate organization_id from the local account on create.
+  before_validation :denormalize_organization_id, on: :create
+
+  private def denormalize_organization_id
+    return if organization_id.present?
+    if local_account_id.present?
+      self.organization_id = Account.where(id: local_account_id).pick(:organization_id)
+    end
+  end
+  public
 
   def complete!(local_transfer: nil)
     # Idempotency guard — safe to call twice (e.g. webhook delivery retries).

@@ -26,6 +26,18 @@ class FederationPartner < ActiveRecord::Base
   scope :active, -> { where(status: "active") }
   scope :by_platform, ->(type) { where(platform_type: type) }
 
+  # Multi-org scoping: check if this partner can access a given organization.
+  # Empty permitted_organization_ids means unrestricted (all orgs).
+  def can_access_organization?(org_or_id)
+    org_id = org_or_id.is_a?(Integer) ? org_or_id : org_or_id.id
+    permitted_organization_ids.blank? || permitted_organization_ids.include?(org_id)
+  end
+
+  # Scope: only partners that can access a specific org.
+  scope :for_organization, ->(org_id) {
+    where("permitted_organization_ids = '[]'::jsonb OR permitted_organization_ids @> ?", [org_id].to_json)
+  }
+
   def active?
     status == "active"
   end

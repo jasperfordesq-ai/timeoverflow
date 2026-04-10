@@ -74,10 +74,15 @@ module Api
 
         org ||= member.organization
 
-        # Check federation consent
+        # Enforce org-level federation setting.
+        unless Federation::AccessControl.org_enabled?(org)
+          return respond_with_error("Federation is not enabled for this organization", status: :forbidden)
+        end
+
+        # Check member-level federation consent (if preference records exist).
         if FederationMemberPreference.exists?(member_id: member.id)
-          unless Federation::AccessControl.member_opted_in?(member)
-            return respond_with_error("Recipient has not opted in to federation", status: :forbidden)
+          unless Federation::AccessControl.member_can_receive_messages?(member, partner: partner)
+            return respond_with_error("Recipient has not opted in to federation messaging", status: :forbidden)
           end
         end
 

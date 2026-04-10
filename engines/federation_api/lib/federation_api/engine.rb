@@ -56,9 +56,14 @@ module FederationApi
             resources :members, only: [:index, :show]
             resources :offers, only: [:index, :show]
             resources :inquiries, only: [:index, :show]
-            resources :transfers, only: [:create]
+            resources :transfers, only: [:create, :show]
             resources :accounts, only: [:show]
+            resources :messages, only: [:index, :create]
             post "webhooks/receive", to: "webhooks#receive"
+
+            # Nexus compatibility aliases — Nexus calls /transactions, TO uses /transfers
+            post "transactions", to: "transfers#create"
+            get  "transactions/:id", to: "transfers#show", as: :transaction_status
           end
         end
 

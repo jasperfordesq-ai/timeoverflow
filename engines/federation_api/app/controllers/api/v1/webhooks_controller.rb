@@ -134,14 +134,14 @@ module Api
 
       def handle_event(event_type, payload, partner)
         case event_type
-        when "partnership.activated"
-          # Don't reactivate terminated partners — termination requires admin action.
+        when "partnership.activated", "partnership.approved"
+          # Nexus sends "partnership.approved"; TO also accepts "partnership.activated".
           if partner.status == "terminated"
             Rails.logger.warn("[Federation] Rejected reactivation of terminated partner #{partner.id}")
           else
             partner.update!(status: "active")
           end
-        when "partnership.suspended"
+        when "partnership.suspended", "partnership.rejected"
           partner.update!(status: "suspended")
         when "partnership.terminated"
           partner.update!(status: "terminated")
@@ -162,11 +162,8 @@ module Api
           else
             Rails.logger.warn("[Federation] Invalid partnership level in webhook: #{level}")
           end
-        when "transaction.requested"
-          # A remote user wants to initiate a transfer — handle idempotently.
-          # handle_inbound_request now checks for existing records before
-          # entering the transaction block, returning the existing record
-          # rather than raising RecordNotUnique (which caused 500s on retry).
+        when "transaction.requested", "transaction.created"
+          # Nexus sends "transaction.created"; TO also accepts "transaction.requested".
           Federation::TransferHandler.handle_inbound_request(partner, payload)
         when "transaction.cancelled"
           fed_txn = FederationTransaction.find_by(
@@ -181,11 +178,69 @@ module Api
           elsif fed_txn
             Rails.logger.warn("[Federation::Webhook] Ignoring cancellation for #{fed_txn.status} transaction #{fed_txn.id}")
           end
+        when "message.sent", "message.received"
+          # A partner sent a message destined for a local member.
+          handle_inbound_message(partner, payload)
+        when "member.opted_in"
+          Rails.logger.info("[Federation] Remote member opted in: #{payload['member_id']} on partner #{partner.id}")
+        when "member.opted_out"
+          Rails.logger.info("[Federation] Remote member opted out: #{payload['member_id']} on partner #{partner.id}")
+        when "listing.shared"
+          Rails.logger.info("[Federation] Partner #{partner.id} shared listing: #{payload['listing_id']}")
+        when "connection.requested", "connection.accepted"
+          Rails.logger.info("[Federation] Connection event from partner #{partner.id}: #{event_type}")
         when "health_check"
           partner.record_success!
         else
           Rails.logger.info("[Federation] Unhandled webhook event: #{event_type}")
         end
+      end
+
+      def handle_inbound_message(partner, payload)
+        # Idempotency
+        ext_id = payload["external_message_id"] || payload["message_id"]
+        if ext_id.present?
+          existing = FederationMessage.find_by(
+            federation_partner: partner,
+            external_message_id: ext_id
+          )
+          return existing if existing
+        end
+
+        # Resolve recipient
+        org_id = payload["organization_id"] || payload["local_organization_id"]
+        org = Organization.find_by(id: org_id)
+        member = nil
+
+        if payload["recipient_id"].present? && org
+          member = org.members.active.find_by(id: payload["recipient_id"]) ||
+                   org.members.active.find_by(member_uid: payload["recipient_id"])
+        elsif payload["local_member_id"].present?
+          member = Member.find_by(id: payload["local_member_id"], active: true)
+          org ||= member&.organization
+        end
+
+        unless member && org
+          Rails.logger.warn("[Federation::Webhook] Could not resolve message recipient: #{payload.inspect}")
+          return
+        end
+
+        FederationMessage.create!(
+          federation_partner: partner,
+          organization_id: org.id,
+          local_member_id: member.id,
+          remote_user_identifier: payload["sender_id"] || payload["remote_user_identifier"] || "unknown",
+          external_message_id: ext_id,
+          direction: "inbound",
+          subject: payload["subject"],
+          body: payload["body"] || payload["message"] || "",
+          status: "delivered",
+          delivered_at: Time.current,
+          metadata: {
+            "sender_name" => payload["sender_name"],
+            "via_webhook" => true
+          }.compact
+        )
       end
     end
   end

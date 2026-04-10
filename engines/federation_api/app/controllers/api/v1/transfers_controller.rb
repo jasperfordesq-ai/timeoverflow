@@ -11,10 +11,17 @@ module Api
   module V1
     class TransfersController < BaseController
       before_action -> { require_permission!(:transactions) }
-      before_action :validate_transfer_params!
+      before_action :validate_transfer_params!, only: [:create]
 
       # Maximum transfer amount in seconds (default: 100 hours)
       MAX_AMOUNT = -> { Rails.application.config.federation.max_transfer_amount.then { |v| v > 0 ? v : 360_000 } rescue 360_000 }
+
+      # GET /api/v1/transfers/:id (or /api/v1/transactions/:id via alias)
+      # Returns the status of a federation transaction.
+      def show
+        fed_txn = FederationTransaction.find(params[:id])
+        respond_with_data(serialize_transaction(fed_txn, fed_txn.transfer))
+      end
 
       # POST /api/v1/transfers
       def create

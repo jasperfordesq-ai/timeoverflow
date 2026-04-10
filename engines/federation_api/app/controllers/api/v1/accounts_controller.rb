@@ -16,6 +16,11 @@ module Api
         #   any org account — but must belong to an org (no dangling accounts).
         account = find_scoped_account!
 
+        # Enforce org-level federation setting.
+        if account.organization && !Federation::AccessControl.org_enabled?(account.organization)
+          return respond_with_error("Federation is not enabled for this organization", status: :forbidden)
+        end
+
         # H2: Paginate movements rather than using an unbounded limit param.
         page     = [(params[:page] || 1).to_i, 1].max
         per_page = [[(params[:per_page] || 20).to_i, 1].max, 100].min

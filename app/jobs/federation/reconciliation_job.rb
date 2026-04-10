@@ -11,25 +11,44 @@
 #
 module Federation
   class ReconciliationJob < ActiveJob::Base
-    queue_as :default
+    queue_as :federation
 
-    # Transactions pending longer than this are flagged
-    PENDING_TIMEOUT = 1.hour
+    # M4: Two distinct timeouts with different semantics.
+    # STALE_WARNING_TIMEOUT — pending transactions older than this are flagged in the report.
+    # REVERSAL_TIMEOUT — pending transactions older than this are auto-cancelled and reversed.
+    STALE_WARNING_TIMEOUT = 1.hour
+    REVERSAL_TIMEOUT      = 24.hours
 
     def perform
       Rails.logger.info("[Federation::Reconciliation] Starting reconciliation run")
 
       issues = []
 
-      # Check 1: Completed transactions without local transfers
+      # Check 1: Completed transactions without local transfers.
+      # H8: Move these to "disputed" so they are visible and don't look healthy.
       orphans = FederationTransaction.completed.where(transfer_id: nil)
       if orphans.any?
+        orphan_ids = orphans.pluck(:id)
+        orphans.find_each do |txn|
+          begin
+            txn.update!(
+              status: "disputed",
+              metadata: txn.metadata.merge(
+                "dispute_reason" => "Completed with no local transfer — data integrity error",
+                "disputed_at"    => Time.current.iso8601
+              )
+            )
+            Rails.logger.error("[Federation::Reconciliation] Moved orphaned completed fed_txn #{txn.id} to disputed")
+          rescue => e
+            Rails.logger.error("[Federation::Reconciliation] Failed to dispute orphaned fed_txn #{txn.id}: #{e.class}: #{e.message}")
+          end
+        end
         issues << {
           type: "orphaned_transactions",
           severity: "critical",
-          count: orphans.count,
-          ids: orphans.pluck(:id),
-          message: "#{orphans.count} completed federation transaction(s) have no local transfer"
+          count: orphan_ids.count,
+          ids: orphan_ids,
+          message: "#{orphan_ids.count} completed federation transaction(s) had no local transfer — moved to disputed"
         }
       end
 
@@ -61,8 +80,8 @@ module Federation
         }
       end
 
-      # Check 3: Stale pending transactions
-      stale = FederationTransaction.pending.where("created_at < ?", PENDING_TIMEOUT.ago)
+      # Check 3: Stale pending transactions (two thresholds — see constants above)
+      stale = FederationTransaction.pending.where("created_at < ?", STALE_WARNING_TIMEOUT.ago)
       if stale.any?
         issues << {
           type: "stale_pending",
@@ -70,11 +89,11 @@ module Federation
           count: stale.count,
           ids: stale.pluck(:id),
           oldest: stale.minimum(:created_at),
-          message: "#{stale.count} transaction(s) pending longer than #{PENDING_TIMEOUT.inspect}"
+          message: "#{stale.count} transaction(s) pending longer than #{STALE_WARNING_TIMEOUT.inspect}"
         }
 
-        # Auto-cancel very old pending transactions (> 24 hours)
-        very_stale = stale.where("created_at < ?", 24.hours.ago)
+        # Auto-cancel and reverse transactions older than REVERSAL_TIMEOUT
+        very_stale = stale.where("created_at < ?", REVERSAL_TIMEOUT.ago)
         very_stale.find_each do |txn|
           begin
             ActiveRecord::Base.transaction do
@@ -82,19 +101,36 @@ module Federation
               # transaction was created (member was debited). If the webhook delivery
               # failed and we're now cancelling, we must reverse that debit so the
               # member's balance is restored.
-              if txn.outbound? && txn.transfer.present?
-                original = txn.transfer
-                reversal = Transfer.new
-                reversal.source      = original.destination # org pool → member
-                reversal.destination = original.source      # member gets credited back
-                reversal.amount      = txn.amount
-                reversal.reason      = "[Federation Reversal] #{txn.reason} — webhook delivery failed"
-                reversal.save!
+              if txn.outbound?
+                if txn.transfer.present?
+                  original = txn.transfer
+                  reversal = Transfer.new
+                  reversal.source      = original.destination # org pool → member
+                  reversal.destination = original.source      # member gets credited back
+                  reversal.amount      = txn.amount
+                  reversal.reason      = "[Federation Reversal] #{txn.reason} — webhook delivery failed"
+                  reversal.save!
 
-                Rails.logger.warn("[Federation::Reconciliation] Reversed transfer #{original.id} via reversal #{reversal.id} for stale outbound fed_txn #{txn.id}")
+                  Rails.logger.warn("[Federation::Reconciliation] Reversed transfer #{original.id} via reversal #{reversal.id} for stale outbound fed_txn #{txn.id}")
+                else
+                  # H8: Outbound txn has no Transfer — the debit was never committed,
+                  # or the link was lost. Move to disputed so a human can investigate
+                  # rather than silently cancelling without reversing.
+                  txn.update!(
+                    status: "disputed",
+                    metadata: txn.metadata.merge(
+                      "dispute_reason" => "Stale outbound pending with no linked transfer — cannot auto-reverse",
+                      "disputed_at"    => Time.current.iso8601
+                    )
+                  )
+                  msg = "Stale outbound fed_txn #{txn.id} has no Transfer — moved to disputed, requires manual review"
+                  Rails.logger.error("[Federation::Reconciliation] #{msg}")
+                  trigger_alert!(msg)
+                  next # skip cancel! — already moved to disputed
+                end
               end
 
-              txn.cancel!(reason: "Auto-cancelled: pending for over 24 hours")
+              txn.cancel!(reason: "Auto-cancelled: pending for over #{REVERSAL_TIMEOUT.inspect}")
             end
 
             Rails.logger.warn("[Federation::Reconciliation] Auto-cancelled stale #{txn.direction} transaction #{txn.id}")
@@ -106,7 +142,7 @@ module Federation
               payload: {
                 external_transaction_id: txn.external_transaction_id,
                 federation_transaction_id: txn.id,
-                reason: "Auto-cancelled: pending for over 24 hours",
+                reason: "Auto-cancelled: pending for over #{REVERSAL_TIMEOUT.inspect}",
                 cancelled_at: txn.cancelled_at&.iso8601
               }
             )
@@ -156,6 +192,7 @@ module Federation
         Rails.logger.error("[Federation::Reconciliation] #{critical_count} CRITICAL issue(s) found!")
         issues.select { |i| i[:severity] == "critical" }.each do |issue|
           Rails.logger.error("[Federation::Reconciliation] #{issue[:type]}: #{issue[:message]}")
+          trigger_alert!("#{issue[:type]}: #{issue[:message]}")
         end
       end
 
@@ -166,6 +203,18 @@ module Federation
       Rails.logger.info("[Federation::Reconciliation] Complete. #{issues.count} total findings (#{critical_count} critical, #{warning_count} warnings)")
 
       issues
+    end
+
+    private
+
+    # M7: Alerting hook for critical reconciliation findings.
+    # Logs at FATAL level so log aggregators (CloudWatch, Datadog, etc.) can filter
+    # for "[ALERT]" and page on-call. Add external integrations here.
+    def trigger_alert!(message)
+      Rails.logger.fatal("[Federation::Reconciliation][ALERT] #{message}")
+      # Hook: uncomment and configure external alerting as needed, e.g.:
+      # Sentry.capture_message(message, level: :fatal) rescue nil
+      # SlackNotifier.ping("#federation-alerts", message) rescue nil
     end
   end
 end

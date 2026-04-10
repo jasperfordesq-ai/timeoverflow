@@ -88,7 +88,10 @@ module Api
         response.set_header("X-RateLimit-Limit", limit.to_s)
         response.set_header("X-RateLimit-Remaining", [limit - count, 0].max.to_s)
 
-        if count > limit
+        # M1: Use >= so the limit-th request is the last one allowed and
+        # X-RateLimit-Remaining correctly shows 0 on the last permitted request
+        # rather than showing 0 on request limit-1 while still allowing request limit.
+        if count >= limit
           render json: {
             success: false,
             error: "Rate limit exceeded",

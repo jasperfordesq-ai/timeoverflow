@@ -149,6 +149,11 @@ module Api
         if amount > max
           return respond_with_error("amount exceeds maximum (#{max} seconds)", status: :bad_request)
         end
+
+        # M5: Limit reason length to prevent outsized payloads in webhook logs and DB.
+        if params[:reason].present? && params[:reason].length > 500
+          return respond_with_error("reason must be 500 characters or less", status: :bad_request)
+        end
       end
 
       # Find account scoped to accessible organizations.

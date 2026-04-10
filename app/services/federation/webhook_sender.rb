@@ -7,6 +7,10 @@ module Federation
   class WebhookSender
     TIMEOUT = 10 # seconds
 
+    # M9: Cap the size of payload stored in webhook logs to avoid bloating the DB.
+    # Full payload is always sent over the wire — this only affects the log record.
+    MAX_LOG_PAYLOAD_SIZE = 10_000 # bytes (JSON-serialised)
+
     # Send a webhook synchronously (for testing or critical events)
     def self.send_now(partner:, event:, payload: {})
       new(partner: partner, event: event, payload: payload).deliver
@@ -43,7 +47,7 @@ module Federation
         event_type: @event,
         direction: "outbound",
         status: "pending",
-        payload: @payload
+        payload: log_safe_payload  # M9: truncated/redacted before storage
       )
 
       begin
@@ -96,7 +100,29 @@ module Federation
     end
 
     def sign(body)
-      OpenSSL::HMAC.hexdigest("SHA256", @partner.webhook_secret.to_s, body)
+      # L1: Explicit blank? guard — .to_s on nil produces an empty key, allowing
+      # HMAC forgery by anyone who knows the request format. Fail loudly instead.
+      if @partner.webhook_secret.blank?
+        raise "webhook_secret is blank for partner #{@partner.id} — cannot sign webhook"
+      end
+      OpenSSL::HMAC.hexdigest("SHA256", @partner.webhook_secret, body)
+    end
+
+    # M9: Return a sanitised copy of the payload safe for DB log storage.
+    # Large or sensitive fields are redacted; essential identifiers are kept.
+    def log_safe_payload
+      payload_json = @payload.to_json
+      return @payload if payload_json.bytesize <= MAX_LOG_PAYLOAD_SIZE
+
+      {
+        _truncated: true,
+        _original_size_bytes: payload_json.bytesize,
+        _note: "Payload exceeded #{MAX_LOG_PAYLOAD_SIZE} bytes — only key fields stored",
+        event: @event,
+        partner_id: @partner.id,
+        federation_transaction_id: @payload["federation_transaction_id"] || @payload[:federation_transaction_id],
+        external_transaction_id: @payload["external_transaction_id"] || @payload[:external_transaction_id]
+      }
     end
   end
 end

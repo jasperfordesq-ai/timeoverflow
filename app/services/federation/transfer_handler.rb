@@ -24,8 +24,21 @@ module Federation
       amount = payload["amount"].to_i
       raise ArgumentError, "Amount must be positive" if amount <= 0
 
-      # IDEMPOTENCY: check before entering transaction block so duplicates
-      # return a clean success rather than propagating RecordNotUnique as 500.
+      # H6: Enforce the configured max transfer amount for inbound transfers.
+      # The API endpoint validates outbound amounts; this ensures the same cap
+      # applies when a remote partner sends a webhook-initiated inbound transfer.
+      max_amount = begin
+        v = Rails.application.config.federation.max_transfer_amount
+        v.to_i > 0 ? v.to_i : 360_000
+      rescue
+        360_000
+      end
+      if amount > max_amount
+        raise ArgumentError, "Amount #{amount} exceeds maximum (#{max_amount} seconds)"
+      end
+
+      # IDEMPOTENCY fast-path: check before entering transaction block so
+      # common duplicates return a clean success without touching the DB transaction.
       external_transaction_id = payload["external_transaction_id"]
       if external_transaction_id.present?
         existing = FederationTransaction.find_by(
@@ -63,26 +76,49 @@ module Federation
 
       fed_txn = nil
 
-      ActiveRecord::Base.transaction do
-        fed_txn = FederationTransaction.create!(
+      begin
+        ActiveRecord::Base.transaction do
+          # H7: Second idempotency check INSIDE the transaction with a row lock
+          # to eliminate the TOCTOU window between the fast-path check and INSERT.
+          # If a concurrent request slipped through, we find and return the
+          # committed record without creating a duplicate.
+          if external_transaction_id.present?
+            locked_existing = FederationTransaction.where(
+              federation_partner: @partner,
+              external_transaction_id: external_transaction_id
+            ).lock("FOR UPDATE SKIP LOCKED").first
+            return locked_existing if locked_existing
+          end
+
+          fed_txn = FederationTransaction.create!(
+            federation_partner: @partner,
+            external_transaction_id: external_transaction_id,
+            direction: "inbound",
+            local_account_id: member.account.id,
+            remote_user_identifier: remote_user_identifier,
+            amount: amount,
+            reason: reason
+          )
+
+          # Credit local member from org's federation pool
+          transfer = Transfer.new
+          transfer.source = org.account.id
+          transfer.destination = member.account.id
+          transfer.amount = amount
+          transfer.reason = "[Federation] #{reason}"
+          transfer.save!
+
+          fed_txn.complete!(local_transfer: transfer)
+        end
+      rescue ActiveRecord::RecordNotUnique
+        # Race condition: another request committed between our lock check and INSERT.
+        # The DB unique constraint is the final safety net — fetch the winner.
+        existing = FederationTransaction.find_by(
           federation_partner: @partner,
-          external_transaction_id: external_transaction_id,
-          direction: "inbound",
-          local_account_id: member.account.id,
-          remote_user_identifier: remote_user_identifier,
-          amount: amount,
-          reason: reason
+          external_transaction_id: external_transaction_id
         )
-
-        # Credit local member from org's federation pool
-        transfer = Transfer.new
-        transfer.source = org.account.id
-        transfer.destination = member.account.id
-        transfer.amount = amount
-        transfer.reason = "[Federation] #{reason}"
-        transfer.save!
-
-        fed_txn.complete!(local_transfer: transfer)
+        return existing if existing
+        raise # unexpected — no matching record despite uniqueness violation
       end
 
       # Notify partner AFTER transaction commits (async, retries on failure).

@@ -20,17 +20,31 @@ module Api
           false
         end
 
-        status = db_ok ? :ok : :service_unavailable
+        # H4: Check Redis/cache connectivity — Sidekiq and rate limiting depend on it.
+        # Use a lightweight write+read cycle rather than a raw Redis ping so we
+        # exercise the same Rails.cache path that the API hot paths use.
+        redis_ok = begin
+          test_key = "federation_health_check:#{SecureRandom.hex(4)}"
+          Rails.cache.write(test_key, "1", expires_in: 5.seconds)
+          Rails.cache.read(test_key) == "1"
+        rescue => e
+          Rails.logger.error("[Federation Health] Cache/Redis check failed: #{e.class}: #{e.message}")
+          false
+        end
+
+        all_ok = db_ok && redis_ok
+        status = all_ok ? :ok : :service_unavailable
 
         render json: {
-          success: db_ok,
+          success: all_ok,
           data: {
-            status: db_ok ? "healthy" : "unhealthy",
+            status: all_ok ? "healthy" : "unhealthy",
             platform: "timeoverflow",
             version: "1.0.0-federation",
             timestamp: Time.current.iso8601,
             checks: {
               database: db_ok ? "ok" : "error",
+              cache: redis_ok ? "ok" : "error",
               federation_api: "ok"
             },
             organizations_count: (Organization.count rescue 0),

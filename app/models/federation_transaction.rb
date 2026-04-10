@@ -27,11 +27,15 @@ class FederationTransaction < ApplicationRecord
   scope :outbound, -> { where(direction: "outbound") }
 
   def complete!(local_transfer: nil)
-    update!(
-      status: "completed",
-      transfer: local_transfer,
-      completed_at: Time.current
-    )
+    # Idempotency guard — safe to call twice (e.g. webhook delivery retries).
+    # Does NOT overwrite transfer_id when local_transfer is nil, so a bare
+    # complete! call from WebhookDeliveryJob can't NULL out the link that
+    # initiate_outbound already set.
+    return if completed?
+
+    attrs = { status: "completed", completed_at: Time.current }
+    attrs[:transfer] = local_transfer if local_transfer.present?
+    update!(attrs)
   end
 
   def cancel!(reason: nil)

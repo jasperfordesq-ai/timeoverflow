@@ -18,6 +18,11 @@ module Api
         payload = params[:data] || {}
         partner_id = params[:partner_id] || params[:tenant_id]
 
+        # M2: Reject requests without an event type early — before DB lookups.
+        if event_type.blank?
+          return respond_with_error("Missing required field: event", status: :bad_request)
+        end
+
         partner = FederationPartner.find_by(id: partner_id)
         unless partner&.active?
           return respond_with_error("Unknown or inactive partner", status: :not_found)
@@ -67,7 +72,8 @@ module Api
         return respond_with_error("Missing signature", status: :unauthorized) if signature.blank?
 
         body = request.raw_post
-        parsed = JSON.parse(body) rescue nil
+        # H5: Limit JSON nesting depth to prevent stack exhaustion attacks.
+        parsed = JSON.parse(body, max_nesting: 10) rescue nil
         partner_id = parsed&.dig("partner_id") || parsed&.dig("tenant_id")
         partner = FederationPartner.find_by(id: partner_id)
 
@@ -104,7 +110,15 @@ module Api
           return
         end
 
-        # Fallback: simple body-only signature (TO native webhooks)
+        # Fallback: simple body-only signature (TO native webhooks).
+        # M3: Check timestamp freshness on this path too if a timestamp header
+        # was provided, preventing replay attacks against the simpler format.
+        simple_ts = request.headers["X-Webhook-Timestamp"]
+        if simple_ts.present? && (Time.current.to_i - simple_ts.to_i).abs > 300
+          respond_with_error("Webhook timestamp expired", status: :unauthorized)
+          return
+        end
+
         expected_simple = OpenSSL::HMAC.hexdigest("SHA256", partner.webhook_secret.to_s, body)
         unless ActiveSupport::SecurityUtils.secure_compare(signature, expected_simple)
           respond_with_error("Invalid signature", status: :unauthorized)

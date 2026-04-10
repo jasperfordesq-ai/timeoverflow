@@ -52,13 +52,12 @@ module Api
         }
 
         if detailed
+          # H3: PII fields (email, phone, date_of_birth, gender, postcode) are
+          # intentionally excluded from the federation API response. Federation
+          # partners need activity data, not personal identifiers. Reducing the
+          # PII surface prevents accidental cross-platform data leakage.
           data.merge!(
-            email: user.email,
-            phone: user.phone,
             description: user.description,
-            gender: user.gender,
-            date_of_birth: user.date_of_birth,
-            postcode: user.postcode,
             offers_count: member.offers.active.count,
             inquiries_count: member.inquiries.active.count,
             last_sign_in_at: user.last_sign_in_at&.iso8601

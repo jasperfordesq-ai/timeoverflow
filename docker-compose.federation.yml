@@ -38,9 +38,10 @@ services:
     environment:
       - FEDERATION_ENABLED=true
     # Override the Dockerfile HEALTHCHECK (which hits port 3000/HTTP).
-    # Sidekiq doesn't serve HTTP — check that the sidekiq process is alive instead.
+    # Sidekiq doesn't serve HTTP. Check via /proc that the sidekiq process
+    # is alive — works without ps, pgrep, or redis-cli in the minimal image.
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f sidekiq || exit 1"]
+      test: ["CMD-SHELL", "grep -rl sidekiq /proc/[0-9]*/cmdline 2>/dev/null | head -1 | grep -q cmdline || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3

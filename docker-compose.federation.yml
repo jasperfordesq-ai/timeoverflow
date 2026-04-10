@@ -32,7 +32,7 @@ services:
       # Remove these once the image is rebuilt.
       - SKIP_DATABASE_SETUP=1
       - SKIP_MIGRATIONS=1
-      - ALLOWED_HOSTS=localhost 34.175.14.41 timeoverflow.exchangemembers.com timeoverflow-develop-app-1 timeoverflow-app
+      - ALLOWED_HOSTS=${FEDERATION_ALLOWED_HOSTS:-localhost timeoverflow-develop-app-1 timeoverflow-app}
     labels:
       - "federation=enabled"
     # Resolve the federation engine gem before the normal entrypoint.

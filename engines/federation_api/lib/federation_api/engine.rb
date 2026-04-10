@@ -72,7 +72,13 @@ module FederationApi
     initializer "federation_api.append_migrations" do |app|
       unless app.root.to_s == root.to_s
         config.paths["db/migrate"].expanded.each do |expanded_path|
-          app.config.paths["db/migrate"] << expanded_path
+          # Guard against duplicate migration paths — if the host image was
+          # built before the engine extraction, /app/db/migrate may still
+          # contain federation migration files from the old layout.  Only
+          # append the engine path if it isn't already registered.
+          unless app.config.paths["db/migrate"].expanded.include?(expanded_path)
+            app.config.paths["db/migrate"] << expanded_path
+          end
         end
       end
     end

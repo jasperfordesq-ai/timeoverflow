@@ -25,6 +25,13 @@ services:
       - FEDERATION_ENABLED=true
       - FEDERATION_WEBHOOK_TIMEOUT=10
       - FEDERATION_RATE_LIMIT=100
+      # Skip db:setup and db:migrate in the entrypoint — the database is
+      # already provisioned and all migrations are applied.  This also avoids
+      # DuplicateMigrationNameError if the Docker image was built before the
+      # engine extraction (old migrations still in /app/db/migrate/).
+      # Remove these once the image is rebuilt.
+      - SKIP_DATABASE_SETUP=1
+      - SKIP_MIGRATIONS=1
       - ALLOWED_HOSTS=localhost 34.175.14.41 timeoverflow.exchangemembers.com timeoverflow-develop-app-1 timeoverflow-app
     labels:
       - "federation=enabled"
@@ -37,6 +44,8 @@ services:
     environment:
       - BUNDLE_GEMFILE=/app/Gemfile.federation
       - FEDERATION_ENABLED=true
+      - SKIP_DATABASE_SETUP=1
+      - SKIP_MIGRATIONS=1
     entrypoint: ["/bin/bash", "/app/engines/federation_api/entrypoint-federation.sh"]
     # Override the Dockerfile HEALTHCHECK (which hits port 3000/HTTP).
     # Sidekiq doesn't serve HTTP. Check via /proc that the sidekiq process

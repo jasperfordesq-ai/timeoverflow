@@ -6,8 +6,11 @@ module FederationAdmin
 
     def show
       @partner = FederationPartner.find(params[:id])
-      @recent_transactions = @partner.federation_transactions.order(created_at: :desc).limit(20)
+      @recent_transactions = @partner.federation_transactions
+        .includes(:federation_partner).order(created_at: :desc).limit(20)
       @recent_webhooks = @partner.federation_webhook_logs.order(created_at: :desc).limit(20)
+      @permitted_orgs = @partner.permitted_organization_ids.present? ?
+        Organization.where(id: @partner.permitted_organization_ids) : []
     end
 
     def new
@@ -36,10 +39,13 @@ module FederationAdmin
         permitted_organization_ids: permitted_org_ids
       )
 
-      flash[:notice] = "Partner '#{@partner.name}' created. Webhook secret: #{@partner.webhook_secret}"
+      flash[:notice] = "Partner '#{@partner.name}' created successfully. The webhook secret is shown on the partner detail page."
       redirect_to federation_admin_partner_path(@partner)
+    rescue ActiveRecord::RecordInvalid => e
+      flash[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
     rescue => e
-      flash[:alert] = "Failed to create partner: #{e.message}"
+      Rails.logger.error("[FederationAdmin] Partner create failed: #{e.class}: #{e.message}")
+      flash[:alert] = "Failed to create partner. Check the server logs for details."
       redirect_to new_federation_admin_partner_path
     end
 
@@ -73,8 +79,11 @@ module FederationAdmin
 
       flash[:notice] = "Partner '#{@partner.name}' updated."
       redirect_to federation_admin_partner_path(@partner)
+    rescue ActiveRecord::RecordInvalid => e
+      flash[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
     rescue => e
-      flash[:alert] = "Failed to update partner: #{e.message}"
+      Rails.logger.error("[FederationAdmin] Partner update failed: #{e.class}: #{e.message}")
+      flash[:alert] = "Failed to update partner. Check the server logs for details."
       redirect_to edit_federation_admin_partner_path(@partner)
     end
   end

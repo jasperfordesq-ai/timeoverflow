@@ -2,11 +2,9 @@ module FederationAdmin
   class DashboardController < BaseController
     def index
       @partners = FederationPartner.order(status: :asc, name: :asc)
-      @recent_transactions = FederationTransaction.order(created_at: :desc).limit(10)
-      @recent_webhooks = FederationWebhookLog.order(created_at: :desc).limit(10)
-      @organizations = Organization.all.order(:name)
+      @recent_transactions = FederationTransaction
+        .includes(:federation_partner).order(created_at: :desc).limit(10)
 
-      # Stats for cards
       @stats = {
         organizations: Organization.count,
         active_partners: FederationPartner.active.count,

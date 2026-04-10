@@ -25,8 +25,12 @@ module FederationAdmin
 
       flash[:notice] = "API key generated successfully. Copy the raw key now — it cannot be retrieved later."
       render :show
+    rescue ActiveRecord::RecordInvalid => e
+      flash[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
+      redirect_to new_federation_admin_api_key_path
     rescue => e
-      flash[:alert] = "Failed to create API key: #{e.message}"
+      Rails.logger.error("[FederationAdmin] API key creation failed: #{e.class}: #{e.message}")
+      flash[:alert] = "Failed to create API key. Check the server logs for details."
       redirect_to new_federation_admin_api_key_path
     end
 

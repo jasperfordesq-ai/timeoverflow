@@ -238,6 +238,14 @@ module Federation
         raise "Member account does not belong to organization #{org.id}"
       end
 
+      # Federation consent check: member must have opted in to receive transfers.
+      # Skip check if no preferences record exists yet (backward compatibility).
+      if FederationMemberPreference.exists?(member_id: member.id)
+        unless Federation::AccessControl.member_can_receive?(member, partner: @partner)
+          raise ArgumentError, "Member has not opted in to federation transfers"
+        end
+      end
+
       member
     end
   end

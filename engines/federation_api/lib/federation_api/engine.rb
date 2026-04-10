@@ -62,7 +62,7 @@ module FederationApi
           end
         end
 
-        # --- Federation Admin UI (human-facing) ---
+        # --- Federation Admin UI (superadmin, human-facing) ---
         # Separate from TimeOverflow's /admin — completely self-contained.
         namespace :federation_admin, path: "federation-admin" do
           root to: "dashboard#index"
@@ -70,6 +70,15 @@ module FederationApi
           resources :partners, only: [:index, :new, :create, :show, :edit, :update]
           resources :transactions, only: [:index, :show]
           resources :webhook_logs, only: [:index, :show]
+        end
+
+        # --- Federation UI API (session-authenticated, for host app JS) ---
+        # These JSON endpoints are called by the TimeOverflow frontend to
+        # render federation opt-in controls. Auth uses Devise session.
+        namespace :federation_ui, path: "federation" do
+          get  "status",          to: "status#show"
+          resource :organization_settings, only: [:show, :update], path: "org-settings"
+          resource :member_preferences,    only: [:show, :update], path: "my-preferences"
         end
       end
     end

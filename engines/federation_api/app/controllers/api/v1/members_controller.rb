@@ -11,7 +11,12 @@ module Api
 
       # GET /api/v1/members?organization_id=X
       def index
+        # Only show members who have opted in and are discoverable via federation.
+        # If no federation_member_preferences records exist (pre-opt-in era), all
+        # members are shown for backward compatibility.
         members = current_organization.members.active.includes(:user, :account)
+        discoverable_ids = Federation::AccessControl.discoverable_member_ids(current_organization)
+        members = members.where(id: discoverable_ids) if discoverable_ids.any?
 
         if params[:search].present?
           # Sanitize ILIKE wildcards (%, _) so literal searches work correctly

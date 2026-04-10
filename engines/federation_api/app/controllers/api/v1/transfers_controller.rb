@@ -167,7 +167,7 @@ module Api
         params[:partner_id] = partner_id
         params[:direction] = "inbound"
         params[:local_account_id] = recipient.account.id
-        params[:remote_user_identifier] = params[:sender_id] || "nexus_user_#{params[:sender_id]}"
+        params[:remote_user_identifier] = params[:sender_id] || "unknown_remote_user"
         params[:amount] = amount_seconds.to_s
         params[:reason] = params[:description] if params[:reason].blank?
         params[:external_transaction_id] ||= "nexus_#{SecureRandom.hex(8)}"

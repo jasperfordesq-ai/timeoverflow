@@ -26,7 +26,7 @@ module Api
         # Filter to listings from opted-in members, if preferences exist.
         if FederationMemberPreference.where(organization_id: current_organization.id).exists?
           visible_ids = Federation::AccessControl.opted_in_member_ids(current_organization)
-          posts = posts.where(user_id: Member.where(id: visible_ids).select(:user_id)) if visible_ids.any?
+          posts = posts.where(user_id: Member.where(id: visible_ids).select(:user_id))
         end
 
         # Filter by type if requested

@@ -28,10 +28,12 @@ class FederationTransaction < ActiveRecord::Base
 
   def complete!(local_transfer: nil)
     # Idempotency guard — safe to call twice (e.g. webhook delivery retries).
-    # Does NOT overwrite transfer_id when local_transfer is nil, so a bare
-    # complete! call from WebhookDeliveryJob can't NULL out the link that
-    # initiate_outbound already set.
     return if completed?
+
+    # State guard — only pending transactions can be completed.
+    unless pending?
+      raise "Cannot complete a #{status} federation transaction (id=#{id})"
+    end
 
     attrs = { status: "completed", completed_at: Time.current }
     attrs[:transfer] = local_transfer if local_transfer.present?
@@ -40,9 +42,6 @@ class FederationTransaction < ActiveRecord::Base
 
   def cancel!(reason: nil)
     # Guard: only pending transactions can be cancelled.
-    # Cancelling a completed transaction would leave the local Transfer intact
-    # (balance already moved) while marking the federation record cancelled —
-    # creating an accounting inconsistency.
     unless pending?
       raise "Cannot cancel a #{status} federation transaction (id=#{id})"
     end
@@ -50,7 +49,7 @@ class FederationTransaction < ActiveRecord::Base
     update!(
       status: "cancelled",
       cancelled_at: Time.current,
-      metadata: metadata.merge("cancellation_reason" => reason)
+      metadata: (metadata || {}).merge("cancellation_reason" => reason)
     )
   end
 

@@ -85,15 +85,14 @@ module FederationApi
 
     # --- Sidekiq queue -----------------------------------------------
     # Register the :federation queue so the Sidekiq server processes
-    # federation jobs.  Works with Sidekiq 6.x (host app uses ~> 6.5).
+    # federation jobs.  Uses Sidekiq[] hash access (Sidekiq 6.x compatible;
+    # Sidekiq.options was deprecated in 6.0).
     initializer "federation_api.sidekiq_queue" do
       next unless defined?(Sidekiq)
 
-      Sidekiq.configure_server do |config|
-        # Sidekiq 6.x stores queues in Sidekiq.options[:queues]
-        queues = Sidekiq.options[:queues] rescue nil
+      Sidekiq.configure_server do |_config|
+        queues = begin; Sidekiq[:queues]; rescue; nil; end
         if queues.is_a?(Array) && !queues.include?("federation")
-          # Insert at position 0 so federation jobs have priority
           queues.unshift("federation")
         end
       end
@@ -101,10 +100,11 @@ module FederationApi
 
     # --- Sidekiq-cron schedule ----------------------------------------
     # Register the daily reconciliation job without touching schedule.yml.
+    # Guard is INSIDE after_initialize so all gems are loaded by the time
+    # we check for Sidekiq::Cron::Job.
     initializer "federation_api.cron_schedule" do
-      next unless defined?(Sidekiq::Cron::Job)
-
       Rails.application.config.after_initialize do
+        next unless defined?(Sidekiq::Cron::Job)
         if ENV.fetch("FEDERATION_ENABLED", "false") == "true"
           Sidekiq::Cron::Job.create(
             name:  "federation_reconciliation",
@@ -114,6 +114,15 @@ module FederationApi
           )
         end
       end
+    end
+
+    # --- Autoload paths ------------------------------------------------
+    # app/services/ is not a Rails default autoload directory.
+    # Explicitly add it so Federation::TransferHandler and
+    # Federation::WebhookSender are found by Zeitwerk.
+    initializer "federation_api.autoload_paths", before: :set_autoload_paths do |app|
+      app.config.autoload_paths    += Dir[root.join("app", "services")]
+      app.config.eager_load_paths  += Dir[root.join("app", "services")]
     end
 
     # --- Rake tasks ---------------------------------------------------

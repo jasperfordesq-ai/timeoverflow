@@ -43,6 +43,10 @@ module Api
           return respond_with_error("Account has no associated organization", status: :unprocessable_entity)
         end
 
+        unless org.account
+          return respond_with_error("Organization has no federation pool account", status: :unprocessable_entity)
+        end
+
         fed_txn = nil
         local_transfer = nil
 
@@ -115,7 +119,9 @@ module Api
         respond_with_error("Resource not found", status: :not_found)
       rescue => e
         Rails.logger.error("[Federation::Transfer] Unexpected error: #{e.class}: #{e.message}")
-        fed_txn&.cancel!(reason: "Internal error") if fed_txn&.pending?
+        begin; fed_txn&.cancel!(reason: "Internal error") if fed_txn&.pending?; rescue => cancel_err
+          Rails.logger.error("[Federation::Transfer] cancel! also failed: #{cancel_err.message}")
+        end
         respond_with_error("Transfer failed", status: :internal_server_error)
       end
 
@@ -139,7 +145,10 @@ module Api
           return respond_with_error("direction must be 'inbound' or 'outbound'", status: :bad_request)
         end
 
-        # Amount must be positive integer within limits
+        # Amount must be a whole positive integer
+        unless params[:amount].to_s.match?(/\A\d+\z/)
+          return respond_with_error("amount must be a positive integer (seconds)", status: :bad_request)
+        end
         amount = params[:amount].to_i
         if amount <= 0
           return respond_with_error("amount must be a positive integer (seconds)", status: :bad_request)

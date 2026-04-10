@@ -15,15 +15,15 @@ module Api
       # POST /api/v1/webhooks/receive
       def receive
         event_type = params[:event]
-        payload = params[:data] || {}
+        payload = params[:data].respond_to?(:to_h) ? params[:data].to_h : {}
         partner_id = params[:partner_id] || params[:tenant_id]
 
-        # M2: Reject requests without an event type early — before DB lookups.
         if event_type.blank?
           return respond_with_error("Missing required field: event", status: :bad_request)
         end
 
-        partner = FederationPartner.find_by(id: partner_id)
+        # Use the partner verified by HMAC signature (avoids double-lookup divergence).
+        partner = @verified_partner || FederationPartner.find_by(id: partner_id)
         unless partner&.active?
           return respond_with_error("Unknown or inactive partner", status: :not_found)
         end
@@ -49,7 +49,7 @@ module Api
             status: "failed",
             response_body: "#{e.class}: #{e.message}"
           )
-          respond_with_error("Webhook processing failed")
+          respond_with_error("Webhook processing failed", status: :internal_server_error)
         end
       end
 
@@ -72,12 +72,16 @@ module Api
         return respond_with_error("Missing signature", status: :unauthorized) if signature.blank?
 
         body = request.raw_post
+        return respond_with_error("Empty request body", status: :bad_request) if body.blank?
+
         # H5: Limit JSON nesting depth to prevent stack exhaustion attacks.
         parsed = JSON.parse(body, max_nesting: 10) rescue nil
         partner_id = parsed&.dig("partner_id") || parsed&.dig("tenant_id")
         partner = FederationPartner.find_by(id: partner_id)
 
-        return respond_with_error("Unknown partner", status: :unauthorized) unless partner
+        # Use generic error message for both unknown partner and invalid signature
+        # to prevent partner-ID enumeration via differential error responses.
+        return respond_with_error("Invalid signature", status: :unauthorized) unless partner
 
         # Fix #2: Reject partners with no webhook_secret — HMAC with empty key
         # can be forged by anyone who knows the request body format.
@@ -103,6 +107,7 @@ module Api
               respond_with_error("Webhook timestamp expired", status: :unauthorized)
               return
             end
+            @verified_partner = partner
             return # signature valid, timestamp fresh
           end
           # Nexus format signature didn't match — don't fall through, reject immediately
@@ -123,12 +128,19 @@ module Api
         unless ActiveSupport::SecurityUtils.secure_compare(signature, expected_simple)
           respond_with_error("Invalid signature", status: :unauthorized)
         end
+
+        @verified_partner = partner
       end
 
       def handle_event(event_type, payload, partner)
         case event_type
         when "partnership.activated"
-          partner.update!(status: "active")
+          # Don't reactivate terminated partners — termination requires admin action.
+          if partner.status == "terminated"
+            Rails.logger.warn("[Federation] Rejected reactivation of terminated partner #{partner.id}")
+          else
+            partner.update!(status: "active")
+          end
         when "partnership.suspended"
           partner.update!(status: "suspended")
         when "partnership.terminated"

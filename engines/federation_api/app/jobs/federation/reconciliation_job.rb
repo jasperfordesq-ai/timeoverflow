@@ -33,7 +33,7 @@ module Federation
           begin
             txn.update!(
               status: "disputed",
-              metadata: txn.metadata.merge(
+              metadata: (txn.metadata || {}).merge(
                 "dispute_reason" => "Completed with no local transfer — data integrity error",
                 "disputed_at"    => Time.current.iso8601
               )
@@ -111,6 +111,8 @@ module Federation
                   reversal.reason      = "[Federation Reversal] #{txn.reason} — webhook delivery failed"
                   reversal.save!
 
+                  # Link reversal to the federation transaction metadata for audit trail
+                  txn.update_column(:metadata, (txn.metadata || {}).merge("reversal_transfer_id" => reversal.id))
                   Rails.logger.warn("[Federation::Reconciliation] Reversed transfer #{original.id} via reversal #{reversal.id} for stale outbound fed_txn #{txn.id}")
                 else
                   # H8: Outbound txn has no Transfer — the debit was never committed,
@@ -118,7 +120,7 @@ module Federation
                   # rather than silently cancelling without reversing.
                   txn.update!(
                     status: "disputed",
-                    metadata: txn.metadata.merge(
+                    metadata: (txn.metadata || {}).merge(
                       "dispute_reason" => "Stale outbound pending with no linked transfer — cannot auto-reverse",
                       "disputed_at"    => Time.current.iso8601
                     )
@@ -152,8 +154,9 @@ module Federation
         end
       end
 
-      # Check 4: Transfer movement integrity
-      FederationTransaction.completed.where.not(transfer_id: nil).find_each do |fed_txn|
+      # Check 4: Transfer movement integrity (eager-load to avoid N+1)
+      FederationTransaction.completed.where.not(transfer_id: nil)
+        .includes(transfer: :movements).find_each do |fed_txn|
         transfer = fed_txn.transfer
         next unless transfer
 

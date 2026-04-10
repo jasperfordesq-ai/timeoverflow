@@ -46,7 +46,8 @@ module Api
 
       # GET /api/v1/listings/:id
       def show
-        post = current_organization.posts.active.find_by!(id: params[:id])
+        post = current_organization.posts.active
+                 .where(type: %w[Offer Inquiry]).find_by!(id: params[:id])
         respond_with_data(serialize_listing(post, detailed: true))
       end
 

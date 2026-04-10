@@ -14,9 +14,11 @@ module Api
         members = current_organization.members.active.includes(:user, :account)
 
         if params[:search].present?
+          # Sanitize ILIKE wildcards (%, _) so literal searches work correctly
+          sanitized = ActiveRecord::Base.sanitize_sql_like(params[:search])
           members = members.joins(:user).where(
             "users.username ILIKE :q OR users.email ILIKE :q",
-            q: "%#{params[:search]}%"
+            q: "%#{sanitized}%"
           )
         end
 
@@ -38,6 +40,7 @@ module Api
 
       def serialize_member(member, detailed: false)
         user = member.user
+        return { id: member.id, error: "missing_user" } unless user
         data = {
           id: member.id,
           member_uid: member.member_uid,

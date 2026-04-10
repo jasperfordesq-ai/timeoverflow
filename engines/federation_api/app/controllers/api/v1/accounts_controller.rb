@@ -29,7 +29,7 @@ module Api
           current_page: page,
           per_page: per_page,
           total_count: total_movements,
-          total_pages: (total_movements.to_f / per_page).ceil
+          total_pages: total_movements.zero? ? 0 : (total_movements.to_f / per_page).ceil
         }
 
         respond_with_data({

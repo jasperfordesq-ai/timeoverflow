@@ -21,6 +21,7 @@ class FederationPartner < ActiveRecord::Base
   validates :webhook_secret, presence: true  # Required: empty secret allows HMAC forgery with key=""
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :partnership_level, inclusion: { in: PARTNERSHIP_LEVELS }
+  validates :feature_gates, presence: true   # nil feature_gates crashes can_transact? et al.
 
   scope :active, -> { where(status: "active") }
   scope :by_platform, ->(type) { where(platform_type: type) }
@@ -30,19 +31,24 @@ class FederationPartner < ActiveRecord::Base
   end
 
   def can_transact?
-    active? && partnership_level >= 3 && feature_gates["transactions_enabled"]
+    active? && partnership_level >= 3 && feature_gates&.dig("transactions_enabled")
   end
 
   def can_share_profiles?
-    active? && partnership_level >= 2 && feature_gates["profiles_enabled"]
+    active? && partnership_level >= 2 && feature_gates&.dig("profiles_enabled")
   end
 
   def can_share_listings?
-    active? && partnership_level >= 1 && feature_gates["listings_enabled"]
+    active? && partnership_level >= 1 && feature_gates&.dig("listings_enabled")
   end
 
   def record_failure!
+    return if status == "terminated"  # don't touch terminated partners
+
+    # Atomic increment + conditional suspension in one reload cycle
+    # to avoid stale in-memory reads under concurrency.
     increment!(:consecutive_failures)
+    reload
     update!(status: "suspended") if consecutive_failures >= 5
   end
 

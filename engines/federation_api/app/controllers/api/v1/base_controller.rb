@@ -7,11 +7,7 @@
 module Api
   module V1
     class BaseController < ActionController::API
-      # devise-i18n's Railtie calls `helper` on all controllers,
-      # but ActionController::API doesn't support helpers.
-      # This no-op prevents the NoMethodError.
-      def self.helper(*); end
-      def self.helper_method(*); end
+      # devise-i18n compatibility handled by FederationApi::Engine initializer.
 
       before_action :authenticate_api_key!
       before_action :enforce_rate_limit!
@@ -28,7 +24,7 @@ module Api
         @current_api_key = FederationApiKey.authenticate(raw_key)
 
         unless @current_api_key
-          render json: { success: false, error: "Unauthorized", message: "Invalid or expired API key" }, status: :unauthorized
+          respond_with_error("Invalid or expired API key", status: :unauthorized)
           return
         end
 
@@ -45,7 +41,7 @@ module Api
 
         auth_header = request.headers["Authorization"]
         if auth_header.present? && auth_header.start_with?("Bearer ")
-          return auth_header.sub("Bearer ", "")
+          return auth_header.delete_prefix("Bearer ")
         end
 
         nil
@@ -53,7 +49,7 @@ module Api
 
       def require_permission!(permission)
         unless @current_api_key.has_permission?(permission)
-          render json: { success: false, error: "Forbidden", message: "API key lacks '#{permission}' permission" }, status: :forbidden
+          respond_with_error("API key lacks '#{permission}' permission", status: :forbidden)
         end
       end
 
@@ -71,7 +67,7 @@ module Api
 
       def require_organization!
         unless current_organization
-          render json: { success: false, error: "Bad Request", message: "organization_id is required" }, status: :bad_request
+          respond_with_error("organization_id is required", status: :bad_request)
         end
       end
 
@@ -88,10 +84,9 @@ module Api
         response.set_header("X-RateLimit-Limit", limit.to_s)
         response.set_header("X-RateLimit-Remaining", [limit - count, 0].max.to_s)
 
-        # M1: Use >= so the limit-th request is the last one allowed and
-        # X-RateLimit-Remaining correctly shows 0 on the last permitted request
-        # rather than showing 0 on request limit-1 while still allowing request limit.
-        if count >= limit
+        # Rate limit: count > limit allows exactly `limit` requests per window.
+        # (count starts at 1 after first increment; the (limit+1)-th request is rejected.)
+        if count > limit
           render json: {
             success: false,
             error: "Rate limit exceeded",
@@ -104,11 +99,10 @@ module Api
         request.format = :json
       end
 
-      # Standard JSON envelope matching Nexus's v2 response format
+      # Standard JSON envelope matching Nexus's v2 response format.
+      # meta is always included (even if empty) for consistent destructuring.
       def respond_with_data(data, status: :ok, meta: {})
-        body = { success: true, data: data }
-        body[:meta] = meta if meta.present?
-        render json: body, status: status
+        render json: { success: true, data: data, meta: meta }, status: status
       end
 
       def respond_with_error(message, status: :unprocessable_entity, errors: nil)

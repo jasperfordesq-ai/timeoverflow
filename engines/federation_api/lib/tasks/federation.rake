@@ -16,7 +16,7 @@ namespace :federation do
 
     # Step 1: Generate API key
     print "Enter a name for the API key (e.g., 'Nexus Production'): "
-    key_name = $stdin.gets.chomp
+    key_name = ($stdin.gets || '').chomp
     key_name = "Nexus Partner" if key_name.blank?
 
     api_key, raw_key = FederationApiKey.generate!(name: key_name)
@@ -28,11 +28,11 @@ namespace :federation do
 
     # Step 2: Register partner
     print "\nEnter the Nexus API endpoint (e.g., https://api.project-nexus.ie): "
-    api_endpoint = $stdin.gets.chomp
+    api_endpoint = ($stdin.gets || '').chomp
 
     if api_endpoint.present?
       print "Enter the Nexus webhook URL (or press Enter to skip): "
-      webhook_url = $stdin.gets.chomp
+      webhook_url = ($stdin.gets || '').chomp
 
       partner = FederationPartner.create!(
         name: "Nexus - #{key_name}",
@@ -68,7 +68,7 @@ namespace :federation do
   desc "Generate a new federation API key"
   task generate_key: :environment do
     print "Key name: "
-    name = $stdin.gets.chomp
+    name = ($stdin.gets || '').chomp
     name = "Federation Key #{Time.current.strftime('%Y%m%d')}" if name.blank?
 
     org_id = ENV["ORGANIZATION_ID"]
@@ -180,8 +180,10 @@ namespace :federation do
     abort "Partner cannot transact (level < 3)" unless partner.can_transact?
 
     org = Organization.first
+    abort "No organizations found" unless org
     member = org.members.active.first
     abort "No active members found" unless member
+    abort "Member has no account" unless member.account
 
     puts "\n=== Test Transfer (Dry Run) ==="
     puts "Partner:     #{partner.name}"

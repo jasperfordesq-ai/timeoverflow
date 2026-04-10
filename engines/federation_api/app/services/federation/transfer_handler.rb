@@ -72,6 +72,7 @@ module Federation
       validate_partner_can_transact!
 
       org = Organization.find(local_organization_id)
+      raise ArgumentError, "Organization #{org.id} has no account" unless org.account
       member = find_local_member(org, email: local_member_email, member_uid: local_member_uid)
 
       fed_txn = nil
@@ -148,6 +149,8 @@ module Federation
       validate_partner_can_transact!
 
       org = local_account.organization
+      raise ArgumentError, "Account has no associated organization" unless org
+      raise ArgumentError, "Organization #{org.id} has no account" unless org.account
 
       # Fix #6: Generate a stable external_transaction_id NOW so that:
       # (a) the webhook payload and local record use the same reference, and
@@ -182,7 +185,7 @@ module Federation
         # but leave status as "pending" — complete! is called by WebhookDeliveryJob.
         fed_txn.update!(
           transfer: local_transfer,
-          metadata: fed_txn.metadata.merge(
+          metadata: (fed_txn.metadata || {}).merge(
             "local_transfer_id" => local_transfer.id,
             "webhook_queued_at" => nil
           )
@@ -206,7 +209,7 @@ module Federation
         }
       )
 
-      fed_txn.update!(metadata: fed_txn.metadata.merge("webhook_queued_at" => Time.current.iso8601))
+      fed_txn.update!(metadata: (fed_txn.metadata || {}).merge("webhook_queued_at" => Time.current.iso8601))
 
       fed_txn
     end

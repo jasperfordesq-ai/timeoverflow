@@ -56,6 +56,7 @@ module Federation
         http.use_ssl = uri.scheme == "https"
         http.open_timeout = TIMEOUT
         http.read_timeout = TIMEOUT
+        http.write_timeout = TIMEOUT if http.respond_to?(:write_timeout=)
 
         request = Net::HTTP::Post.new(uri.request_uri)
         request["Content-Type"] = "application/json"

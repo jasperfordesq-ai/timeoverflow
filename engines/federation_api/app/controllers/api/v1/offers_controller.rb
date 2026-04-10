@@ -13,6 +13,12 @@ module Api
       def index
         offers = current_organization.offers.active.of_active_members.includes(:user, :category)
 
+        # Filter to listings from members who have opted in, if preferences exist.
+        if FederationMemberPreference.where(organization_id: current_organization.id).exists?
+          visible_ids = Federation::AccessControl.opted_in_member_ids(current_organization)
+          offers = offers.where(user_id: Member.where(id: visible_ids).select(:user_id)) if visible_ids.any?
+        end
+
         offers = offers.by_category(params[:category_id]) if params[:category_id].present?
         offers = offers.search_by_query(params[:search]) if params[:search].present?
 

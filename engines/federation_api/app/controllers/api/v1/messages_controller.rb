@@ -104,6 +104,13 @@ module Api
           }.compact
         )
 
+        # Notify the local member about the received message.
+        Federation::NotificationService.notify(
+          member: member,
+          event_type: :message_received,
+          data: { sender_name: params[:sender_name] || message.remote_user_identifier, subject: message.subject, body: message.body, partner_name: partner.name }
+        )
+
         respond_with_data(serialize_message(message), status: :created)
 
       rescue ActiveRecord::RecordNotUnique

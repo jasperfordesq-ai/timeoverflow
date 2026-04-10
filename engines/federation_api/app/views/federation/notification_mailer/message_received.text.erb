@@ -1,0 +1,11 @@
+Hello <%= @member.user&.username %>,
+
+You have received a new message via federation from <%= @sender_name %> (<%= @partner_name %>).
+
+<% if @subject.present? %>Subject: <%= @subject %><% end %>
+
+<%= @body_preview %>
+
+---
+This message was sent via the TimeOverflow Federation network.
+To manage your federation preferences, visit your profile settings.

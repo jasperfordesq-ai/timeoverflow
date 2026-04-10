@@ -122,6 +122,13 @@ module Federation
         raise # unexpected — no matching record despite uniqueness violation
       end
 
+      # Notify the local member about the received transfer.
+      Federation::NotificationService.notify(
+        member: member,
+        event_type: :transfer_received,
+        data: { amount: amount, remote_user_identifier: remote_user_identifier, reason: reason, partner_name: @partner.name }
+      )
+
       # Notify partner AFTER transaction commits (async, retries on failure).
       # If delivery ultimately fails the transaction record is already committed
       # and the member's balance is correct — the partner will reconcile via

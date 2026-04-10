@@ -88,6 +88,8 @@ module FederationApi
           resource :organization_settings, only: [:show, :update], path: "org-settings"
           resource :member_preferences,    only: [:show, :update], path: "my-preferences"
           resources :messages, only: [:index, :create]
+          resources :transfers, only: [:create]
+          resources :partner_listings, only: [:index, :show], path: "partner-listings"
         end
       end
     end

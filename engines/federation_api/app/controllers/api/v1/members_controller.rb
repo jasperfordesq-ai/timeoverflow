@@ -58,6 +58,7 @@ module Api
           organization_id: member.organization_id,
           account_id: member.account&.id,
           balance: member.account&.balance,
+          avatar_url: user.avatar.attached? ? (Rails.application.routes.url_helpers.rails_blob_url(user.avatar, only_path: true) rescue nil) : nil,
           tags: member.tag_list,
           created_at: member.created_at.iso8601,
           # Federation capability flags — Nexus reads these to show UI indicators.

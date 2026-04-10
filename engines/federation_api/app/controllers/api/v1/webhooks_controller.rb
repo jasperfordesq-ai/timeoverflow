@@ -225,7 +225,7 @@ module Api
           return
         end
 
-        FederationMessage.create!(
+        msg = FederationMessage.create!(
           federation_partner: partner,
           organization_id: org.id,
           local_member_id: member.id,
@@ -240,6 +240,13 @@ module Api
             "sender_name" => payload["sender_name"],
             "via_webhook" => true
           }.compact
+        )
+
+        # Notify the local member about the received message.
+        Federation::NotificationService.notify(
+          member: member,
+          event_type: :message_received,
+          data: { sender_name: payload["sender_name"] || msg.remote_user_identifier, subject: msg.subject, body: msg.body, partner_name: partner.name }
         )
       end
     end

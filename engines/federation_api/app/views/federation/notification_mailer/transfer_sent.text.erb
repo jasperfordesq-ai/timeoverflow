@@ -1,0 +1,10 @@
+Hello <%= @member.user&.username %>,
+
+You sent <%= @amount_hours %> hours of time credit to <%= @recipient_name %> via the federation network.
+
+<% if @reason.present? %>Reason: <%= @reason %><% end %>
+
+Your balance has been updated. You can view your account details in TimeOverflow.
+
+---
+This notification was sent via the TimeOverflow Federation network.

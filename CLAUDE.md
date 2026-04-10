@@ -1,67 +1,148 @@
-# TimeOverflow Federation API — AI Assistant Guide
+# TimeOverflow Federation Engine — AI Assistant Guide
+
+## ⚠️ ABSOLUTE RULE: Never Modify Original TimeOverflow Code
+
+**This is the most important rule in this project.**
+
+The federation module is a **self-contained Rails Engine** at `engines/federation_api/`.
+It must NEVER touch, modify, edit, or alter any file from the original TimeOverflow
+codebase by [Coopdevs](https://coopdevs.org/). This includes but is not limited to:
+
+- `app/` (their controllers, models, views, helpers, assets)
+- `config/routes.rb`, `config/schedule.yml`, `config/sidekiq.yml`
+- `config/initializers/` (their initializers)
+- `db/migrate/` (their migrations — ours live in `engines/federation_api/db/migrate/`)
+- `lib/`, `spec/` (their code), `Gemfile`, `Gemfile.lock`
+- Any view, stylesheet, JavaScript, or locale file
+
+**Why?** We are building on someone else's open-source project. Out of respect for the
+original developers and to ensure we can cleanly merge upstream updates (`git merge
+upstream/master` should always be conflict-free), our code lives entirely in the engine
+directory and supporting overlay files.
+
+**How to verify:** Run `git diff upstream/master --name-only --diff-filter=M` — the
+result must be empty (zero modified original files).
+
+---
 
 ## Project Purpose
 
-This is a **fork** of [TimeOverflow](https://github.com/coopdevs/timeoverflow) by [Coopdevs](https://coopdevs.org/), extended with a **Federation API** that enables cross-platform time exchanges with external timebanking partners such as [Project NEXUS](https://project-nexus.ie).
+This is a **fork** of [TimeOverflow](https://github.com/coopdevs/timeoverflow) by
+[Coopdevs](https://coopdevs.org/), extended with a **Federation API Engine** that enables
+cross-platform time exchanges with external timebanking partners such as
+[Project NEXUS](https://project-nexus.ie).
 
-The Federation API lives entirely in new files — the original TimeOverflow codebase is unmodified. See [CONTRIBUTORS.md](CONTRIBUTORS.md) for full attribution.
-
----
-
-## What Is the Federation API?
-
-A JSON REST API layer (`/api/v1/`) that allows external timebanking platforms to:
-
-- **Discover** TimeOverflow organisations, members, and service listings
-- **Execute** cross-platform time transfers (double-entry accounting)
-- **Receive** webhook events for partnership lifecycle and transaction updates
-- **Health check** the TimeOverflow instance
-
-This enables TimeOverflow communities to federate with platforms like Project NEXUS, allowing members of different timebanks to exchange services across platform boundaries.
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for full attribution.
 
 ---
 
-## Architecture
+## Architecture: Self-Contained Rails Engine
 
 ```
-External Partner (e.g., Nexus)  ←→  Federation API (this fork)  ←→  TimeOverflow Core
-         REST/JSON                    app/controllers/api/v1/          Original models
-         API key auth                 app/services/federation/         & business logic
-         HMAC webhooks                app/models/federation_*.rb
+engines/federation_api/          ← ALL federation code lives here
+├── app/
+│   ├── controllers/api/v1/     ← JSON REST API endpoints
+│   ├── models/                 ← FederationPartner, FederationTransaction, etc.
+│   ├── services/federation/    ← TransferHandler, WebhookSender
+│   └── jobs/federation/        ← WebhookDeliveryJob, ReconciliationJob
+├── db/migrate/                 ← Federation-only migrations
+├── lib/federation_api/
+│   └── engine.rb               ← Auto-mounts routes, queues, cron, config
+├── lib/tasks/federation.rake   ← Rake tasks
+├── spec/                       ← All specs
+└── scripts/                    ← Test scripts
+
+Gemfile.federation               ← Overlay Gemfile (eval_gemfile + engine gem)
+docker-compose.federation.yml    ← Docker overlay to activate the engine
 ```
 
-All federation code is in:
-- `app/controllers/api/v1/` — API endpoints
-- `app/models/federation_*.rb` — Federation data models
-- `app/services/federation/` — Business logic (transfers, webhooks)
-- `app/jobs/federation/` — Background jobs (delivery, reconciliation)
-- `db/migrate/20260408*` — Database migrations
-- `config/initializers/federation_api.rb` — Configuration
-- `config/initializers/0_api_controller_fix.rb` — Devise-i18n compatibility
+The engine registers everything dynamically in `engine.rb`:
+- **Routes** — auto-appended to the host app (no `config/routes.rb` change)
+- **Sidekiq queue** — `:federation` registered programmatically
+- **Cron schedule** — `ReconciliationJob` registered via `Sidekiq::Cron::Job`
+- **Configuration** — `Rails.application.config.federation` from ENV vars
+- **Migrations** — appended to host migration paths automatically
+- **Autoload paths** — `app/services/` added for Zeitwerk
+
+---
+
+## TimeOverflow Multi-Org Model (Important Context)
+
+TimeOverflow is a **multi-tenant** platform where each **Organization = one time bank**.
+
+```
+User (person with login)
+  └── has_many :members (join records)
+        └── belongs_to :organization (a time bank)
+        └── has_one :account (balance within that org)
+
+Organization (a time bank)
+  └── has_many :members
+  └── has_one :account (org pool account)
+  └── has_many :offers, :inquiries, :posts
+```
+
+**Key facts:**
+- A user can belong to **multiple organizations** (one Member record per org)
+- Each Member has a **separate Account** with an independent balance per org
+- The `manager` flag is per-membership (admin of Org A, regular member of Org B)
+- Superadmins are defined by the `ADMINS` env var (email allowlist)
+- Org switching is session-based (`session[:current_organization_id]`)
+- There is NO middleware or `default_scope` for org scoping — each controller does it manually
 
 ---
 
 ## Key Rules for AI Assistants
 
-1. **Never modify original TimeOverflow code.** All federation work goes in new files only. The upstream codebase by Coopdevs must remain untouched.
+1. **Never modify original TimeOverflow code.** (See absolute rule above.)
 
-2. **Follow existing TimeOverflow patterns.** Use `ActiveJob::Base` (not `ApplicationJob`), follow the same model/controller conventions, use the same test framework (RSpec + Fabrication).
+2. **All code goes in `engines/federation_api/`.** New controllers, models, services,
+   jobs, migrations, specs, rake tasks — everything in the engine directory.
 
-3. **All API responses must use the standard envelope:** `{ "success": true/false, "data": {...}, "meta": {...} }`. Every error response includes `"success": false`.
+3. **Models inherit from `ActiveRecord::Base`**, not `ApplicationRecord`. This keeps
+   the engine independent of the host's `ApplicationRecord` class.
 
-4. **Double-entry accounting is sacred.** Every transfer creates exactly 2 movements that sum to zero. The reconciliation job verifies this. Never bypass Transfer's `after_create :make_movements` callback.
+4. **Jobs inherit from `ActiveJob::Base`**, not `ApplicationJob`.
 
-5. **Security requirements:**
-   - All API endpoints require Bearer token or X-Federation-Api-Key auth
-   - Transfer amounts are validated (positive, capped at 360,000 seconds)
-   - Duplicate transfers are prevented via DB unique constraint on `(federation_partner_id, external_transaction_id)`
-   - Error responses never leak internal exception details
-   - Rate limiting: 100 requests/minute per API key, 200/minute per IP for webhooks
+5. **Controllers inherit from `ActionController::API`** (for API endpoints) or
+   `ActionController::Base` (for admin UI). Never from `ApplicationController`.
 
-6. **Production caveats (Docker):**
-   - Production mode caches classes — container restart needed for code changes
-   - Multi-network Docker containers can have stale DNS — disconnect from secondary network before restart
-   - Volume mounts: only mount specific files, not entire `config/` directory (breaks `database.yml`)
+6. **All API responses use the standard envelope:**
+   `{ "success": true/false, "data": {...}, "meta": {...} }`.
+   `meta` is always present (even if empty `{}`).
+
+7. **Double-entry accounting is sacred.** Every transfer creates exactly 2 movements
+   that sum to zero. The reconciliation job verifies this.
+
+8. **Organization scoping is critical.** Federation partners, API keys, and transactions
+   must respect the multi-org model. Always verify which org a request is targeting.
+
+9. **Security requirements:**
+   - API endpoints require Bearer token or X-Federation-Api-Key auth
+   - Webhook endpoints use HMAC-SHA256 signature verification
+   - Transfer amounts validated (positive, capped at 360,000 seconds)
+   - Duplicate prevention via DB unique constraint
+   - Rate limiting: 100 req/min per API key, 200 req/min per IP for webhooks
+   - Never hardcode IPs, secrets, or credentials in source files
+
+10. **Docker deployment:** Federation activates via the Docker Compose overlay:
+    ```
+    docker compose -f docker-compose.yml -f docker-compose.federation.yml up
+    ```
+    Environment-specific values (IPs, domains, secrets) go in env vars, not in source.
+
+---
+
+## Syncing with Upstream
+
+```bash
+git fetch upstream
+git merge upstream/master   # Should always be conflict-free
+```
+
+This works because we modify zero original files. The only files that differ from
+upstream are **added** files (the engine, Gemfile.federation, docker-compose.federation.yml,
+CLAUDE.md, CONTRIBUTORS.md).
 
 ---
 
@@ -87,18 +168,18 @@ All federation code is in:
 
 ```bash
 # Curl-based E2E test suite
-./scripts/test_federation_api.sh http://localhost:3000 <api_key>
+./engines/federation_api/scripts/test_federation_api.sh http://localhost:3000 <api_key>
 
 # Full E2E with Docker
-./scripts/federation_e2e.sh
+./engines/federation_api/scripts/federation_e2e.sh
 
 # RSpec (when dev environment available)
-bundle exec rspec spec/controllers/api/v1/
-bundle exec rspec spec/models/federation_*
+bundle exec rspec engines/federation_api/spec/
 ```
 
 ---
 
 ## License
 
-This fork is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**, the same license as the original TimeOverflow project. See [LICENSE](LICENSE).
+This fork is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**,
+the same license as the original TimeOverflow project. See [LICENSE](LICENSE).

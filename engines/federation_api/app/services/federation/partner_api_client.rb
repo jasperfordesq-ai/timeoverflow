@@ -1,5 +1,8 @@
-# Fetches data from a federation partner's API.
-# This is the reverse direction — calling OUT to a partner to read their data.
+# Calls a federation partner's API.
+# Supports both GET (fetch data) and POST (send data) operations.
+#
+# Authentication: Bearer token via the partner's api_key_hash field.
+# This mirrors how the partner authenticates with us — simple API key auth.
 #
 module Federation
   class PartnerApiClient
@@ -36,21 +39,55 @@ module Federation
       get("/health")
     end
 
+    # Send a message to the partner's API.
+    # Wraps in event format for compatibility with webhook-style receivers.
+    def post_message(payload)
+      post("/receive", {
+        event: "message.sent",
+        timestamp: Time.current.iso8601,
+        platform: "timeoverflow",
+        data: payload
+      })
+    end
+
     private
 
     def get(path, params = {})
-      uri = URI("#{@partner.api_endpoint}#{path}")
+      uri = build_uri(path)
       uri.query = URI.encode_www_form(params) if params.any?
 
+      request = Net::HTTP::Get.new(uri)
+      set_headers(request)
+
+      execute(uri, request)
+    end
+
+    def post(path, data = {})
+      uri = build_uri(path)
+
+      request = Net::HTTP::Post.new(uri)
+      set_headers(request)
+      request["Content-Type"] = "application/json"
+      request.body = data.to_json
+
+      execute(uri, request)
+    end
+
+    def build_uri(path)
+      URI("#{@partner.api_endpoint}#{path}")
+    end
+
+    def set_headers(request)
+      request["Authorization"] = "Bearer #{@partner.api_key_hash}" if @partner.api_key_hash.present?
+      request["User-Agent"] = "TimeOverflow-Federation/#{FederationApi::VERSION}"
+      request["Accept"] = "application/json"
+    end
+
+    def execute(uri, request)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = uri.scheme == "https"
       http.open_timeout = TIMEOUT
       http.read_timeout = TIMEOUT
-
-      request = Net::HTTP::Get.new(uri)
-      request["Authorization"] = "Bearer #{@partner.api_key_hash}" if @partner.api_key_hash.present?
-      request["User-Agent"] = "TimeOverflow-Federation/#{FederationApi::VERSION}"
-      request["Accept"] = "application/json"
 
       response = http.request(request)
 

@@ -8,7 +8,7 @@
       No external CDN dependencies. To regenerate CSS after view changes:
       cd engines/federation_api && npx tailwindcss -i ./app/assets/stylesheets/federation_admin_input.css -o ./app/assets/stylesheets/federation_admin.css --minify %>
   <style><%= File.read(FederationApi::Engine.root.join("app/assets/stylesheets/federation_admin.css")) rescue "/* CSS not found — run: cd engines/federation_api && npx tailwindcss ... */" %></style>
-  <script><%= File.read(FederationApi::Engine.root.join("app/assets/javascripts/rails-ujs.min.js")) rescue "" %></script>
+  <script><%= raw File.read(FederationApi::Engine.root.join("app/assets/javascripts/rails-ujs.min.js")) rescue "" %></script>
   <script>if (typeof Rails !== 'undefined') Rails.start();</script>
   <style>
     [data-flash] { animation: fadeOut 8s ease-in-out forwards; }

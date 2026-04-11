@@ -9,7 +9,7 @@
       cd engines/federation_api && npx tailwindcss -i ./app/assets/stylesheets/federation_admin_input.css -o ./app/assets/stylesheets/federation_admin.css --minify %>
   <style><%= File.read(FederationApi::Engine.root.join("app/assets/stylesheets/federation_admin.css")) rescue "/* CSS not found — run: cd engines/federation_api && npx tailwindcss ... */" %></style>
   <script><%= raw File.read(FederationApi::Engine.root.join("app/assets/javascripts/rails-ujs.min.js")) rescue "" %></script>
-  <script>if (typeof Rails !== 'undefined') Rails.start();</script>
+  <script>if (typeof Rails !== 'undefined' && !window._rails_loaded) Rails.start();</script>
   <style>
     [data-flash] { animation: fadeOut 8s ease-in-out forwards; }
     @keyframes fadeOut { 0%,85% { opacity: 1; } 100% { opacity: 0; display: none; } }

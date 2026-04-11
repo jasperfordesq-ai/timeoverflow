@@ -105,16 +105,28 @@ module Api
         request.format = :json
       end
 
-      # Standard JSON envelope matching Nexus's v2 response format.
+      # Content-negotiation: select the appropriate response adapter based
+      # on the Accept header. JSON:API clients (Komunitin) send
+      # "application/vnd.api+json"; all others get the standard REST envelope.
+      def current_response_adapter
+        @current_response_adapter ||= if request.headers["Accept"]&.include?("vnd.api+json")
+          Federation::Adapters::JsonApiAdapter.new(partner: nil)
+        else
+          Federation::Adapters::RestAdapter.new(partner: nil)
+        end
+      end
+
+      # Standard JSON envelope matching Nexus's v2 response format, with
+      # automatic content negotiation for JSON:API clients.
       # meta is always included (even if empty) for consistent destructuring.
-      def respond_with_data(data, status: :ok, meta: {})
-        render json: { success: true, data: data, meta: meta }, status: status
+      def respond_with_data(data, status: :ok, meta: {}, resource_type: nil)
+        body = current_response_adapter.serialize_response(data, meta: meta, resource_type: resource_type)
+        render json: body, status: status, content_type: current_response_adapter.content_type
       end
 
       def respond_with_error(message, status: :unprocessable_entity, errors: nil)
-        body = { success: false, error: message }
-        body[:errors] = errors if errors.present?
-        render json: body, status: status
+        body = current_response_adapter.serialize_error(message, status: status, errors: errors)
+        render json: body, status: status, content_type: current_response_adapter.content_type
       end
 
       def not_found(_exception)

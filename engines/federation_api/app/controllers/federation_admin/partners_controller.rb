@@ -33,6 +33,7 @@ module FederationAdmin
       @partner = FederationPartner.create!(
         name: params[:name],
         platform_type: params[:platform_type] || "nexus",
+        protocol_type: params[:protocol_type] || "rest",
         api_endpoint: params[:api_endpoint],
         webhook_url: params[:webhook_url],
         webhook_secret: SecureRandom.hex(32),

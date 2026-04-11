@@ -64,6 +64,20 @@ module FederationApi
             # Nexus compatibility aliases — Nexus calls /transactions, TO uses /transfers
             post "transactions", to: "transfers#create"
             get  "transactions/:id", to: "transfers#show", as: :transaction_status
+
+            # Credit Commons compatible endpoints
+            scope "cc" do
+              get "about", to: "credit_commons#about"
+              get "accounts", to: "credit_commons#accounts"
+              get "account/:acc_id", to: "credit_commons#account"
+              post "transaction", to: "credit_commons#create_transaction"
+              get "transaction/:uuid", to: "credit_commons#show_transaction"
+              patch "transaction/:uuid/:dest_state", to: "credit_commons#transition_transaction"
+              post "transaction/relay", to: "credit_commons#relay"
+              get "entries", to: "credit_commons#entries"
+              get "entries/:uuid", to: "credit_commons#transaction_entries"
+              get "forms", to: "credit_commons#forms"
+            end
           end
         end
 

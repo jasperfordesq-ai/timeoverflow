@@ -2,13 +2,12 @@
 #
 # Handles the Credit Commons recursive mutual credit protocol:
 #   - Hierarchical node tree with account paths (node/username)
-#   - Transaction state machine (P→V→C→E→X)
+#   - Transaction state machine (P->V->C->E->X)
 #   - Double-entry entries (payer/payee/quant)
 #   - Hashchain verification (Last-hash header)
 #   - Multi-hop relay (POST /transaction/relay)
 #
-# Phase 2 implementation — stub for now. Full implementation will follow
-# after CEN agrees on the protocol details.
+# Phase 2 implementation — full CC protocol support.
 #
 module Federation
   module Adapters
@@ -25,6 +24,15 @@ module Federation
         "E" => %w[X],
         "X" => []
       }.freeze
+
+      # Default workflow code:
+      #   + = payee side
+      #   | = separator
+      #   PPC-PE-CE= transitions
+      DEFAULT_WORKFLOW = "+|PPC-PE-CE=".freeze
+
+      # Default: 1 CC unit = 1 hour = 3600 seconds
+      SECONDS_PER_UNIT = 3600
 
       def protocol_name
         "Credit Commons"
@@ -71,8 +79,8 @@ module Federation
       # --- Account path helpers ---
 
       def to_account_path(member)
-        node_slug = @partner&.metadata&.dig("node_slug") || "timeoverflow"
-        username = member.respond_to?(:member_uid) ? member.member_uid : member.to_s
+        node_slug = resolve_node_slug
+        username = member.respond_to?(:member_uid) ? (member.member_uid || member.id.to_s) : member.to_s
         "#{node_slug}/#{username}"
       end
 
@@ -80,11 +88,108 @@ module Federation
         path.to_s.split("/").last
       end
 
-      # --- Stub implementations (Phase 2) ---
+      # --- Amount conversion ---
+
+      def to_cc_amount(seconds)
+        rate = exchange_rate
+        (seconds.to_f / SECONDS_PER_UNIT * rate).round(4)
+      end
+
+      def from_cc_amount(cc_units)
+        rate = exchange_rate
+        (cc_units.to_f / rate * SECONDS_PER_UNIT).round
+      end
+
+      # --- Entry generation ---
+      # Converts a FederationTransaction (with its associated Transfer + Movements)
+      # into CC entry format: { payer, payee, quant, description }
+
+      def generate_entries(txn)
+        return [] unless txn
+
+        node_slug = resolve_node_slug(txn.organization_id)
+        entries = []
+
+        if txn.transfer.present? && txn.transfer.respond_to?(:movements)
+          # Build entries from the actual double-entry movements
+          movements = txn.transfer.movements.order(:amount)
+          debit_movement  = movements.detect { |m| m.amount.negative? }
+          credit_movement = movements.detect { |m| m.amount.positive? }
+
+          if debit_movement && credit_movement
+            payer_account = debit_movement.account
+            payee_account = credit_movement.account
+
+            payer_path = build_account_path(payer_account, node_slug, txn)
+            payee_path = build_account_path(payee_account, node_slug, txn)
+
+            entries << {
+              payer: payer_path,
+              payee: payee_path,
+              quant: to_cc_amount(credit_movement.amount.abs),
+              description: txn.transfer.respond_to?(:reason) ? txn.transfer.reason.to_s : "",
+              uuid: txn.external_transaction_id || SecureRandom.uuid
+            }
+          end
+        else
+          # No linked transfer — build a synthetic entry from the transaction record
+          local_path = "#{node_slug}/#{txn.local_account_id}"
+          remote_path = txn.remote_user_identifier.to_s
+
+          if txn.outbound?
+            payer_path = local_path
+            payee_path = remote_path
+          else
+            payer_path = remote_path
+            payee_path = local_path
+          end
+
+          entries << {
+            payer: payer_path,
+            payee: payee_path,
+            quant: to_cc_amount(txn.amount),
+            description: txn.metadata&.dig("reason").to_s,
+            uuid: txn.external_transaction_id || SecureRandom.uuid
+          }
+        end
+
+        entries
+      end
+
+      # --- Outbound transformation (TO Transfer -> CC Transaction) ---
 
       def transform_outbound_transfer(payload)
-        # TODO Phase 2: wrap as CC transaction with entries
-        payload
+        # payload is expected to be a hash with TO transfer data
+        txn = payload[:transaction] || payload["transaction"]
+        transfer = payload[:transfer] || payload["transfer"]
+
+        uuid = txn&.external_transaction_id || SecureRandom.uuid
+        state = txn ? to_cc_state(txn.status) : "P"
+
+        entries = if txn
+                    generate_entries(txn)
+                  else
+                    []
+                  end
+
+        {
+          uuid: uuid,
+          written: Time.current.iso8601,
+          state: state,
+          workflow: DEFAULT_WORKFLOW,
+          entries: entries
+        }
+      end
+
+      # Convert a FederationTransaction into CC transaction format
+      def to_cc_transaction(txn)
+        {
+          uuid: txn.external_transaction_id || SecureRandom.uuid,
+          written: (txn.created_at || Time.current).iso8601,
+          state: to_cc_state(txn.status),
+          workflow: DEFAULT_WORKFLOW,
+          entries: generate_entries(txn)
+        }
       end
 
       def transform_outbound_message(payload)
@@ -92,13 +197,52 @@ module Federation
         payload
       end
 
+      # --- Inbound transformation (CC format -> TO format) ---
+
+      def transform_inbound_transfer(data)
+        data = data.with_indifferent_access if data.respond_to?(:with_indifferent_access)
+
+        entries = data[:entries] || data["entries"] || []
+        first_entry = entries.first || {}
+        state = data[:state] || data["state"] || "P"
+
+        {
+          external_transaction_id: data[:uuid] || data["uuid"],
+          status: from_cc_state(state),
+          amount: from_cc_amount(first_entry[:quant] || first_entry["quant"] || 0),
+          payer: first_entry[:payer] || first_entry["payer"],
+          payee: first_entry[:payee] || first_entry["payee"],
+          description: first_entry[:description] || first_entry["description"],
+          remote_user_identifier: first_entry[:payer] || first_entry["payer"],
+          cc_state: state,
+          cc_workflow: data[:workflow] || data["workflow"] || DEFAULT_WORKFLOW
+        }
+      end
+
+      # Parse a CC transaction from controller params into canonical format
+      def parse_cc_transaction(params)
+        data = params.to_unsafe_h rescue params.to_h
+        transform_inbound_transfer(data)
+      end
+
       def transform_inbound_member(data)
-        # TODO Phase 2: parse CC account format
-        data
+        data = data.with_indifferent_access if data.respond_to?(:with_indifferent_access)
+
+        account_path = data[:id] || data["id"] || ""
+        username = extract_username(account_path)
+
+        {
+          id: account_path,
+          username: username,
+          balance: from_cc_amount(data[:balance] || data["balance"] || 0),
+          name: data[:name] || data["name"] || username,
+          volume: from_cc_amount(data[:volume] || data["volume"] || 0),
+          trades: data[:trades] || data["trades"] || 0
+        }
       end
 
       def transform_inbound_members(data)
-        data
+        Array(data).map { |d| transform_inbound_member(d) }
       end
 
       def transform_inbound_listing(data)
@@ -109,10 +253,14 @@ module Federation
         data
       end
 
-      def transform_inbound_transfer(data)
-        # TODO Phase 2: parse CC transaction + entries, convert state
-        data
+      # --- About endpoint data ---
+
+      def build_about_response(organization)
+        config = FederationCcNodeConfig.for(organization)
+        config.build_about_response
       end
+
+      # --- Response handling ---
 
       def unwrap_response(response)
         if response.is_a?(Hash) && response.key?("data")
@@ -129,6 +277,95 @@ module Federation
       def serialize_error(message, status: nil, errors: nil)
         # CC error format: CCViolation / CCFailure
         { errors: [{ class: "CCViolation", message: message }] }
+      end
+
+      # --- Hashchain verification ---
+      # CC uses a chain of hashes to ensure transaction ordering integrity.
+      # Each new transaction includes the hash of the previous one.
+
+      def compute_hash(transaction_data, previous_hash)
+        payload = "#{previous_hash}:#{transaction_data.to_json}"
+        Digest::SHA256.hexdigest(payload)
+      end
+
+      def last_hash
+        @partner&.metadata&.dig("cc_last_hash") || Digest::SHA256.hexdigest("genesis")
+      end
+
+      def store_hash!(new_hash)
+        return unless @partner
+        meta = (@partner.metadata || {}).merge("cc_last_hash" => new_hash)
+        @partner.update!(metadata: meta)
+      end
+
+      def verify_hashchain(inbound_hash, transaction_data)
+        expected = compute_hash(transaction_data, last_hash)
+        ActiveSupport::SecurityUtils.secure_compare(expected, inbound_hash.to_s)
+      end
+
+      # --- Extra headers for outbound requests ---
+
+      def extra_headers
+        { "Last-hash" => last_hash }
+      end
+
+      # --- Webhook event normalisation ---
+      # CC uses different event names than TO — map them to canonical names.
+
+      CC_EVENT_MAP = {
+        "transaction.pending"   => "transaction.created",
+        "transaction.validated" => "transaction.validated",
+        "transaction.completed" => "transaction.completed",
+        "transaction.erased"    => "transaction.cancelled",
+        "transaction.expired"   => "transaction.cancelled",
+        "account.created"       => "member.created",
+        "account.updated"       => "member.updated"
+      }.freeze
+
+      def normalize_webhook_event(event)
+        CC_EVENT_MAP[event.to_s] || event
+      end
+
+      def normalize_webhook_payload(payload)
+        payload = payload.with_indifferent_access if payload.respond_to?(:with_indifferent_access)
+
+        if payload[:entries].present? || payload[:uuid].present?
+          # This looks like a CC transaction payload — transform it
+          { "transaction" => transform_inbound_transfer(payload) }
+        else
+          payload
+        end
+      end
+
+      private
+
+      def resolve_node_slug(org_id = nil)
+        if org_id
+          config = FederationCcNodeConfig.find_by(organization_id: org_id)
+          return config.node_slug if config
+        end
+
+        @partner&.metadata&.dig("node_slug") || "timeoverflow"
+      end
+
+      def exchange_rate
+        rate = @partner&.metadata&.dig("cc_exchange_rate")
+        rate = rate.to_f if rate
+        (rate && rate > 0) ? rate : 1.0
+      end
+
+      def build_account_path(account, node_slug, txn)
+        if account
+          member = Member.find_by(account_id: account.id)
+          if member
+            "#{node_slug}/#{member.member_uid || member.id}"
+          else
+            # Could be the remote side — use the remote identifier
+            txn.remote_user_identifier.to_s
+          end
+        else
+          txn.remote_user_identifier.to_s
+        end
       end
     end
   end

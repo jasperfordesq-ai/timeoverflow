@@ -34,7 +34,26 @@ module Federation
     # fed_txn_id is optional — only passed for outbound "transaction.requested"
     def perform(partner_id, event, payload, fed_txn_id = nil)
       partner = FederationPartner.find(partner_id)
-      return unless partner.active? && partner.webhook_url.present?
+
+      unless partner.active?
+        Rails.logger.warn("[Federation::WebhookDelivery] Partner #{partner_id} is #{partner.status}; dropping #{event} webhook")
+        # For outbound transactions, mark disputed so it's visible instead of silently pending
+        if fed_txn_id && event == "transaction.requested"
+          fed_txn = FederationTransaction.find_by(id: fed_txn_id)
+          if fed_txn&.pending?
+            fed_txn.update!(
+              status: "disputed",
+              metadata: (fed_txn.metadata || {}).merge(
+                "dispute_reason" => "Partner deactivated before webhook delivery",
+                "disputed_at" => Time.current.iso8601
+              )
+            )
+          end
+        end
+        return
+      end
+
+      return unless partner.webhook_url.present?
 
       WebhookSender.send_now(
         partner: partner,

@@ -25,8 +25,14 @@ module FederationAdmin
     end
 
     def reconcile
-      Federation::ReconciliationJob.perform_later
-      flash[:notice] = "Reconciliation job queued. Results will appear in the server logs."
+      cache_key = "federation_reconciliation_throttle"
+      if Rails.cache.exist?(cache_key)
+        flash[:alert] = "Reconciliation was already queued recently. Please wait 5 minutes."
+      else
+        Federation::ReconciliationJob.perform_later
+        Rails.cache.write(cache_key, true, expires_in: 5.minutes)
+        flash[:notice] = "Reconciliation job queued. Results will appear in the server logs."
+      end
       redirect_to federation_admin_root_path
     end
   end

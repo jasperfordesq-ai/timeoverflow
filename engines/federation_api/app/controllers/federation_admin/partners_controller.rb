@@ -116,9 +116,16 @@ module FederationAdmin
     # POST /federation-admin/partners/:id/regenerate_secret
     def regenerate_secret
       @partner = FederationPartner.find(params[:id])
+      old_secret = @partner.webhook_secret
       new_secret = SecureRandom.hex(32)
-      @partner.update_column(:webhook_secret, new_secret)
-      flash[:notice] = "Webhook secret regenerated for #{@partner.name}. New secret is visible on the partner detail page."
+      @partner.update!(
+        webhook_secret: new_secret,
+        metadata: (@partner.metadata || {}).merge(
+          "previous_webhook_secret" => old_secret,
+          "secret_rotated_at" => Time.current.iso8601
+        )
+      )
+      flash[:notice] = "Webhook secret regenerated for #{@partner.name}. The partner must update their configuration immediately."
       redirect_to federation_admin_partner_path(@partner)
     end
 

@@ -25,6 +25,16 @@ module FederationUi
         params[:amount].to_i
       end
 
+      # Validate amount limits (matches API endpoint behaviour)
+      if amount_seconds <= 0
+        return respond_with_error("Amount must be positive", status: :unprocessable_entity)
+      end
+      max_amount = Rails.application.config.federation.max_transfer_amount
+      max_amount = 360_000 if max_amount <= 0
+      if amount_seconds > max_amount
+        return respond_with_error("Amount exceeds maximum (#{max_amount} seconds / #{(max_amount / 3600.0).round(1)} hours)", status: :unprocessable_entity)
+      end
+
       handler = Federation::TransferHandler.new(partner: partner)
       fed_txn = handler.initiate_outbound(
         local_account: current_member.account,

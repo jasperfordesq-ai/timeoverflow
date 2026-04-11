@@ -24,9 +24,9 @@ module FederationApi
     initializer "federation_api.configuration", before: :load_config_initializers do |app|
       app.config.federation = ActiveSupport::OrderedOptions.new
       app.config.federation.enabled       = ENV.fetch("FEDERATION_ENABLED", "false") == "true"
-      app.config.federation.webhook_timeout    = ENV.fetch("FEDERATION_WEBHOOK_TIMEOUT", "10").to_i
-      app.config.federation.max_transfer_amount = ENV.fetch("FEDERATION_MAX_TRANSFER_AMOUNT", "0").to_i
-      app.config.federation.rate_limit          = ENV.fetch("FEDERATION_RATE_LIMIT", "100").to_i
+      app.config.federation.webhook_timeout    = [ENV.fetch("FEDERATION_WEBHOOK_TIMEOUT", "10").to_i, 1].max
+      app.config.federation.max_transfer_amount = [ENV.fetch("FEDERATION_MAX_TRANSFER_AMOUNT", "360000").to_i, 0].max
+      app.config.federation.rate_limit          = [ENV.fetch("FEDERATION_RATE_LIMIT", "100").to_i, 1].max
     end
 
     # --- Devise-i18n compatibility ----------------------------------

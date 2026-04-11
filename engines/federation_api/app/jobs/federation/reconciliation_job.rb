@@ -97,7 +97,8 @@ module Federation
       end
 
       # Check 3: Stale pending transactions (two thresholds — see constants above)
-      stale = FederationTransaction.pending.where("created_at < ?", STALE_WARNING_TIMEOUT.ago)
+      # Use Time.now.utc explicitly to avoid timezone mismatch with DB timestamps
+      stale = FederationTransaction.pending.where("created_at < ?", Time.now.utc - STALE_WARNING_TIMEOUT)
       if stale.any?
         issues << {
           type: "stale_pending",
@@ -109,7 +110,7 @@ module Federation
         }
 
         # Auto-cancel and reverse transactions older than REVERSAL_TIMEOUT
-        very_stale = stale.where("created_at < ?", REVERSAL_TIMEOUT.ago)
+        very_stale = stale.where("created_at < ?", Time.now.utc - REVERSAL_TIMEOUT)
         very_stale.find_each do |txn|
           begin
             ActiveRecord::Base.transaction do

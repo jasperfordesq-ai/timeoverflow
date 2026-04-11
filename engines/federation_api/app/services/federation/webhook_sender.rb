@@ -58,10 +58,14 @@ module Federation
         http.read_timeout = TIMEOUT
         http.write_timeout = TIMEOUT if http.respond_to?(:write_timeout=)
 
+        timestamp = Time.current.to_i.to_s
+
         request = Net::HTTP::Post.new(uri.request_uri)
         request["Content-Type"] = "application/json"
         request["X-Webhook-Signature"] = signature
         request["X-Federation-Signature"] = signature
+        request["X-Webhook-Timestamp"] = timestamp
+        request["X-Federation-Timestamp"] = timestamp
         request["X-Webhook-Event"] = @event
         request["User-Agent"] = "TimeOverflow-Federation/1.0"
         request.body = body

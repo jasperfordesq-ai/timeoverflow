@@ -47,8 +47,22 @@ module Federation
     end
 
     # Health check the partner.
+    # Tries the standard /health endpoint first. If that fails (404),
+    # falls back to sending a health_check event to the webhook receiver,
+    # which Nexus and other partners support.
     def health_check
-      get(@adapter.map_endpoint("health"))
+      result = get(@adapter.map_endpoint("health"))
+      if result["success"] == false && result["error"]&.include?("404")
+        # Fallback: POST health_check event to the webhook/receive endpoint
+        post(@adapter.map_endpoint("receive"), {
+          event: "health_check",
+          timestamp: Time.current.iso8601,
+          platform: "timeoverflow",
+          data: {}
+        })
+      else
+        result
+      end
     end
 
     # Send a message to the partner's API.

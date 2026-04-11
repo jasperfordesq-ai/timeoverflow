@@ -77,6 +77,7 @@ module FederationAdmin
       @partner.update!(
         name: params[:name],
         platform_type: params[:platform_type],
+        protocol_type: params[:protocol_type] || @partner.protocol_type,
         api_endpoint: params[:api_endpoint],
         webhook_url: params[:webhook_url],
         status: params[:status],

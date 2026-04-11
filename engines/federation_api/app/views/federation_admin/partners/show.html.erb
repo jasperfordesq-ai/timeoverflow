@@ -67,6 +67,14 @@
       <dd class="mt-1 text-sm text-gray-900 capitalize"><%= @partner.platform_type %></dd>
     </div>
     <div>
+      <dt class="text-sm font-medium text-gray-500">Protocol Type</dt>
+      <dd class="mt-1">
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-federation-100 text-federation-800">
+          <%= Federation::Adapters.protocol_labels[@partner.protocol_type] || @partner.protocol_type %>
+        </span>
+      </dd>
+    </div>
+    <div>
       <dt class="text-sm font-medium text-gray-500">API Endpoint</dt>
       <dd class="mt-1 text-sm font-mono text-gray-900 break-all"><%= @partner.api_endpoint %></dd>
     </div>

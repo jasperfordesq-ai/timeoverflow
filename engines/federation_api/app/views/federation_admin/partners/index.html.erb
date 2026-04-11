@@ -20,6 +20,7 @@
         <tr>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Protocol</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endpoint</th>
@@ -33,6 +34,11 @@
           <tr class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= partner.name %></td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize"><%= partner.platform_type %></td>
+            <td class="px-6 py-4 whitespace-nowrap text-xs">
+              <span class="inline-flex items-center rounded-full px-2 py-0.5 font-medium bg-federation-50 text-federation-700">
+                <%= partner.protocol_type&.upcase || "REST" %>
+              </span>
+            </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <% status_colors = { "active" => "bg-green-100 text-green-800", "pending" => "bg-yellow-100 text-yellow-800", "suspended" => "bg-red-100 text-red-800", "terminated" => "bg-gray-100 text-gray-600" } %>
               <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= status_colors[partner.status] || 'bg-gray-100 text-gray-600' %>">

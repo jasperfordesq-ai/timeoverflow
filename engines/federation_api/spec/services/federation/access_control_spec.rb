@@ -654,6 +654,8 @@ RSpec.describe Federation::AccessControl, type: :service do
     let!(:member2) { Member.create!(user: user2, organization: organization) }
 
     before do
+      # Org must have federation_enabled and share_member_profiles for discoverable to work
+      configure_org!(federation_enabled: true, share_member_profiles: true)
       # member1: opted in + discoverable
       FederationMemberPreference.for(member).update!(opted_in: true, discoverable: true)
       # member2: opted in but NOT discoverable
@@ -665,6 +667,20 @@ RSpec.describe Federation::AccessControl, type: :service do
 
       expect(ids).to include(member.id)
       expect(ids).not_to include(member2.id)
+    end
+
+    it "returns empty array when org does not share member profiles" do
+      configure_org!(federation_enabled: true, share_member_profiles: false)
+
+      ids = described_class.discoverable_member_ids(organization)
+      expect(ids).to be_empty
+    end
+
+    it "returns empty array when org federation is disabled" do
+      configure_org!(federation_enabled: false, share_member_profiles: true)
+
+      ids = described_class.discoverable_member_ids(organization)
+      expect(ids).to be_empty
     end
   end
 

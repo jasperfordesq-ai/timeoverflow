@@ -17,54 +17,80 @@ RSpec.describe Federation::Adapters::JsonApiAdapter do
   end
 
   describe "#map_endpoint" do
-    it "maps accounts with code" do
-      expect(adapter.map_endpoint("accounts", code: "TESTBANK")).to eq("/TESTBANK/accounts")
+    before do
+      partner.update!(metadata: (partner.metadata || {}).merge("currency_code" => "TESTBANK"))
     end
 
-    it "maps transfers with code" do
-      expect(adapter.map_endpoint("transfers", code: "TESTBANK")).to eq("/TESTBANK/transfers")
+    it "maps accounts with currency_code from partner metadata" do
+      expect(adapter.map_endpoint("accounts")).to eq("/TESTBANK/accounts")
     end
 
-    it "maps members with code" do
-      expect(adapter.map_endpoint("members", code: "TESTBANK")).to eq("/TESTBANK/members")
+    it "maps transfers with currency_code from partner metadata" do
+      expect(adapter.map_endpoint("transfers")).to eq("/TESTBANK/transfers")
+    end
+
+    it "maps members with currency_code from partner metadata" do
+      expect(adapter.map_endpoint("members")).to eq("/TESTBANK/accounts")
     end
   end
 
   describe "#transform_outbound_transfer" do
-    it "converts seconds to minor units" do
+    it "converts seconds to minor units in JSON:API document" do
       data = { "amount" => 3600 }
       result = adapter.transform_outbound_transfer(data)
-      expect(result["amount"]).to eq(100)
+      # Returns a JSON:API document: { data: { type: "transfers", id: ..., attributes: { amount: 100, ... } } }
+      expect(result[:data][:attributes][:amount]).to eq(100)
     end
 
-    it "converts 7200 seconds to 200 minor units" do
+    it "converts 7200 seconds to 200 minor units in JSON:API document" do
       data = { "amount" => 7200 }
       result = adapter.transform_outbound_transfer(data)
-      expect(result["amount"]).to eq(200)
+      expect(result[:data][:attributes][:amount]).to eq(200)
     end
   end
 
   describe "#transform_inbound_transfer" do
     it "converts minor units to seconds" do
-      data = { "amount" => 100 }
+      # Wrap in JSON:API document format for deserialization
+      data = {
+        "data" => {
+          "type" => "transfers", "id" => "t1",
+          "attributes" => { "amount" => 100, "state" => "new" }
+        }
+      }
       result = adapter.transform_inbound_transfer(data)
       expect(result["amount"]).to eq(3600)
     end
 
     it "maps state 'new' to 'pending'" do
-      data = { "amount" => 100, "state" => "new" }
+      data = {
+        "data" => {
+          "type" => "transfers", "id" => "t1",
+          "attributes" => { "amount" => 100, "state" => "new" }
+        }
+      }
       result = adapter.transform_inbound_transfer(data)
       expect(result["state"]).to eq("pending")
     end
 
     it "maps state 'committed' to 'completed'" do
-      data = { "amount" => 100, "state" => "committed" }
+      data = {
+        "data" => {
+          "type" => "transfers", "id" => "t1",
+          "attributes" => { "amount" => 100, "state" => "committed" }
+        }
+      }
       result = adapter.transform_inbound_transfer(data)
       expect(result["state"]).to eq("completed")
     end
 
     it "maps state 'rejected' to 'cancelled'" do
-      data = { "amount" => 100, "state" => "rejected" }
+      data = {
+        "data" => {
+          "type" => "transfers", "id" => "t1",
+          "attributes" => { "amount" => 100, "state" => "rejected" }
+        }
+      }
       result = adapter.transform_inbound_transfer(data)
       expect(result["state"]).to eq("cancelled")
     end
@@ -72,6 +98,7 @@ RSpec.describe Federation::Adapters::JsonApiAdapter do
 
   describe "#transform_inbound_member" do
     it "extracts from JSON:API format" do
+      # The method calls wrap_if_raw, which wraps { "attributes" => ... } in { "data" => ... }
       data = {
         "type" => "members",
         "id" => "abc-123",
@@ -109,7 +136,7 @@ RSpec.describe Federation::Adapters::JsonApiAdapter do
 
   describe "#serialize_response" do
     it "wraps as JSON:API document" do
-      result = adapter.serialize_response({ id: 1, name: "Test" }, type: "members")
+      result = adapter.serialize_response({ id: 1, name: "Test" }, resource_type: "members")
       expect(result).to have_key(:data)
     end
   end
@@ -127,9 +154,16 @@ RSpec.describe Federation::Adapters::JsonApiAdapter do
   describe "amount round-trip" do
     it "converts 3600 seconds → 100 minor units → 3600 seconds" do
       outbound = adapter.transform_outbound_transfer({ "amount" => 3600 })
-      expect(outbound["amount"]).to eq(100)
+      minor_units = outbound[:data][:attributes][:amount]
+      expect(minor_units).to eq(100)
 
-      inbound = adapter.transform_inbound_transfer({ "amount" => outbound["amount"] })
+      inbound_doc = {
+        "data" => {
+          "type" => "transfers", "id" => "t1",
+          "attributes" => { "amount" => minor_units, "state" => "new" }
+        }
+      }
+      inbound = adapter.transform_inbound_transfer(inbound_doc)
       expect(inbound["amount"]).to eq(3600)
     end
   end

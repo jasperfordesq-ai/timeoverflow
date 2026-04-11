@@ -17,7 +17,12 @@ RSpec.describe Api::V1::MembersController, type: :controller do
 
   before do
     request.headers["X-Federation-Api-Key"] = raw_key
-    FederationOrganizationSetting.for(organization).update!(federation_enabled: true)
+    FederationOrganizationSetting.for(organization).update!(
+      federation_enabled: true,
+      share_member_profiles: true
+    )
+    # Member must be opted in and discoverable to appear in federation API
+    FederationMemberPreference.for(member).update!(opted_in: true, discoverable: true)
   end
 
   describe "GET #index" do

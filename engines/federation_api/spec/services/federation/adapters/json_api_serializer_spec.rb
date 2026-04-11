@@ -16,12 +16,15 @@ RSpec.describe Federation::Adapters::JsonApiSerializer do
   describe ".serialize_collection" do
     it "wraps array as { data: [{...}], meta: {} }" do
       items = [
-        { type: "members", id: "1", attributes: { name: "Alice" } },
-        { type: "members", id: "2", attributes: { name: "Bob" } }
+        { id: "1", name: "Alice" },
+        { id: "2", name: "Bob" }
       ]
-      result = serializer.serialize_collection(items, meta: { total: 2 })
+      result = serializer.serialize_collection("members", items, meta: { total: 2 })
       expect(result[:data]).to be_an(Array)
       expect(result[:data].length).to eq(2)
+      expect(result[:data].first[:type]).to eq("members")
+      expect(result[:data].first[:id]).to eq("1")
+      expect(result[:data].first[:attributes][:name]).to eq("Alice")
       expect(result[:meta][:total]).to eq(2)
     end
   end

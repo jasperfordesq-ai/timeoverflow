@@ -27,6 +27,8 @@ RSpec.describe Api::V1::OffersController, type: :controller do
   before do
     request.headers["X-Federation-Api-Key"] = raw_key
     FederationOrganizationSetting.for(organization).update!(federation_enabled: true)
+    # Member must be opted in for their offers to be visible via federation
+    FederationMemberPreference.for(member).update!(opted_in: true)
   end
 
   describe "GET #index" do

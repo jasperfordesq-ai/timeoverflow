@@ -690,10 +690,11 @@ RSpec.describe FederationAdmin::MemberPreferencesController, type: :controller d
     context "when superadmin" do
       before { sign_in_superadmin(superadmin_user) }
 
-      it "returns 200 and lists preferences" do
+      it "returns 200 and lists members with preferences" do
         get :index
         expect(response).to have_http_status(:ok)
-        expect(assigns(:preferences)).to include(preference)
+        expect(assigns(:members)).to include(member)
+        expect(assigns(:prefs_by_member)).to be_a(Hash)
       end
     end
 
@@ -710,10 +711,11 @@ RSpec.describe FederationAdmin::MemberPreferencesController, type: :controller d
   describe "GET #show" do
     before { sign_in_superadmin(superadmin_user) }
 
-    it "returns 200 and loads the preference" do
-      get :show, params: { id: preference.id }
+    it "returns 200 and loads the member and preference" do
+      get :show, params: { id: member.id }
       expect(response).to have_http_status(:ok)
-      expect(assigns(:preference)).to eq(preference)
+      expect(assigns(:member)).to eq(member)
+      expect(assigns(:preference)).to be_a(FederationMemberPreference)
     end
   end
 
@@ -721,7 +723,7 @@ RSpec.describe FederationAdmin::MemberPreferencesController, type: :controller d
     before { sign_in_superadmin(superadmin_user) }
 
     it "updates opted_in and tracks opted_in_at timestamp" do
-      patch :update, params: { id: preference.id, opted_in: "1" }
+      patch :update, params: { id: member.id, opted_in: "1" }
       expect(response).to redirect_to(federation_admin_member_preferences_path)
 
       preference.reload
@@ -733,7 +735,7 @@ RSpec.describe FederationAdmin::MemberPreferencesController, type: :controller d
     it "tracks opted_out_at when opting out" do
       preference.update!(opted_in: true, opted_in_at: 1.day.ago)
 
-      patch :update, params: { id: preference.id, opted_in: "0" }
+      patch :update, params: { id: member.id, opted_in: "0" }
       preference.reload
       expect(preference.opted_in).to eq(false)
       expect(preference.opted_out_at).not_to be_nil
@@ -741,7 +743,7 @@ RSpec.describe FederationAdmin::MemberPreferencesController, type: :controller d
 
     it "updates blocked_partner_ids" do
       patch :update, params: {
-        id: preference.id,
+        id: member.id,
         blocked_partner_ids: [partner.id.to_s]
       }
       expect(preference.reload.blocked_partner_ids).to include(partner.id)

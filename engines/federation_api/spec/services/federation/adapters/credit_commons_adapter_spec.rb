@@ -17,8 +17,8 @@ RSpec.describe Federation::Adapters::CreditCommonsAdapter do
       expect(adapter.map_endpoint("accounts")).to eq("/accounts")
     end
 
-    it "maps transaction to /transaction" do
-      expect(adapter.map_endpoint("transaction")).to eq("/transaction")
+    it "maps transfers to /transactions" do
+      expect(adapter.map_endpoint("transfers")).to eq("/transactions")
     end
 
     it "maps entries to /entries" do
@@ -63,28 +63,46 @@ RSpec.describe Federation::Adapters::CreditCommonsAdapter do
   describe "state mapping" do
     it "maps to CC state" do
       expect(adapter.to_cc_state("pending")).to eq("P")
-      expect(adapter.to_cc_state("validated")).to eq("V")
       expect(adapter.to_cc_state("completed")).to eq("C")
-      expect(adapter.to_cc_state("erased")).to eq("E")
+      expect(adapter.to_cc_state("cancelled")).to eq("E")
     end
 
     it "maps from CC state" do
       expect(adapter.from_cc_state("P")).to eq("pending")
-      expect(adapter.from_cc_state("V")).to eq("validated")
+      expect(adapter.from_cc_state("V")).to eq("pending")
       expect(adapter.from_cc_state("C")).to eq("completed")
-      expect(adapter.from_cc_state("E")).to eq("erased")
+      expect(adapter.from_cc_state("E")).to eq("cancelled")
+      expect(adapter.from_cc_state("X")).to eq("cancelled")
     end
 
-    it "round-trips state mapping" do
-      %w[pending validated completed erased].each do |state|
+    it "round-trips state mapping for supported states" do
+      # Only states in REVERSE_STATES round-trip cleanly
+      %w[pending completed cancelled].each do |state|
         expect(adapter.from_cc_state(adapter.to_cc_state(state))).to eq(state)
       end
     end
   end
 
   describe "#to_account_path" do
-    it "builds node/username format" do
-      expect(adapter.to_account_path("mynode", "alice")).to eq("mynode/alice")
+    it "builds node_slug/username format from a member object" do
+      # resolve_node_slug falls back to partner.metadata["node_slug"] or "timeoverflow"
+      partner.update!(metadata: (partner.metadata || {}).merge("node_slug" => "mynode"))
+      member = double("Member", member_uid: "alice", id: 1)
+      expect(adapter.to_account_path(member)).to eq("mynode/alice")
+    end
+
+    it "uses 'timeoverflow' as default node slug" do
+      member = double("Member", member_uid: "bob", id: 2)
+      expect(adapter.to_account_path(member)).to eq("timeoverflow/bob")
+    end
+
+    it "falls back to member.id when member_uid is nil" do
+      member = double("Member", member_uid: nil, id: 99)
+      expect(adapter.to_account_path(member)).to eq("timeoverflow/99")
+    end
+
+    it "handles a plain string argument" do
+      expect(adapter.to_account_path("alice")).to eq("timeoverflow/alice")
     end
   end
 
@@ -117,21 +135,34 @@ RSpec.describe Federation::Adapters::CreditCommonsAdapter do
   end
 
   describe "#generate_entries" do
-    it "returns valid CC entry format with payer/payee/quant" do
-      entries = adapter.generate_entries(
-        payer: "node/alice",
-        payee: "node/bob",
-        quant: 1.0,
-        description: "Test service"
+    it "returns valid CC entry format from a FederationTransaction (no transfer)" do
+      txn = double("FederationTransaction",
+        transfer: nil,
+        organization_id: nil,
+        local_account_id: 42,
+        remote_user_identifier: "node/bob",
+        external_transaction_id: "uuid-123",
+        amount: 3600,
+        outbound?: true,
+        metadata: { "reason" => "Test service" }
       )
+
+      partner.update!(metadata: (partner.metadata || {}).merge("node_slug" => "node"))
+
+      entries = adapter.generate_entries(txn)
       expect(entries).to be_an(Array)
-      expect(entries.length).to be >= 1
+      expect(entries.length).to eq(1)
 
       entry = entries.first
-      expect(entry[:payer]).to eq("node/alice")
+      expect(entry[:payer]).to eq("node/42")
       expect(entry[:payee]).to eq("node/bob")
       expect(entry[:quant]).to eq(1.0)
       expect(entry[:description]).to eq("Test service")
+      expect(entry[:uuid]).to eq("uuid-123")
+    end
+
+    it "returns empty array for nil input" do
+      expect(adapter.generate_entries(nil)).to eq([])
     end
   end
 end

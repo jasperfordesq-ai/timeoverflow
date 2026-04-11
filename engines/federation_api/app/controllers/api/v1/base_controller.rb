@@ -56,11 +56,11 @@ module Api
       # Resolve organization. If the API key is scoped to an org, enforce it.
       # If the key is global (no org), allow params[:organization_id] as a filter.
       def current_organization
-        @current_organization ||= if @current_api_key.organization
+        @current_organization ||= if @current_api_key&.organization
           # Key is org-specific — ignore params, enforce the key's org
           @current_api_key.organization
         else
-          # Global key — allow org selection via param
+          # Global key or no key (public endpoints) — allow org selection via param
           Organization.find_by(id: params[:organization_id])
         end
       end

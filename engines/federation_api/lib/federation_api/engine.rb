@@ -96,7 +96,7 @@ module FederationApi
           end
           resources :messages, only: [:index, :show]
           resources :org_settings, only: [:index, :edit, :update]
-          resources :member_preferences, only: [:index, :show, :update]
+          resources :member_preferences, only: [:index, :show, :update, :create]
           resources :activity, only: [:index]
         end
 

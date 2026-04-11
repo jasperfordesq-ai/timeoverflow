@@ -3,7 +3,19 @@
 <div class="sm:flex sm:items-center sm:justify-between mb-8">
   <div>
     <h1 class="text-2xl font-bold text-gray-900">Member Federation Preferences</h1>
-    <p class="mt-1 text-sm text-gray-500"><%= @total_count %> total preference<%= @total_count == 1 ? '' : 's' %></p>
+    <p class="mt-1 text-sm text-gray-500">
+      <%= @opted_in_count %> of <%= @total_member_count %> active members opted in to federation
+    </p>
+  </div>
+  <div class="mt-4 sm:mt-0">
+    <form method="post" action="<%= federation_admin_member_preferences_path(action_type: "bulk_opt_in") %>">
+      <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+      <input type="hidden" name="organization_id" value="<%= params[:organization_id] %>">
+      <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 transition-colors"
+              onclick="return confirm('Opt in ALL members<%= params[:organization_id].present? ? ' in this organization' : '' %> to federation? They can be individually opted out later.')">
+        Opt In All
+      </button>
+    </form>
   </div>
 </div>
 
@@ -22,12 +34,12 @@
     </div>
 
     <div>
-      <label for="opted_in" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Opted In</label>
+      <label for="opted_in" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Status</label>
       <select name="opted_in" id="opted_in" onchange="this.form.submit()"
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
-        <option value="">All</option>
-        <option value="true" <%= params[:opted_in] == 'true' ? 'selected' : '' %>>Yes</option>
-        <option value="false" <%= params[:opted_in] == 'false' ? 'selected' : '' %>>No</option>
+        <option value="">All Members</option>
+        <option value="true" <%= params[:opted_in] == 'true' ? 'selected' : '' %>>Opted In</option>
+        <option value="false" <%= params[:opted_in] == 'false' ? 'selected' : '' %>>Not Opted In</option>
       </select>
     </div>
 
@@ -44,78 +56,60 @@
 
 <!-- Table -->
 <div class="bg-white shadow rounded-lg overflow-hidden">
-  <% if @preferences.any? %>
+  <% if @members.any? %>
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member ID</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Org ID</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opted In</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discoverable</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Share Profile</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Share Listings</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inbound</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Outbound</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated At</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Federation Status</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Discoverable</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Profile</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Listings</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Transfers In</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Transfers Out</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <% @preferences.each do |pref| %>
-            <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap font-mono"><%= pref.member_id %></td>
-              <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                <%= pref.member&.user&.username rescue "—" %>
+          <% @members.each do |member| %>
+            <% pref = @prefs_by_member[member.id] %>
+            <% has_pref = pref.present? %>
+            <% opted_in = has_pref && pref.opted_in? %>
+            <tr class="hover:bg-gray-50 <%= opted_in ? '' : 'bg-gray-50/50' %>">
+              <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex items-center gap-2">
+                  <div>
+                    <div class="text-sm font-medium text-gray-900"><%= member.user&.username || "—" %></div>
+                    <div class="text-xs text-gray-400 font-mono">ID: <%= member.id %></div>
+                  </div>
+                </div>
               </td>
-              <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap"><%= pref.organization_id %></td>
-              <td class="px-4 py-3 text-sm whitespace-nowrap">
-                <% if pref.opted_in? %>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Yes</span>
+              <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap"><%= member.organization&.name %></td>
+              <td class="px-4 py-3 text-center whitespace-nowrap">
+                <% if opted_in %>
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Opted In</span>
+                <% elsif has_pref %>
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800">Opted Out</span>
                 <% else %>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800">No</span>
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-500">No Preference</span>
                 <% end %>
               </td>
+              <% if has_pref %>
+                <td class="px-4 py-3 text-center"><%= pref.discoverable? ? tag.span("Yes", class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800") : tag.span("No", class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600") %></td>
+                <td class="px-4 py-3 text-center"><%= pref.share_profile ? tag.span("Yes", class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800") : tag.span("No", class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600") %></td>
+                <td class="px-4 py-3 text-center"><%= pref.share_listings ? tag.span("Yes", class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800") : tag.span("No", class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600") %></td>
+                <td class="px-4 py-3 text-center"><%= pref.allow_inbound_transfers ? tag.span("Yes", class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800") : tag.span("No", class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600") %></td>
+                <td class="px-4 py-3 text-center"><%= pref.allow_outbound_transfers ? tag.span("Yes", class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800") : tag.span("No", class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600") %></td>
+              <% else %>
+                <td class="px-4 py-3 text-center text-xs text-gray-400" colspan="5">—</td>
+              <% end %>
               <td class="px-4 py-3 text-sm whitespace-nowrap">
-                <% if pref.discoverable? %>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Yes</span>
-                <% else %>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">No</span>
-                <% end %>
-              </td>
-              <td class="px-4 py-3 text-sm whitespace-nowrap">
-                <% if pref.share_profile %>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Yes</span>
-                <% else %>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">No</span>
-                <% end %>
-              </td>
-              <td class="px-4 py-3 text-sm whitespace-nowrap">
-                <% if pref.share_listings %>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Yes</span>
-                <% else %>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">No</span>
-                <% end %>
-              </td>
-              <td class="px-4 py-3 text-sm whitespace-nowrap">
-                <% if pref.allow_inbound_transfers %>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Yes</span>
-                <% else %>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">No</span>
-                <% end %>
-              </td>
-              <td class="px-4 py-3 text-sm whitespace-nowrap">
-                <% if pref.allow_outbound_transfers %>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Yes</span>
-                <% else %>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">No</span>
-                <% end %>
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap"><%= pref.updated_at.strftime("%Y-%m-%d %H:%M") %></td>
-              <td class="px-4 py-3 text-sm whitespace-nowrap">
-                <a href="<%= federation_admin_member_preference_path(pref) %>"
-                   class="text-federation-600 hover:text-federation-900 font-medium">View / Edit</a>
+                <a href="<%= federation_admin_member_preference_path(member) %>"
+                   class="text-federation-600 hover:text-federation-900 font-medium">
+                  <%= has_pref ? "Edit" : "Configure" %>
+                </a>
               </td>
             </tr>
           <% end %>
@@ -124,31 +118,19 @@
     </div>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3 mt-4">
+    <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3">
       <div class="text-sm text-gray-700">
-        Page <span class="font-medium"><%= @current_page %></span> of <span class="font-medium"><%= @total_pages %></span>
+        Showing <span class="font-medium"><%= @total_count %></span> members &middot;
+        Page <span class="font-medium"><%= @current_page %></span> of <span class="font-medium"><%= [@total_pages, 1].max %></span>
       </div>
       <div class="flex space-x-2">
         <% if @current_page > 1 %>
           <a href="<%= federation_admin_member_preferences_path(request.query_parameters.merge(page: @current_page - 1)) %>"
-             class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            Previous
-          </a>
-        <% else %>
-          <span class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 opacity-50 cursor-not-allowed">
-            Previous
-          </span>
+             class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</a>
         <% end %>
-
         <% if @current_page < @total_pages %>
           <a href="<%= federation_admin_member_preferences_path(request.query_parameters.merge(page: @current_page + 1)) %>"
-             class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            Next
-          </a>
-        <% else %>
-          <span class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 opacity-50 cursor-not-allowed">
-            Next
-          </span>
+             class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Next</a>
         <% end %>
       </div>
     </div>
@@ -157,8 +139,8 @@
       <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-1.997M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
       </svg>
-      <h3 class="mt-2 text-sm font-semibold text-gray-900">No member preferences found</h3>
-      <p class="mt-1 text-sm text-gray-500">Members will appear here once they interact with federation settings.</p>
+      <h3 class="mt-2 text-sm font-semibold text-gray-900">No active members found</h3>
+      <p class="mt-1 text-sm text-gray-500">There are no active members matching your filters.</p>
     </div>
   <% end %>
 </div>

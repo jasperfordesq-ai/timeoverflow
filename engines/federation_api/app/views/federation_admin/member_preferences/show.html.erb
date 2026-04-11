@@ -1,19 +1,18 @@
-<% content_for(:title, "Member Preference ##{@preference.id}") %>
+<% content_for(:title, "Member: #{@member&.user&.username || "Member ##{@member.id}"}") %>
 
 <div class="mb-6">
   <a href="<%= federation_admin_member_preferences_path %>" class="text-sm text-federation-600 hover:text-federation-800">
-    &larr; Back to Member Preferences
+    &larr; Back to All Members
   </a>
 </div>
 
 <div class="sm:flex sm:items-center sm:justify-between mb-8">
   <div>
-    <h1 class="text-2xl font-bold text-gray-900">Member Preference #<%= @preference.id %></h1>
+    <h1 class="text-2xl font-bold text-gray-900"><%= @member.user&.username || "Member ##{@member.id}" %></h1>
     <p class="mt-1 text-sm text-gray-500">
-      Member #<%= @preference.member_id %>
-      <% username = (@member&.user&.username rescue nil) %>
-      <% if username.present? %>
-        &mdash; <span class="font-medium text-gray-700"><%= username %></span>
+      Member #<%= @member.id %> &middot; <%= @member.organization&.name %>
+      <% if @preference.new_record? %>
+        <span class="ml-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">No preference set yet</span>
       <% end %>
     </p>
   </div>
@@ -112,11 +111,11 @@
       </div>
       <div>
         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @preference.created_at.strftime("%Y-%m-%d %H:%M UTC") %></dd>
+        <dd class="mt-1 text-sm text-gray-900"><%= @preference.created_at&.strftime("%Y-%m-%d %H:%M UTC") || "—" %></dd>
       </div>
       <div>
         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Updated At</dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @preference.updated_at.strftime("%Y-%m-%d %H:%M UTC") %></dd>
+        <dd class="mt-1 text-sm text-gray-900"><%= @preference.updated_at&.strftime("%Y-%m-%d %H:%M UTC") || "—" %></dd>
       </div>
     </dl>
   </div>
@@ -129,7 +128,7 @@
     <p class="mt-1 text-sm text-gray-500">Update this member's federation preferences. Changes take effect immediately.</p>
   </div>
   <div class="px-6 py-5">
-    <form action="<%= federation_admin_member_preference_path(@preference) %>" method="post">
+    <form action="<%= federation_admin_member_preference_path(@member) %>" method="post">
       <input type="hidden" name="_method" value="patch">
       <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
 

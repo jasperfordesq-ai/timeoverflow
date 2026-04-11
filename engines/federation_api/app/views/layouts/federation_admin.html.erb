@@ -51,7 +51,8 @@
               [federation_admin_webhook_logs_path, "Webhooks"],
               [federation_admin_org_settings_path, "Orgs"],
               [federation_admin_member_preferences_path, "Members"],
-              [federation_admin_activity_index_path, "Activity"]
+              [federation_admin_activity_index_path, "Activity"],
+              [federation_admin_cc_config_index_path, "CC Config"]
             ] %>
             <% nav_items.each do |path, label| %>
               <% is_active = (path == federation_admin_root_path) ? (request.path == path) : request.path.start_with?(path) %>

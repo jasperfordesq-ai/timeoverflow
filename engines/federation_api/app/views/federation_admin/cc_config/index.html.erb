@@ -1,0 +1,82 @@
+<% content_for(:title, "Credit Commons Node Configuration") %>
+
+<div class="mb-8">
+  <h1 class="text-2xl font-bold text-gray-900">Credit Commons Node Configuration</h1>
+  <p class="mt-1 text-sm text-gray-500">Configure this TimeOverflow instance as a Credit Commons network node.</p>
+</div>
+
+<div class="bg-white shadow rounded-lg p-6 max-w-2xl">
+  <form action="<%= federation_admin_cc_config_index_path %>" method="post">
+    <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+    <input type="hidden" name="_method" value="patch">
+
+    <div class="space-y-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Node Slug</label>
+        <input type="text" name="node_slug" value="<%= @config.node_slug %>" required
+               pattern="[0-9a-z-]{3,15}"
+               class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
+        <p class="mt-1 text-xs text-gray-400">3-15 lowercase alphanumeric or hyphen characters. This identifies your node in the CC network.</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Currency Format</label>
+        <input type="text" name="currency_format" value="<%= @config.currency_format %>"
+               class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
+        <p class="mt-1 text-xs text-gray-400">Display format for amounts. Use %s for the number (e.g., "%s hours").</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Exchange Rate</label>
+        <input type="number" name="exchange_rate" value="<%= @config.exchange_rate %>" step="0.0001" min="0.01"
+               class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
+        <p class="mt-1 text-xs text-gray-400">Exchange rate to parent node currency. 1.0 means 1:1.</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Validated Window (seconds)</label>
+        <input type="number" name="validated_window" value="<%= @config.validated_window %>" min="30" max="86400"
+               class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
+        <p class="mt-1 text-xs text-gray-400">How long validated transactions remain valid before expiring (30-86400 seconds).</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Parent Node URL (optional)</label>
+        <input type="url" name="parent_node_url" value="<%= @config.parent_node_url %>"
+               placeholder="https://parent-node.example.com"
+               class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
+        <p class="mt-1 text-xs text-gray-400">Leave blank if this is a root node. Set to the trunk node's API URL for tree topology.</p>
+      </div>
+
+      <div class="pt-4 flex justify-end">
+        <button type="submit" class="inline-flex items-center rounded-md bg-federation-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-federation-500">
+          Save Configuration
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<% if @config.persisted? %>
+<div class="mt-8 bg-white shadow rounded-lg p-6 max-w-2xl">
+  <h2 class="text-lg font-semibold text-gray-900 mb-4">Node Status</h2>
+  <dl class="grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <dt class="text-gray-500">Node Path</dt>
+      <dd class="font-mono text-gray-900"><%= @config.node_slug %></dd>
+    </div>
+    <div>
+      <dt class="text-gray-500">Root Node?</dt>
+      <dd class="text-gray-900"><%= @config.root_node? ? "Yes" : "No" %></dd>
+    </div>
+    <div>
+      <dt class="text-gray-500">CC About Endpoint</dt>
+      <dd class="font-mono text-xs text-gray-600">/api/v1/cc/about</dd>
+    </div>
+    <div>
+      <dt class="text-gray-500">CC Forms Endpoint</dt>
+      <dd class="font-mono text-xs text-gray-600">/api/v1/cc/forms</dd>
+    </div>
+  </dl>
+</div>
+<% end %>

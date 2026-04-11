@@ -78,6 +78,16 @@ module FederationApi
               get "entries/:uuid", to: "credit_commons#transaction_entries"
               get "forms", to: "credit_commons#forms"
             end
+
+            # Komunitin JSON:API compatible endpoints
+            scope "komunitin" do
+              get "currencies", to: "komunitin#currencies"
+              get ":code/accounts", to: "komunitin#accounts"
+              get ":code/accounts/:id", to: "komunitin#account"
+              get ":code/transfers", to: "komunitin#transfers"
+              get ":code/transfers/:id", to: "komunitin#transfer"
+              post ":code/transfers", to: "komunitin#create_transfer"
+            end
           end
         end
 
@@ -112,6 +122,11 @@ module FederationApi
           resources :org_settings, only: [:index, :edit, :update]
           resources :member_preferences, only: [:index, :show, :update, :create]
           resources :activity, only: [:index]
+          resources :cc_config, only: [:index] do
+            collection do
+              patch :update
+            end
+          end
         end
 
         # --- Federation UI API (session-authenticated, for host app JS) ---

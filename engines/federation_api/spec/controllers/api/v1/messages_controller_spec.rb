@@ -30,8 +30,9 @@ RSpec.describe Api::V1::MessagesController, type: :controller do
     request.headers["X-Federation-Api-Key"] = raw_key
     allow(Federation::WebhookSender).to receive(:send_async)
     allow(Federation::NotificationService).to receive(:notify)
-    # Ensure federation is enabled for the org
+    # Ensure federation is enabled for the org and member can receive messages
     allow(Federation::AccessControl).to receive(:org_enabled?).and_return(true)
+    allow(Federation::AccessControl).to receive(:member_can_receive_messages?).and_return(true)
   end
 
   describe "POST #create" do

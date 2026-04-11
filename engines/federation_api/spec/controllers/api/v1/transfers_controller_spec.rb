@@ -29,8 +29,11 @@ RSpec.describe Api::V1::TransfersController, type: :controller do
     # Stub webhook sending
     allow(Federation::WebhookSender).to receive(:send_async)
     allow(Federation::NotificationService).to receive(:notify)
-    # Enable federation for the org
+    # Enable federation for the org and opt member in
     FederationOrganizationSetting.for(organization).update!(federation_enabled: true)
+    FederationMemberPreference.for(member).update!(
+      opted_in: true, allow_inbound_transfers: true, allow_outbound_transfers: true
+    )
   end
 
   describe "POST #create" do

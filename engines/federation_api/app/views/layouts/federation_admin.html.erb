@@ -27,67 +27,45 @@
     <!-- Top navigation bar -->
     <nav class="bg-federation-800 shadow-lg">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="flex h-16 items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="flex-shrink-0">
-              <span class="text-2xl">🔗</span>
-            </div>
-            <a href="<%= federation_admin_root_path %>" class="text-white font-bold text-lg tracking-tight">
-              Federation Admin
-            </a>
-            <span class="hidden sm:inline-block text-federation-300 text-xs font-mono bg-federation-900 px-2 py-0.5 rounded">
-              v<%= FederationApi::VERSION %>
-            </span>
-          </div>
-
-          <!-- Nav links -->
-          <div class="hidden md:flex items-center space-x-1">
+        <!-- Top row: brand + back link -->
+        <div class="flex h-12 items-center justify-between">
+          <a href="<%= federation_admin_root_path %>" class="flex items-center gap-2 text-white font-bold tracking-tight">
+            <span class="text-xl">🔗</span>
+            Federation Admin
+          </a>
+          <a href="<%= main_app.root_path rescue '/' %>" class="text-federation-300 hover:text-white text-sm">
+            &larr; TimeOverflow
+          </a>
+        </div>
+      </div>
+      <!-- Nav links row -->
+      <div class="border-t border-federation-700">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center gap-1 py-1 overflow-x-auto">
             <% nav_items = [
-              [federation_admin_root_path, "Dashboard", "federation_admin_root"],
-              [federation_admin_partners_path, "Partners", "partners"],
-              [federation_admin_api_keys_path, "API Keys", "api_keys"],
-              [federation_admin_transactions_path, "Transactions", "transactions"],
-              [federation_admin_messages_path, "Messages", "messages"],
-              [federation_admin_webhook_logs_path, "Webhooks", "webhook_logs"],
-              [federation_admin_org_settings_path, "Org Settings", "org_settings"],
-              [federation_admin_member_preferences_path, "Members", "member_preferences"],
-              [federation_admin_activity_index_path, "Activity", "activity"]
+              [federation_admin_root_path, "Dashboard"],
+              [federation_admin_partners_path, "Partners"],
+              [federation_admin_api_keys_path, "API Keys"],
+              [federation_admin_transactions_path, "Transactions"],
+              [federation_admin_webhook_logs_path, "Webhooks"],
+              [federation_admin_org_settings_path, "Orgs"],
+              [federation_admin_member_preferences_path, "Members"],
+              [federation_admin_activity_index_path, "Activity"]
             ] %>
-            <% nav_items.each do |path, label, id| %>
+            <% nav_items.each do |path, label| %>
               <% is_active = (path == federation_admin_root_path) ? (request.path == path) : request.path.start_with?(path) %>
               <a href="<%= path %>"
-                 class="<%= is_active ? 'bg-federation-900 text-white' : 'text-federation-200 hover:bg-federation-700 hover:text-white' %> rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                 class="<%= is_active ? 'bg-federation-900 text-white' : 'text-federation-200 hover:bg-federation-700 hover:text-white' %> whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors">
                 <%= label %>
               </a>
             <% end %>
-          </div>
-
-          <form method="get" action="<%= federation_admin_transactions_path %>" class="hidden lg:flex items-center ml-4">
-            <input type="text" name="search" placeholder="Search transactions..."
-                   class="rounded-lg border border-federation-700 bg-federation-900 text-federation-200 text-sm px-3 py-1.5 w-40 placeholder-federation-400 focus:ring-federation-500 focus:border-federation-500 focus:bg-federation-800">
-          </form>
-
-          <div class="flex items-center gap-4">
             <% if federation_stats[:transactions_pending] > 0 %>
-              <span class="inline-flex items-center rounded-full bg-yellow-400 px-2.5 py-0.5 text-xs font-semibold text-yellow-900">
+              <span class="ml-auto inline-flex items-center rounded-full bg-yellow-400 px-2.5 py-0.5 text-xs font-semibold text-yellow-900 whitespace-nowrap">
                 <%= federation_stats[:transactions_pending] %> pending
               </span>
             <% end %>
-            <span class="text-federation-300 text-sm hidden lg:inline">
-              <%= current_user&.username || current_user&.email %>
-            </span>
-            <a href="<%= main_app.root_path rescue '/' %>" class="text-federation-300 hover:text-white text-sm">
-              ← Back to TimeOverflow
-            </a>
           </div>
         </div>
-      </div>
-
-      <!-- Mobile menu -->
-      <div class="md:hidden border-t border-federation-700 px-4 py-2 flex flex-wrap gap-1">
-        <% nav_items&.each do |path, label, _| %>
-          <a href="<%= path %>" class="text-federation-200 hover:text-white text-sm px-2 py-1"><%= label %></a>
-        <% end %>
       </div>
     </nav>
 

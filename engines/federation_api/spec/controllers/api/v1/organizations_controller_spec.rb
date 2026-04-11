@@ -24,7 +24,8 @@ RSpec.describe Api::V1::OrganizationsController, type: :controller do
       body = JSON.parse(response.body)
       expect(body["success"]).to be true
       expect(body["data"]).to be_an(Array)
-      expect(body["data"].first["name"]).to eq(organization.name)
+      org_names = body["data"].map { |o| o["name"] }
+      expect(org_names).to include(organization.name)
     end
 
     it "returns unauthorized without API key" do

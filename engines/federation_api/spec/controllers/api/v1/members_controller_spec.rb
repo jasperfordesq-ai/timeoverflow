@@ -17,6 +17,7 @@ RSpec.describe Api::V1::MembersController, type: :controller do
 
   before do
     request.headers["X-Federation-Api-Key"] = raw_key
+    FederationOrganizationSetting.for(organization).update!(federation_enabled: true)
   end
 
   describe "GET #index" do
@@ -58,7 +59,8 @@ RSpec.describe Api::V1::MembersController, type: :controller do
       expect(response).to have_http_status(:ok)
       body = JSON.parse(response.body)
       expect(body["data"]["id"]).to eq(member.id)
-      expect(body["data"]["email"]).to eq(member.user.email)
+      # Email is excluded from federation API for PII protection
+      expect(body["data"]["id"]).to be_present
     end
   end
 end

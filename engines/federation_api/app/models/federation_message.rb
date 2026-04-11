@@ -14,10 +14,11 @@ class FederationMessage < ActiveRecord::Base
   DIRECTIONS = %w[inbound outbound].freeze
 
   validates :direction, presence: true, inclusion: { in: DIRECTIONS }
-  validates :body, presence: true
+  validates :body, presence: true, length: { maximum: 10_000 }
   validates :remote_user_identifier, presence: true
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :organization_id, presence: true
+  validates :local_member_id, presence: true, if: -> { direction == "inbound" }
   validates :external_message_id,
             uniqueness: { scope: :federation_partner_id },
             allow_nil: true
@@ -36,10 +37,6 @@ class FederationMessage < ActiveRecord::Base
   def mark_read!
     update!(status: "read", read_at: Time.current) unless read_at.present?
   end
-
-  # Validate body length to prevent abuse
-  validates :body, length: { maximum: 10_000 }
-  validates :local_member_id, presence: true, if: -> { direction == "inbound" }
 
   def inbound?
     direction == "inbound"

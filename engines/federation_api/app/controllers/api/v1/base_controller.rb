@@ -82,7 +82,7 @@ module Api
       def enforce_rate_limit!
         return unless @current_api_key # skip if auth failed (will 401 anyway)
 
-        limit = Rails.application.config.federation.rate_limit rescue 100
+        limit = [Rails.application.config.federation.rate_limit, 1].max rescue 100
         cache_key = "federation_rate:#{@current_api_key.id}:#{Time.current.to_i / 60}"
 
         count = Rails.cache.increment(cache_key, 1, expires_in: 2.minutes) || 1

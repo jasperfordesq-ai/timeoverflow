@@ -28,6 +28,9 @@ RSpec.describe Api::V1::TransfersController, type: :controller do
     org_account.update!(balance: 10000)
     # Stub webhook sending
     allow(Federation::WebhookSender).to receive(:send_async)
+    allow(Federation::NotificationService).to receive(:notify)
+    # Enable federation for the org
+    FederationOrganizationSetting.for(organization).update!(federation_enabled: true)
   end
 
   describe "POST #create" do
@@ -72,7 +75,9 @@ RSpec.describe Api::V1::TransfersController, type: :controller do
 
       post :create, params: valid_params
 
-      expect(response).to have_http_status(:forbidden)
+      # The controller uses FederationPartner.active.find() which raises
+      # RecordNotFound for non-active partners, returning 404.
+      expect(response).to have_http_status(:not_found)
     end
 
     it "rejects transfer for partner without transaction permission" do

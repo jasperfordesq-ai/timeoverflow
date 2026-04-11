@@ -15,7 +15,7 @@ module Api
       # POST /api/v1/webhooks/receive
       def receive
         event_type = params[:event]
-        payload = params[:data].respond_to?(:to_h) ? params[:data].to_h : {}
+        payload = params[:data].respond_to?(:to_unsafe_h) ? params[:data].to_unsafe_h : (params[:data].respond_to?(:to_h) ? params[:data].to_h : {})
         partner_id = params[:partner_id] || params[:tenant_id]
 
         if event_type.blank?
@@ -24,8 +24,15 @@ module Api
 
         # Use the partner verified by HMAC signature (avoids double-lookup divergence).
         partner = @verified_partner || FederationPartner.find_by(id: partner_id)
-        unless partner&.active?
-          return respond_with_error("Unknown or inactive partner", status: :not_found)
+        unless partner
+          return respond_with_error("Unknown partner", status: :not_found)
+        end
+        # Allow partnership status-change events from non-active partners (e.g., a
+        # suspended partner sending "partnership.activated" to reactivate itself).
+        # All other events require an active partner.
+        partnership_events = %w[partnership.activated partnership.approved partnership.suspended partnership.rejected partnership.terminated partnership.level_changed]
+        unless partner.active? || partnership_events.include?(event_type)
+          return respond_with_error("Inactive partner", status: :forbidden)
         end
 
         # Log the incoming webhook
@@ -34,7 +41,7 @@ module Api
           event_type: event_type,
           direction: "inbound",
           status: "pending",
-          payload: { event: event_type, partner_id: partner_id, data: payload.to_h }
+          payload: { event: event_type, partner_id: partner_id, data: payload }
         )
 
         begin

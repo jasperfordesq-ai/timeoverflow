@@ -31,8 +31,12 @@ RSpec.describe FederationMemberPreference, type: :model do
   # -- opt_in! / opt_out! ---------------------------------------------------
 
   describe "#opt_in!" do
+    let(:opt_org) { Organization.create!(name: "OptIn Org #{SecureRandom.hex(4)}") }
+    let(:opt_user) { User.create!(username: "optinuser_#{SecureRandom.hex(4)}", email: "optin_#{SecureRandom.hex(4)}@example.com", password: "password123") }
+    let(:opt_member) { Member.create!(user: opt_user, organization: opt_org) }
+
     it "sets opted_in to true and records opted_in_at, clears opted_out_at" do
-      pref = Fabricate(:federation_member_preference, opted_in: false, opted_out_at: 1.day.ago)
+      pref = Fabricate(:federation_member_preference, member_id: opt_member.id, organization_id: opt_org.id, opted_in: false, opted_out_at: 1.day.ago)
       pref.opt_in!
       pref.reload
       expect(pref.opted_in).to be true
@@ -42,8 +46,12 @@ RSpec.describe FederationMemberPreference, type: :model do
   end
 
   describe "#opt_out!" do
+    let(:opt_org) { Organization.create!(name: "OptOut Org #{SecureRandom.hex(4)}") }
+    let(:opt_user) { User.create!(username: "optoutuser_#{SecureRandom.hex(4)}", email: "optout_#{SecureRandom.hex(4)}@example.com", password: "password123") }
+    let(:opt_member) { Member.create!(user: opt_user, organization: opt_org) }
+
     it "sets opted_in to false and records opted_out_at" do
-      pref = Fabricate(:federation_member_preference, opted_in: true, opted_in_at: 1.day.ago)
+      pref = Fabricate(:federation_member_preference, member_id: opt_member.id, organization_id: opt_org.id, opted_in: true, opted_in_at: 1.day.ago)
       pref.opt_out!
       pref.reload
       expect(pref.opted_in).to be false
@@ -92,14 +100,22 @@ RSpec.describe FederationMemberPreference, type: :model do
   # -- Scopes ---------------------------------------------------------------
 
   describe "scopes" do
+    let(:scope_org) { Organization.create!(name: "Scope Test Org #{SecureRandom.hex(4)}") }
+    let(:scope_user1) { User.create!(username: "scopeuser1_#{SecureRandom.hex(4)}", email: "scope1_#{SecureRandom.hex(4)}@example.com", password: "password123") }
+    let(:scope_user2) { User.create!(username: "scopeuser2_#{SecureRandom.hex(4)}", email: "scope2_#{SecureRandom.hex(4)}@example.com", password: "password123") }
+    let(:scope_user3) { User.create!(username: "scopeuser3_#{SecureRandom.hex(4)}", email: "scope3_#{SecureRandom.hex(4)}@example.com", password: "password123") }
+    let(:scope_member1) { Member.create!(user: scope_user1, organization: scope_org) }
+    let(:scope_member2) { Member.create!(user: scope_user2, organization: scope_org) }
+    let(:scope_member3) { Member.create!(user: scope_user3, organization: scope_org) }
+
     let!(:opted_in_discoverable) do
-      Fabricate(:federation_member_preference, member_id: 100, opted_in: true, discoverable: true)
+      Fabricate(:federation_member_preference, member_id: scope_member1.id, organization_id: scope_org.id, opted_in: true, discoverable: true)
     end
     let!(:opted_in_not_discoverable) do
-      Fabricate(:federation_member_preference, member_id: 101, opted_in: true, discoverable: false)
+      Fabricate(:federation_member_preference, member_id: scope_member2.id, organization_id: scope_org.id, opted_in: true, discoverable: false)
     end
     let!(:opted_out) do
-      Fabricate(:federation_member_preference, member_id: 102, opted_in: false)
+      Fabricate(:federation_member_preference, member_id: scope_member3.id, organization_id: scope_org.id, opted_in: false)
     end
 
     describe ".opted_in" do

@@ -84,9 +84,9 @@ RSpec.describe Federation::WebhookSender do
 
     it "raises on blank webhook_secret" do
       partner_no_secret = Fabricate(:federation_partner,
-        webhook_url: "https://partner.example.com/webhooks/receive",
-        webhook_secret: nil
+        webhook_url: "https://partner.example.com/webhooks/receive"
       )
+      partner_no_secret.webhook_secret = nil
 
       expect {
         described_class.send_now(partner: partner_no_secret, event: event, payload: payload)

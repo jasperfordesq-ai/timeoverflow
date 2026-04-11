@@ -23,7 +23,7 @@ module Api
 
         # H2: Paginate movements rather than using an unbounded limit param.
         page     = [(params[:page] || 1).to_i, 1].max
-        per_page = [[(params[:per_page] || 20).to_i, 1].max, 100].min
+        per_page = [[(params[:per_page] || 25).to_i, 1].max, 100].min
         total_movements = account.movements.count
         movements = account.movements
                       .order(created_at: :desc)

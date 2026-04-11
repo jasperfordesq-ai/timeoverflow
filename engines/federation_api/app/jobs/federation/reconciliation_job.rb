@@ -113,6 +113,10 @@ module Federation
         very_stale.find_each do |txn|
           begin
             ActiveRecord::Base.transaction do
+              # Lock the row to prevent concurrent reconciliation runs from
+              # processing the same transaction (double-reversal prevention).
+              txn = FederationTransaction.lock.find_by(id: txn.id)
+              next unless txn&.pending?  # skip if already processed by another worker
               # For outbound transactions: the local Transfer was committed when the
               # transaction was created (member was debited). If the webhook delivery
               # failed and we're now cancelling, we must reverse that debit so the
@@ -135,7 +139,7 @@ module Federation
                   reversal.save!
 
                   # Link reversal to the federation transaction metadata for audit trail
-                  txn.update_column(:metadata, (txn.metadata || {}).merge("reversal_transfer_id" => reversal.id))
+                  txn.update!(metadata: (txn.metadata || {}).merge("reversal_transfer_id" => reversal.id))
                   Rails.logger.warn("[Federation::Reconciliation] Reversed transfer #{original.id} via reversal #{reversal.id} for stale outbound fed_txn #{txn.id}")
                 else
                   # H8: Outbound txn has no Transfer — the debit was never committed,

@@ -53,15 +53,15 @@ class FederationPartner < ActiveRecord::Base
   end
 
   def can_transact?
-    active? && partnership_level >= 3 && feature_gates&.dig("transactions_enabled")
+    active? && partnership_level >= 3 && feature_gates.dig("transactions_enabled")
   end
 
   def can_share_profiles?
-    active? && partnership_level >= 2 && feature_gates&.dig("profiles_enabled")
+    active? && partnership_level >= 2 && feature_gates.dig("profiles_enabled")
   end
 
   def can_share_listings?
-    active? && partnership_level >= 1 && feature_gates&.dig("listings_enabled")
+    active? && partnership_level >= 1 && feature_gates.dig("listings_enabled")
   end
 
   def record_failure!

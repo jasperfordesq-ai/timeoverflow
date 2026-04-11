@@ -26,6 +26,7 @@ RSpec.describe Api::V1::OffersController, type: :controller do
 
   before do
     request.headers["X-Federation-Api-Key"] = raw_key
+    FederationOrganizationSetting.for(organization).update!(federation_enabled: true)
   end
 
   describe "GET #index" do

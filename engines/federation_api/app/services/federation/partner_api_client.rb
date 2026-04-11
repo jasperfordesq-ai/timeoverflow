@@ -4,6 +4,7 @@
 module Federation
   class PartnerApiClient
     TIMEOUT = 10
+    MAX_RESPONSE_SIZE = 10_000_000  # 10 MB
 
     def initialize(partner:)
       @partner = partner
@@ -54,6 +55,10 @@ module Federation
       response = http.request(request)
 
       if response.code.to_i < 300
+        if response.body && response.body.bytesize > MAX_RESPONSE_SIZE
+          @partner.record_failure!
+          return { "success" => false, "error" => "Response too large (#{response.body.bytesize} bytes)" }
+        end
         @partner.record_success!
         JSON.parse(response.body)
       else

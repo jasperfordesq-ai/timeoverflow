@@ -138,9 +138,20 @@ RSpec.describe FederationTransaction, type: :model do
     end
 
     it "does not null transfer_id when called with no args" do
-      txn = Fabricate(:federation_transaction, status: "pending", transfer_id: 42)
+      org = Organization.create!(name: "TransferID Test Org #{SecureRandom.hex(4)}")
+      u = User.create!(username: "txnuser_#{SecureRandom.hex(4)}", email: "txn_#{SecureRandom.hex(4)}@example.com", password: "password123")
+      m = Member.create!(user: u, organization: org)
+
+      transfer = Transfer.new
+      transfer.source = org.account.id
+      transfer.destination = m.account.id
+      transfer.amount = 3600
+      transfer.reason = "transfer_id preservation test"
+      transfer.save!
+
+      txn = Fabricate(:federation_transaction, status: "pending", transfer_id: transfer.id)
       txn.complete!
-      expect(txn.reload.transfer_id).to eq(42)
+      expect(txn.reload.transfer_id).to eq(transfer.id)
     end
   end
 
@@ -198,11 +209,11 @@ RSpec.describe FederationTransaction, type: :model do
 
   describe "#denormalize_organization_id" do
     it "sets organization_id from local_account on create" do
-      # Create an Account that belongs to an organization
-      org = Organization.create!(name: "Test Org")
-      account = Account.create!(organization: org)
+      org = Organization.create!(name: "Test Org #{SecureRandom.hex(4)}")
+      user = User.create!(username: "denorm_#{SecureRandom.hex(4)}", email: "denorm_#{SecureRandom.hex(4)}@example.com", password: "password123")
+      member = Member.create!(user: user, organization: org)
 
-      txn = Fabricate(:federation_transaction, local_account_id: account.id, organization_id: nil)
+      txn = Fabricate(:federation_transaction, local_account_id: member.account.id, organization_id: nil)
       expect(txn.reload.organization_id).to eq(org.id)
     end
 

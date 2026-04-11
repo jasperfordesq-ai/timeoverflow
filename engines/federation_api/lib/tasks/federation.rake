@@ -24,7 +24,8 @@ namespace :federation do
     puts "  Name:    #{api_key.name}"
     puts "  Prefix:  #{api_key.key_prefix}"
     puts "  Raw key: #{raw_key}"
-    puts "\n  ⚠️  Save this key now — it cannot be retrieved later!\n"
+    puts "\n  ⚠️  Save this key now — it cannot be retrieved later!"
+    puts "  ⚠️  If running in CI/CD, ensure this output is NOT persisted in logs.\n"
 
     # Step 2: Register partner
     print "\nEnter the Nexus API endpoint (e.g., https://api.project-nexus.ie): "
@@ -84,7 +85,8 @@ namespace :federation do
     puts "  Prefix:         #{api_key.key_prefix}"
     puts "  Organization:   #{org&.name || 'All (global)'}"
     puts "  Raw key:        #{raw_key}"
-    puts "\n  ⚠️  Save this key now — it cannot be retrieved later!\n"
+    puts "\n  ⚠️  Save this key now — it cannot be retrieved later!"
+    puts "  ⚠️  If running in CI/CD, ensure this output is NOT persisted in logs.\n"
   end
 
   desc "Register a new federation partner"
@@ -158,7 +160,11 @@ namespace :federation do
       print "  #{partner.name}... "
       begin
         uri = URI("#{partner.api_endpoint}/health")
-        response = Net::HTTP.get_response(uri)
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.use_ssl = uri.scheme == "https"
+        http.open_timeout = 10
+        http.read_timeout = 10
+        response = http.request(Net::HTTP::Get.new(uri))
         if response.code.to_i < 300
           partner.record_success!
           puts "✓ OK (#{response.code})"
@@ -194,6 +200,9 @@ namespace :federation do
     puts ""
 
     if ENV["EXECUTE"] == "true"
+      if Rails.env.production?
+        abort "⚠️  Refusing to execute test transfer in production. Set FORCE_PRODUCTION=true to override."  unless ENV["FORCE_PRODUCTION"] == "true"
+      end
       handler = Federation::TransferHandler.new(partner: partner)
       txn = handler.process_inbound(
         external_transaction_id: "test_#{SecureRandom.hex(8)}",

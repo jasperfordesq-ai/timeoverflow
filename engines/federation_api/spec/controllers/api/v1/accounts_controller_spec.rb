@@ -16,6 +16,7 @@ RSpec.describe Api::V1::AccountsController, type: :controller do
 
   before do
     request.headers["X-Federation-Api-Key"] = raw_key
+    FederationOrganizationSetting.for(organization).update!(federation_enabled: true)
   end
 
   describe "GET #show" do
@@ -26,7 +27,7 @@ RSpec.describe Api::V1::AccountsController, type: :controller do
       body = JSON.parse(response.body)
       expect(body["data"]["id"]).to eq(member.account.id)
       expect(body["data"]).to have_key("balance")
-      expect(body["data"]).to have_key("recent_movements")
+      expect(body["data"]).to have_key("movements")
     end
 
     it "returns 404 for non-existent account" do

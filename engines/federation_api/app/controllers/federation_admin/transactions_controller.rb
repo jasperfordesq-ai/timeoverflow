@@ -8,7 +8,7 @@ module FederationAdmin
       @transactions = @transactions.where(direction: params[:direction]) if params[:direction].present?
       @transactions = @transactions.where(federation_partner_id: params[:partner_id]) if params[:partner_id].present?
       @transactions = @transactions.where(organization_id: params[:organization_id]) if params[:organization_id].present?
-      @transactions = @transactions.where("external_transaction_id ILIKE ?", "%#{params[:search]}%") if params[:search].present?
+      @transactions = @transactions.where("external_transaction_id ILIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(params[:search])}%") if params[:search].present?
 
       sort_col = %w[id status direction amount created_at].include?(params[:sort]) ? params[:sort] : "created_at"
       sort_dir = params[:dir] == "asc" ? :asc : :desc
@@ -45,11 +45,20 @@ module FederationAdmin
       csv_data = CSV.generate do |csv|
         csv << ["ID", "External ID", "Partner", "Direction", "Amount (seconds)", "Amount (hours)", "Status", "Org ID", "Remote User", "Reason", "Created At", "Completed At"]
         transactions.each do |txn|
-          csv << [txn.id, txn.external_transaction_id, txn.federation_partner&.name, txn.direction, txn.amount, (txn.amount.to_f / 3600).round(2), txn.status, txn.organization_id, txn.remote_user_identifier, txn.reason, txn.created_at&.iso8601, txn.completed_at&.iso8601]
+          csv << [txn.id, csv_safe(txn.external_transaction_id), csv_safe(txn.federation_partner&.name), txn.direction, txn.amount, (txn.amount.to_f / 3600).round(2), txn.status, txn.organization_id, csv_safe(txn.remote_user_identifier), csv_safe(txn.reason), txn.created_at&.iso8601, txn.completed_at&.iso8601]
         end
       end
 
       send_data csv_data, filename: "federation_transactions_#{Date.current}.csv", type: "text/csv"
+    end
+
+    private
+
+    # Prevent CSV formula injection: values starting with =, +, -, @, or tab
+    # are treated as formulas by Excel/Sheets. Prefix with a single quote.
+    def csv_safe(value)
+      return value unless value.is_a?(String) && value.match?(/\A[=+\-@\t]/)
+      "'#{value}"
     end
   end
 end

@@ -16,7 +16,7 @@ module Federation
     # Handle an inbound transfer request from a webhook
     def self.handle_inbound_request(partner, payload)
       # Validate required fields
-      %w[local_organization_id remote_user_identifier amount].each do |field|
+      %w[local_organization_id remote_user_identifier amount external_transaction_id].each do |field|
         raise ArgumentError, "Missing required field: #{field}" if payload[field].blank?
       end
       raise ArgumentError, "Must provide local_member_email or local_member_uid" if payload["local_member_email"].blank? && payload["local_member_uid"].blank?
@@ -216,7 +216,9 @@ module Federation
         }
       )
 
-      fed_txn.update!(metadata: (fed_txn.metadata || {}).merge("webhook_queued_at" => Time.current.iso8601))
+      fed_txn.update(metadata: (fed_txn.metadata || {}).merge("webhook_queued_at" => Time.current.iso8601))
+      # Use update (not update!) — metadata timestamp is informational;
+      # failure here should not crash the transfer flow.
 
       fed_txn
     end

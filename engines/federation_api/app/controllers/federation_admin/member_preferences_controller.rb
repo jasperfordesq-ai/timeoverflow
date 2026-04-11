@@ -79,7 +79,9 @@ module FederationAdmin
 
       count = 0
       ActiveRecord::Base.transaction do
-        members.find_each do |m|
+        # Use .each (not find_each) inside transaction — find_each batching
+        # breaks transaction atomicity since each batch is a separate query.
+        members.each do |m|
           pref = FederationMemberPreference.find_or_initialize_by(member_id: m.id)
           next if pref.persisted? && pref.opted_in?
 

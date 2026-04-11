@@ -89,7 +89,11 @@ module Federation
     end
 
     # IDs of members who are discoverable by federation partners.
+    # Requires org-level share_member_profiles to be enabled.
     def self.discoverable_member_ids(organization)
+      settings = FederationOrganizationSetting.for(organization)
+      return [] unless settings.federation_enabled? && settings.share_member_profiles?
+
       FederationMemberPreference
         .where(organization_id: organization.id)
         .discoverable

@@ -173,6 +173,10 @@ module Api
           # Nexus sends "transaction.created"; TO also accepts "transaction.requested".
           Federation::TransferHandler.handle_inbound_request(partner, payload)
         when "transaction.cancelled"
+          if payload["external_transaction_id"].blank?
+            Rails.logger.warn("[Federation::Webhook] transaction.cancelled missing external_transaction_id from partner #{partner.id}")
+            return # Cannot identify which transaction to cancel
+          end
           fed_txn = FederationTransaction.find_by(
             external_transaction_id: payload["external_transaction_id"],
             federation_partner: partner

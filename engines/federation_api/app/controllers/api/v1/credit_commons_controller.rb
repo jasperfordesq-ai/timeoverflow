@@ -45,9 +45,10 @@ module Api
                  current_organization.members.active.find_by(id: username)
 
         return render(json: { errors: [{ class: "CCViolation", message: "Account not found" }] }, status: :not_found) unless member
+        return render(json: { errors: [{ class: "CCViolation", message: "Account has no balance record" }] }, status: :not_found) unless member.account
 
-        balance = member.account&.balance.to_i / 3600.0
-        completed = FederationTransaction.completed.where(local_account_id: member.account&.id)
+        balance = member.account.balance.to_i / 3600.0
+        completed = FederationTransaction.completed.where(local_account_id: member.account.id)
 
         render json: {
           balance: balance,

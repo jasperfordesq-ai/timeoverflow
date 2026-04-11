@@ -10,7 +10,9 @@ module Api
 
       # GET /api/v1/komunitin/currencies
       def currencies
-        orgs = Organization.all
+        # Only show federation-enabled orgs, capped at 100 for safety
+        orgs = Organization.order(:name).limit(100)
+        orgs = orgs.where(id: @current_api_key.organization_id) if @current_api_key&.organization_id
         data = orgs.map do |org|
           {
             type: "currencies",

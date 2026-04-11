@@ -1,8 +1,13 @@
 # Calls a federation partner's API.
 # Supports both GET (fetch data) and POST (send data) operations.
 #
+# Uses the partner's protocol adapter for:
+#   - Endpoint mapping (action → URL path)
+#   - Data transformation (outbound/inbound)
+#   - Response unwrapping (protocol-specific envelopes)
+#   - Content negotiation (Accept/Content-Type headers)
+#
 # Authentication: Bearer token via the partner's api_key_hash field.
-# This mirrors how the partner authenticates with us — simple API key auth.
 #
 module Federation
   class PartnerApiClient
@@ -11,46 +16,69 @@ module Federation
 
     def initialize(partner:)
       @partner = partner
+      @adapter = partner.adapter
       raise ArgumentError, "Partner has no API endpoint" if @partner.api_endpoint.blank?
     end
 
+    # --- High-level API methods (adapter-aware) ---
+
     # Fetch listings from the partner's API.
     def fetch_listings(params = {})
-      get("/listings", params.compact)
+      result = get(@adapter.map_endpoint("listings"), params.compact)
+      transform_collection(result, :transform_inbound_listings)
     end
 
     # Fetch a single listing.
     def fetch_listing(id)
-      get("/listings/#{id}")
+      result = get(@adapter.map_endpoint("listing", id: id))
+      transform_single(result, :transform_inbound_listing)
     end
 
     # Fetch members from the partner.
     def fetch_members(params = {})
-      get("/members", params.compact)
+      result = get(@adapter.map_endpoint("members"), params.compact)
+      transform_collection(result, :transform_inbound_members)
     end
 
     # Fetch a single member.
     def fetch_member(id)
-      get("/members/#{id}")
+      result = get(@adapter.map_endpoint("member", id: id))
+      transform_single(result, :transform_inbound_member)
     end
 
     # Health check the partner.
     def health_check
-      get("/health")
+      get(@adapter.map_endpoint("health"))
     end
 
     # Send a message to the partner's API.
-    # Wraps in event format for compatibility with webhook-style receivers.
     def post_message(payload)
-      post("/receive", {
+      transformed = @adapter.transform_outbound_message(payload)
+      endpoint = @adapter.map_endpoint("receive")
+      post(endpoint, {
         event: "message.sent",
         timestamp: Time.current.iso8601,
         platform: "timeoverflow",
-        data: payload
+        data: transformed
       })
     end
 
+    # Send a transfer/transaction to the partner's API.
+    def post_transfer(payload)
+      transformed = @adapter.transform_outbound_transfer(payload)
+      endpoint = @adapter.map_endpoint("transfers")
+      method = @adapter.map_http_method("transfers", "POST")
+      if method == "POST"
+        post(endpoint, transformed)
+      else
+        # Support PATCH/PUT for protocols that use them
+        request_with_method(method, endpoint, transformed)
+      end
+    end
+
     private
+
+    # --- Transport layer ---
 
     def get(path, params = {})
       uri = build_uri(path)
@@ -67,8 +95,24 @@ module Federation
 
       request = Net::HTTP::Post.new(uri)
       set_headers(request)
-      request["Content-Type"] = "application/json"
+      request["Content-Type"] = @adapter.content_type
       request.body = data.to_json
+
+      execute(uri, request)
+    end
+
+    def request_with_method(method, path, data = {})
+      uri = build_uri(path)
+      request_class = case method.to_s.upcase
+                      when "PATCH" then Net::HTTP::Patch
+                      when "PUT"   then Net::HTTP::Put
+                      when "DELETE" then Net::HTTP::Delete
+                      else Net::HTTP::Post
+                      end
+      request = request_class.new(uri)
+      set_headers(request)
+      request["Content-Type"] = @adapter.content_type
+      request.body = data.to_json unless method.to_s.upcase == "DELETE"
 
       execute(uri, request)
     end
@@ -80,7 +124,10 @@ module Federation
     def set_headers(request)
       request["Authorization"] = "Bearer #{@partner.api_key_hash}" if @partner.api_key_hash.present?
       request["User-Agent"] = "TimeOverflow-Federation/#{FederationApi::VERSION}"
-      request["Accept"] = "application/json"
+      request["Accept"] = @adapter.content_type
+
+      # Protocol-specific extra headers
+      @adapter.extra_headers.each { |k, v| request[k] = v }
     end
 
     def execute(uri, request)
@@ -106,6 +153,28 @@ module Federation
       @partner.record_failure!
       Rails.logger.error("[Federation::PartnerApiClient] Request to #{@partner.name} failed: #{e.class}: #{e.message}")
       { "success" => false, "error" => e.message }
+    end
+
+    # --- Response transformation helpers ---
+
+    def transform_collection(result, method)
+      if result.is_a?(Hash) && result["success"] != false
+        data = @adapter.unwrap_response(result)
+        data = @adapter.send(method, data) if data.is_a?(Array)
+        result.merge("data" => data)
+      else
+        result
+      end
+    end
+
+    def transform_single(result, method)
+      if result.is_a?(Hash) && result["success"] != false
+        data = @adapter.unwrap_response(result)
+        data = @adapter.send(method, data) if data.is_a?(Hash)
+        result.merge("data" => data)
+      else
+        result
+      end
     end
   end
 end

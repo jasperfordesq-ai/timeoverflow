@@ -13,17 +13,25 @@ class FederationPartner < ActiveRecord::Base
   has_many :federation_webhook_logs, dependent: :destroy
 
   STATUSES = %w[pending active suspended terminated].freeze
-  PLATFORM_TYPES = %w[nexus timeoverflow custom].freeze
+  PLATFORM_TYPES = %w[nexus timeoverflow custom komunitin].freeze
+  PROTOCOL_TYPES = %w[rest json_api credit_commons].freeze
   PARTNERSHIP_LEVELS = (1..4).freeze
 
   validates :name, presence: true
   validates :platform_type, presence: true, inclusion: { in: PLATFORM_TYPES }
+  validates :protocol_type, presence: true, inclusion: { in: PROTOCOL_TYPES }
   validates :api_endpoint, presence: true, format: { with: /\Ahttps?:\/\//i, message: "must be a valid HTTP(S) URL" }
   validates :webhook_secret, presence: true  # Required: empty secret allows HMAC forgery with key=""
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :partnership_level, inclusion: { in: PARTNERSHIP_LEVELS }
   validates :feature_gates, presence: true   # nil feature_gates crashes can_transact? et al.
   validate :valid_status_transition, if: :status_changed?
+
+  # Resolve the protocol adapter for this partner.
+  # Mirrors Nexus's resolveAdapter() pattern.
+  def adapter
+    @adapter ||= Federation::Adapters.resolve(self)
+  end
 
   # Valid status transitions. Terminated partners cannot be reactivated.
   VALID_TRANSITIONS = {

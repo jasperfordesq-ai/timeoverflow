@@ -19,6 +19,27 @@ fi
 bundle install --local --quiet 2>&1 | grep -v "^Using " || true
 echo "✅ Federation engine resolved"
 
+# Remove old federation files baked into the Docker image from before the
+# engine extraction. These must be removed on every boot because container
+# restart restores the image layer. The engine's versions are authoritative.
+if [ -f /app/app/models/federation_transaction.rb ]; then
+  echo "🧹 Removing pre-engine federation files from host app..."
+  rm -f /app/app/models/federation_*.rb
+  rm -f /app/app/controllers/api/v1/accounts_controller.rb \
+        /app/app/controllers/api/v1/base_controller.rb \
+        /app/app/controllers/api/v1/health_controller.rb \
+        /app/app/controllers/api/v1/inquiries_controller.rb \
+        /app/app/controllers/api/v1/listings_controller.rb \
+        /app/app/controllers/api/v1/members_controller.rb \
+        /app/app/controllers/api/v1/messages_controller.rb \
+        /app/app/controllers/api/v1/offers_controller.rb \
+        /app/app/controllers/api/v1/organizations_controller.rb \
+        /app/app/controllers/api/v1/transfers_controller.rb \
+        /app/app/controllers/api/v1/webhooks_controller.rb 2>/dev/null
+  rm -rf /app/app/services/federation/ /app/app/jobs/federation/ /app/app/mailers/federation/ 2>/dev/null
+  echo "✅ Old federation files cleaned"
+fi
+
 # Warn about skipped migrations if pending ones exist.
 if [ "$SKIP_MIGRATIONS" = "1" ]; then
   pending=$(bundle exec rake db:migrate:status 2>/dev/null | grep -c "^\s*down" || true)

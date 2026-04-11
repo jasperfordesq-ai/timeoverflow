@@ -179,5 +179,68 @@ RSpec.describe Federation::MessageHandler, type: :service do
         }.to raise_error(ArgumentError, /Federation is not enabled/)
       end
     end
+
+    context "direct API delivery (partner has api_endpoint + api_key_hash)" do
+      let(:api_client_double) { instance_double(Federation::PartnerApiClient) }
+
+      before do
+        partner.update_columns(
+          api_endpoint: "https://staging.project-nexus.ie/api/v2/federation/external/webhooks",
+          api_key_hash: "test_api_key_abc123"
+        )
+        allow(Federation::PartnerApiClient).to receive(:new).and_return(api_client_double)
+      end
+
+      it "calls PartnerApiClient.post_message instead of webhook" do
+        allow(api_client_double).to receive(:post_message).and_return({ "success" => true, "data" => { "message_id" => 99 } })
+
+        handler.send_outbound(
+          member: member,
+          remote_user_identifier: remote_user,
+          body: "Direct API test"
+        )
+
+        expect(api_client_double).to have_received(:post_message)
+        expect(Federation::WebhookSender).not_to have_received(:send_async)
+      end
+
+      it "marks message as delivered on API success" do
+        allow(api_client_double).to receive(:post_message).and_return({ "success" => true })
+
+        message = handler.send_outbound(
+          member: member,
+          remote_user_identifier: remote_user,
+          body: "Direct API test"
+        )
+
+        expect(message.status).to eq("delivered")
+      end
+
+      it "leaves message as pending on API failure" do
+        allow(api_client_double).to receive(:post_message).and_return({ "success" => false, "error" => "Partner rejected" })
+
+        message = handler.send_outbound(
+          member: member,
+          remote_user_identifier: remote_user,
+          body: "Direct API test"
+        )
+
+        expect(message.status).to eq("pending")
+        expect(message.metadata["delivery_error"]).to eq("Partner rejected")
+      end
+
+      it "leaves message as pending on API exception" do
+        allow(api_client_double).to receive(:post_message).and_raise(StandardError.new("connection refused"))
+
+        message = handler.send_outbound(
+          member: member,
+          remote_user_identifier: remote_user,
+          body: "Direct API test"
+        )
+
+        expect(message.status).to eq("pending")
+        expect(message.metadata["delivery_error"]).to include("connection refused")
+      end
+    end
   end
 end

@@ -18,7 +18,7 @@ class FederationPartner < ActiveRecord::Base
 
   validates :name, presence: true
   validates :platform_type, presence: true, inclusion: { in: PLATFORM_TYPES }
-  validates :api_endpoint, presence: true
+  validates :api_endpoint, presence: true, format: { with: /\Ahttps?:\/\//i, message: "must be a valid HTTP(S) URL" }
   validates :webhook_secret, presence: true  # Required: empty secret allows HMAC forgery with key=""
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :partnership_level, inclusion: { in: PARTNERSHIP_LEVELS }

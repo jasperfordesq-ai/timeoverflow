@@ -122,10 +122,15 @@ module Api
       end
 
       def unprocessable_entity(exception)
+        # Return field-level error codes without exposing schema details.
+        # full_messages like "Amount must be less than..." reveal column constraints.
+        sanitized = exception.record.errors.map do |error|
+          { field: error.attribute.to_s, code: error.type.to_s }
+        end
         render json: {
           success: false,
           error: "Validation failed",
-          errors: exception.record.errors.full_messages
+          errors: sanitized
         }, status: :unprocessable_entity
       end
 

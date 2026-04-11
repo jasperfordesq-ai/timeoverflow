@@ -37,6 +37,9 @@ if [ -f /app/app/models/federation_transaction.rb ]; then
         /app/app/controllers/api/v1/transfers_controller.rb \
         /app/app/controllers/api/v1/webhooks_controller.rb 2>/dev/null
   rm -rf /app/app/services/federation/ /app/app/jobs/federation/ /app/app/mailers/federation/ 2>/dev/null
+  # Also clean any other potential federation file locations
+  rm -rf /app/app/views/federation/ /app/app/validators/federation_* /app/app/policies/federation_* 2>/dev/null
+  rm -f /app/app/models/federation_organization_setting.rb /app/app/models/federation_member_preference.rb /app/app/models/federation_message.rb 2>/dev/null
   echo "✅ Old federation files cleaned"
 fi
 

@@ -5,8 +5,10 @@
 # Delivery methods (tried in order):
 #   1. Direct API call — if partner has api_endpoint + api_key_hash configured,
 #      POST directly to the partner's message-receiving endpoint with Bearer auth.
+#      Message marked "delivered" only on success; stays "pending" on failure.
 #   2. Webhook — if partner has webhook_url configured, deliver via async webhook
-#      with HMAC signature (fire-and-forget with retries).
+#      with HMAC signature (fire-and-forget with retries). Message marked "delivered"
+#      optimistically since webhook delivery is async.
 #
 module Federation
   class MessageHandler
@@ -52,29 +54,37 @@ module Federation
 
       # Try direct API call first, fall back to webhook
       if @partner.api_endpoint.present? && @partner.api_key_hash.present?
-        deliver_via_api(message, payload)
+        delivered = deliver_via_api(message, payload)
+        message.deliver! if delivered
       elsif @partner.webhook_url.present?
         deliver_via_webhook(message, payload)
+        message.deliver! # Optimistic — webhook delivery is async with retries
       else
         Rails.logger.warn("[Federation::MessageHandler] Partner #{@partner.id} has no api_endpoint or webhook_url — message #{message.id} stored but not delivered")
       end
 
-      message.deliver!
       message
     end
 
     private
 
-    # Direct API call with Bearer token auth — synchronous, simple.
+    # Direct API call with Bearer token auth — synchronous.
+    # Returns true if delivery succeeded, false otherwise.
     def deliver_via_api(message, payload)
       client = Federation::PartnerApiClient.new(partner: @partner)
       result = client.post_message(payload)
 
       if result["success"] == false
-        Rails.logger.warn("[Federation::MessageHandler] API delivery failed: #{result['error']}")
+        Rails.logger.warn("[Federation::MessageHandler] API delivery failed for message #{message.id}: #{result['error']}")
+        message.update!(metadata: (message.metadata || {}).merge("delivery_error" => result["error"], "delivery_attempted_at" => Time.current.iso8601))
+        return false
       end
+
+      true
     rescue => e
-      Rails.logger.error("[Federation::MessageHandler] API delivery error: #{e.class}: #{e.message}")
+      Rails.logger.error("[Federation::MessageHandler] API delivery error for message #{message.id}: #{e.class}: #{e.message}")
+      message.update!(metadata: (message.metadata || {}).merge("delivery_error" => "#{e.class}: #{e.message}", "delivery_attempted_at" => Time.current.iso8601))
+      false
     end
 
     # Async webhook with HMAC signature — fire-and-forget with retries.

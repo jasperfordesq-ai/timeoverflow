@@ -78,24 +78,29 @@ module FederationAdmin
       members = members.where(organization_id: params[:organization_id]) if params[:organization_id].present?
 
       count = 0
-      members.find_each do |m|
-        pref = FederationMemberPreference.find_or_initialize_by(member_id: m.id)
-        next if pref.persisted? && pref.opted_in?
+      ActiveRecord::Base.transaction do
+        members.find_each do |m|
+          pref = FederationMemberPreference.find_or_initialize_by(member_id: m.id)
+          next if pref.persisted? && pref.opted_in?
 
-        pref.organization_id ||= m.organization_id
-        pref.opted_in = true
-        pref.discoverable = true
-        pref.share_profile = true
-        pref.share_listings = true
-        pref.allow_inbound_transfers = true
-        pref.allow_outbound_transfers = true
-        pref.opted_in_at = Time.current
-        pref.opted_out_at = nil
-        pref.save!
-        count += 1
+          pref.organization_id ||= m.organization_id
+          pref.opted_in = true
+          pref.discoverable = true
+          pref.share_profile = true
+          pref.share_listings = true
+          pref.allow_inbound_transfers = true
+          pref.allow_outbound_transfers = true
+          pref.opted_in_at = Time.current
+          pref.opted_out_at = nil
+          pref.save!
+          count += 1
+        end
       end
 
       flash[:notice] = "#{count} member#{'s' unless count == 1} opted in to federation."
+      redirect_to federation_admin_member_preferences_path
+    rescue => e
+      flash[:alert] = "Bulk opt-in failed: #{e.message}. No changes were made."
       redirect_to federation_admin_member_preferences_path
     end
   end

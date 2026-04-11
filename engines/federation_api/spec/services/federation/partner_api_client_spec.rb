@@ -202,4 +202,48 @@ RSpec.describe Federation::PartnerApiClient do
       expect(result["success"]).to be true
     end
   end
+
+  describe "#post_message" do
+    let(:payload) { { sender_id: 1, recipient_id: 42, subject: "Test", body: "Hello" } }
+
+    it "makes a POST request to /receive with event-wrapped payload" do
+      expect(http_double).to receive(:request) do |req|
+        expect(req).to be_a(Net::HTTP::Post)
+        expect(req.path).to include("/receive")
+        expect(req["Content-Type"]).to eq("application/json")
+
+        body = JSON.parse(req.body)
+        expect(body["event"]).to eq("message.sent")
+        expect(body["platform"]).to eq("timeoverflow")
+        expect(body["data"]["sender_id"]).to eq(1)
+        expect(body["data"]["recipient_id"]).to eq(42)
+        response_double
+      end
+
+      described_class.new(partner: partner).post_message(payload)
+    end
+
+    it "includes Authorization Bearer header" do
+      expect(http_double).to receive(:request) do |req|
+        expect(req["Authorization"]).to eq("Bearer test_bearer_token_abc123")
+        response_double
+      end
+
+      described_class.new(partner: partner).post_message(payload)
+    end
+
+    it "returns parsed JSON on success" do
+      result = described_class.new(partner: partner).post_message(payload)
+      expect(result["success"]).to be true
+    end
+
+    it "records failure on non-2xx response" do
+      allow(response_double).to receive(:code).and_return("422")
+      allow(response_double).to receive(:body).and_return('{"error":"rejected"}')
+      expect(partner).to receive(:record_failure!)
+
+      result = described_class.new(partner: partner).post_message(payload)
+      expect(result["success"]).to be false
+    end
+  end
 end

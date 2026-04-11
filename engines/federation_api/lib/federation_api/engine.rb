@@ -154,6 +154,9 @@ module FederationApi
       Rails.application.config.after_initialize do
         next unless defined?(Sidekiq::Cron::Job)
         if ENV.fetch("FEDERATION_ENABLED", "false") == "true"
+          # Upsert: destroy any stale entry before creating to prevent duplicates
+          # on server restart or multiple initializer runs.
+          Sidekiq::Cron::Job.destroy("federation_reconciliation") rescue nil
           Sidekiq::Cron::Job.create(
             name:  "federation_reconciliation",
             cron:  "0 3 * * *",  # daily at 3 AM

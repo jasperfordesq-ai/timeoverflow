@@ -340,12 +340,17 @@ module Federation
       private
 
       def resolve_node_slug(org_id = nil)
-        if org_id
-          config = FederationCcNodeConfig.find_by(organization_id: org_id)
-          return config.node_slug if config
-        end
+        @_slug_cache ||= {}
+        cache_key = org_id || :default
 
-        @partner&.metadata&.dig("node_slug") || "timeoverflow"
+        @_slug_cache[cache_key] ||= begin
+          if org_id
+            config = FederationCcNodeConfig.find_by(organization_id: org_id)
+            config&.node_slug || @partner&.metadata&.dig("node_slug") || "timeoverflow"
+          else
+            @partner&.metadata&.dig("node_slug") || "timeoverflow"
+          end
+        end
       end
 
       def exchange_rate

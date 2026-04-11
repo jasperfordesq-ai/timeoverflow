@@ -21,6 +21,10 @@ module Api
         config = FederationCcNodeConfig.for(current_organization)
         members = current_organization.members.active.includes(:user, :account)
 
+        # Apply consent filter — only show discoverable members (same as REST API)
+        discoverable_ids = Federation::AccessControl.discoverable_member_ids(current_organization)
+        members = members.where(id: discoverable_ids)
+
         accounts = members.map do |m|
           {
             id: "#{config.node_slug}/#{m.member_uid || m.id}",
@@ -65,7 +69,9 @@ module Api
       end
 
       def show_transaction
-        txn = FederationTransaction.find_by(external_transaction_id: params[:uuid])
+        # Scope by organization to prevent cross-partner transaction leaks
+        scope = current_organization ? FederationTransaction.where(organization_id: current_organization.id) : FederationTransaction
+        txn = scope.find_by(external_transaction_id: params[:uuid])
         return render(json: { errors: [{ class: "CCViolation", message: "Transaction not found" }] }, status: :not_found) unless txn
 
         adapter = Federation::Adapters::CreditCommonsAdapter.new(partner: txn.federation_partner)

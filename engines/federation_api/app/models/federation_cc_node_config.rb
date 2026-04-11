@@ -30,7 +30,7 @@ class FederationCcNodeConfig < ActiveRecord::Base
       validated_window: validated_window,
       trades: FederationTransaction.where(organization_id: organization_id).completed.count,
       traders: FederationTransaction.where(organization_id: organization_id).completed.select(:remote_user_identifier).distinct.count,
-      volume: FederationTransaction.where(organization_id: organization_id).completed.sum(:amount),
+      volume: (FederationTransaction.where(organization_id: organization_id).completed.sum(:amount).to_f / 3600.0 * exchange_rate.to_f).round(2),
       accounts: (org ? org.members.active.count : 0)
     }
   end

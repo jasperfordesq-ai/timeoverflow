@@ -44,7 +44,7 @@ module Api
 
         # Pagination
         page_size = [(params.dig(:page, :size) || 25).to_i, 100].min
-        offset = (params.dig(:page, :after) || 0).to_i
+        offset = [(params.dig(:page, :after) || 0).to_i, 0].max
         total = members.count
         members = members.offset(offset).limit(page_size)
 
@@ -70,7 +70,7 @@ module Api
           .order(created_at: :desc)
 
         page_size = [(params.dig(:page, :size) || 25).to_i, 100].min
-        offset = (params.dig(:page, :after) || 0).to_i
+        offset = [(params.dig(:page, :after) || 0).to_i, 0].max
         total = txns.count
         txns = txns.offset(offset).limit(page_size)
 
@@ -93,7 +93,17 @@ module Api
       # POST /api/v1/komunitin/:code/transfers
       def create_transfer
         # Parse JSON:API transfer document
-        body = JSON.parse(request.raw_post) rescue {}
+        raw = request.raw_post
+        if raw.blank?
+          return render json: { errors: [{ status: "400", title: "Bad Request", detail: "Request body is required" }] },
+                        status: :bad_request, content_type: "application/vnd.api+json"
+        end
+        begin
+          body = JSON.parse(raw)
+        rescue JSON::ParserError => e
+          return render json: { errors: [{ status: "400", title: "Bad Request", detail: "Invalid JSON: #{e.message}" }] },
+                        status: :bad_request, content_type: "application/vnd.api+json"
+        end
         attrs = body.dig("data", "attributes") || {}
         rels = body.dig("data", "relationships") || {}
 

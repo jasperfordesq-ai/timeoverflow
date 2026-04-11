@@ -104,10 +104,13 @@ module Federation
     def request_with_method(method, path, data = {})
       uri = build_uri(path)
       request_class = case method.to_s.upcase
-                      when "PATCH" then Net::HTTP::Patch
-                      when "PUT"   then Net::HTTP::Put
+                      when "POST"   then Net::HTTP::Post
+                      when "PATCH"  then Net::HTTP::Patch
+                      when "PUT"    then Net::HTTP::Put
                       when "DELETE" then Net::HTTP::Delete
-                      else Net::HTTP::Post
+                      else
+                        Rails.logger.warn("[Federation::PartnerApiClient] Unknown HTTP method '#{method}', defaulting to POST")
+                        Net::HTTP::Post
                       end
       request = request_class.new(uri)
       set_headers(request)

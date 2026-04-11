@@ -1,12 +1,15 @@
 module FederationAdmin
   class CcConfigController < BaseController
     def index
-      org = Organization.first
-      @config = FederationCcNodeConfig.for(org)
+      @organizations = Organization.order(:name)
+      @configs = {}
+      @organizations.each do |org|
+        @configs[org.id] = FederationCcNodeConfig.for(org)
+      end
     end
 
     def update
-      org = Organization.first
+      org = Organization.find(params[:organization_id])
       @config = FederationCcNodeConfig.for(org)
 
       attrs = {}
@@ -17,7 +20,7 @@ module FederationAdmin
       attrs[:parent_node_url] = params[:parent_node_url] if params.key?(:parent_node_url)
 
       @config.update!(attrs)
-      flash[:notice] = "Credit Commons node configuration updated."
+      flash[:notice] = "CC node configuration updated for '#{org.name}'."
       redirect_to federation_admin_cc_config_index_path
     rescue => e
       flash[:alert] = "Failed to update: #{e.message}"

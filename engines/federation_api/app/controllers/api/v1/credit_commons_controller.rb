@@ -7,6 +7,9 @@ module Api
 
       def about
         org = current_organization || Organization.first
+        unless org
+          return render json: { errors: [{ class: "CCFailure", message: "No organizations configured" }] }, status: :service_unavailable
+        end
         config = FederationCcNodeConfig.for(org)
         render json: config.build_about_response
       end

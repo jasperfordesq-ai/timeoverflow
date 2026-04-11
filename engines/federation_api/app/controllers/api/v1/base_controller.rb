@@ -130,24 +130,19 @@ module Api
       end
 
       def not_found(_exception)
-        render json: { success: false, error: "Not found" }, status: :not_found
+        respond_with_error("Not found", status: :not_found)
       end
 
       def unprocessable_entity(exception)
         # Return field-level error codes without exposing schema details.
-        # full_messages like "Amount must be less than..." reveal column constraints.
         sanitized = exception.record.errors.map do |error|
           { field: error.attribute.to_s, code: error.type.to_s }
         end
-        render json: {
-          success: false,
-          error: "Validation failed",
-          errors: sanitized
-        }, status: :unprocessable_entity
+        respond_with_error("Validation failed", status: :unprocessable_entity, errors: sanitized)
       end
 
       def bad_request(_exception)
-        render json: { success: false, error: "Bad request" }, status: :bad_request
+        respond_with_error("Bad request", status: :bad_request)
       end
 
       # Pagination helper

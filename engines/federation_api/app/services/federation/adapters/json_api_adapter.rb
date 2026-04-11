@@ -199,12 +199,16 @@ module Federation
         case type
         when "transfers"
           if flat.is_a?(Hash)
-            transform_inbound_transfer(payload)
+            transform_inbound_transfer({ "data" => { "type" => "transfers", "id" => flat["id"], "attributes" => flat } })
           else
-            flat.map { |t| transform_inbound_transfer({ "data" => t }) }
+            flat.map { |t| transform_inbound_transfer({ "data" => { "type" => "transfers", "id" => t["id"], "attributes" => t } }) }
           end
         when "accounts"
-          flat.is_a?(Hash) ? transform_inbound_member(payload) : transform_inbound_members(payload)
+          if flat.is_a?(Hash)
+            transform_inbound_member({ "data" => { "type" => "accounts", "id" => flat["id"], "attributes" => flat } })
+          else
+            transform_inbound_members(flat.map { |m| { "type" => "accounts", "id" => m["id"], "attributes" => m } })
+          end
         else
           flat
         end

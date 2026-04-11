@@ -60,8 +60,12 @@ module Federation
         response = http.request(request)
         return nil unless response.code.to_i == 200
 
-        data = JSON.parse(response.body)
+        data = JSON.parse(response.body) rescue nil
+        return nil unless data.is_a?(Hash)
+
         token = data["access_token"]
+        return nil if token.blank?  # Never cache nil/blank tokens
+
         expires_in = data["expires_in"] || 3600
 
         # Cache token and expiry in partner metadata

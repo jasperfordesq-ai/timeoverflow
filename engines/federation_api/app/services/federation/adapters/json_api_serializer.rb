@@ -87,7 +87,7 @@ module Federation
             result["#{key}_id"] = linked["id"] || linked[:id]
             result["#{key}_type"] = linked["type"] || linked[:type]
           elsif linked.is_a?(Array)
-            result["#{key}_ids"] = linked.map { |l| l["id"] || l[:id] }
+            result["#{key}_ids"] = linked.compact.map { |l| l.is_a?(Hash) ? (l["id"] || l[:id]) : l }
           end
         end
         result

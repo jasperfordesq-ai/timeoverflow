@@ -2,14 +2,15 @@ class FederationCcNodeConfig < ActiveRecord::Base
   belongs_to :organization, optional: true
 
   validates :node_slug, presence: true, uniqueness: true,
-            format: { with: /\A[0-9a-z-]{3,15}\z/, message: "must be 3-15 lowercase alphanumeric or hyphen characters" }
+            format: { with: /\A[0-9a-z][0-9a-z-]{1,13}[0-9a-z]\z/, message: "must be 3-15 lowercase alphanumeric characters, hyphens allowed in middle" }
   validates :exchange_rate, numericality: { greater_than: 0 }
   validates :validated_window, numericality: { greater_than: 0 }
 
   def self.for(organization)
     org_id = organization.is_a?(Integer) ? organization : organization.id
     find_or_create_by!(organization_id: org_id) do |config|
-      config.node_slug = "timeoverflow-#{org_id}"
+      # Truncate to fit 15-char limit: "to-" prefix + org_id (max 12 chars)
+      config.node_slug = "to-#{org_id}"[0, 15]
       config.currency_format = "%s hours"
     end
   rescue ActiveRecord::RecordNotUnique

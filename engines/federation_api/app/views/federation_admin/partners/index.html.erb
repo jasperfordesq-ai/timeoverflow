@@ -13,7 +13,7 @@
   </div>
 </div>
 
-<div class="bg-white shadow rounded-lg overflow-hidden">
+<div class="bg-white shadow rounded-lg overflow-x-auto scroll-shadow">
   <% if @partners.any? %>
     <table class="min-w-full divide-y divide-gray-200">
       <caption class="sr-only"><%= t("federation_admin.partners.index.title") %></caption>
@@ -57,7 +57,7 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               <% if partner.permitted_organization_ids.blank? || partner.permitted_organization_ids.empty? %>
-                <span class="text-federation-600 font-medium">All</span>
+                <span class="text-federation-600 font-medium"><%= t("federation_admin.partners.show.all_organizations") %></span>
               <% else %>
                 <%= partner.permitted_organization_ids.size %>
               <% end %>
@@ -66,9 +66,9 @@
               <% if partner.consecutive_failures == 0 %>
                 <span class="inline-block h-3 w-3 rounded-full bg-green-500" role="img" aria-label="<%= t('federation_admin.common.active') %>" title="<%= t('federation_admin.common.healthy') %>"></span>
               <% elsif partner.consecutive_failures < 5 %>
-                <span class="inline-block h-3 w-3 rounded-full bg-yellow-500" role="img" aria-label="<%= partner.consecutive_failures %> failures" title="<%= partner.consecutive_failures %> failures"></span>
+                <span class="inline-block h-3 w-3 rounded-full bg-yellow-500" role="img" aria-label="<%= t('federation_admin.partners.index.n_failures', count: partner.consecutive_failures, default: '%{count} failures') %>" title="<%= t('federation_admin.partners.index.n_failures', count: partner.consecutive_failures, default: '%{count} failures') %>"></span>
               <% else %>
-                <span class="inline-block h-3 w-3 rounded-full bg-red-500" role="img" aria-label="<%= partner.consecutive_failures %> failures (<%= t('federation_admin.common.suspended') %>)" title="<%= partner.consecutive_failures %> failures (suspended)"></span>
+                <span class="inline-block h-3 w-3 rounded-full bg-red-500" role="img" aria-label="<%= t('federation_admin.partners.index.n_failures', count: partner.consecutive_failures, default: '%{count} failures') %> (<%= t('federation_admin.common.suspended') %>)" title="<%= t('federation_admin.partners.index.n_failures', count: partner.consecutive_failures, default: '%{count} failures') %> (<%= t('federation_admin.common.suspended') %>)"></span>
               <% end %>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
@@ -79,6 +79,27 @@
         <% end %>
       </tbody>
     </table>
+    <% if @total_pages > 1 %>
+      <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3">
+        <div class="text-sm text-gray-700">
+          <%= t('federation_admin.common.page', default: 'Page') %> <span class="font-medium"><%= @current_page %></span> <%= t('federation_admin.common.of', default: 'of') %> <span class="font-medium"><%= @total_pages %></span>
+        </div>
+        <div class="flex space-x-2">
+          <% if @current_page > 1 %>
+            <a href="<%= federation_admin_partners_path(request.query_parameters.merge(page: @current_page - 1)) %>"
+               class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <%= t('federation_admin.common.previous', default: 'Previous') %>
+            </a>
+          <% end %>
+          <% if @current_page < @total_pages %>
+            <a href="<%= federation_admin_partners_path(request.query_parameters.merge(page: @current_page + 1)) %>"
+               class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <%= t('federation_admin.common.next', default: 'Next') %>
+            </a>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
   <% else %>
     <div class="text-center py-12">
       <p class="text-sm text-gray-500"><%= t("federation_admin.partners.index.empty") %></p>

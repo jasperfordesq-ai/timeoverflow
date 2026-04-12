@@ -25,7 +25,7 @@
 
     <div class="px-6 py-4 grid grid-cols-3 gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.partner') %></dt>
-      <dd class="text-sm text-gray-900 col-span-2"><%= @message.federation_partner&.name || 'N/A' %></dd>
+      <dd class="text-sm text-gray-900 col-span-2"><%= @message.federation_partner&.name || t("federation_admin.common.not_available", default: "N/A") %></dd>
     </div>
 
     <div class="px-6 py-4 grid grid-cols-3 gap-4">
@@ -63,7 +63,7 @@
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.body') %></dt>
       <dd class="text-sm text-gray-900 col-span-2">
         <% if @message.body.present? %>
-          <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 whitespace-pre-wrap font-mono text-xs leading-relaxed"><%= @message.body %></div>
+          <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 whitespace-pre-wrap font-mono text-xs leading-relaxed break-words"><%= @message.body %></div>
         <% else %>
           <span class="text-gray-400"><%= t('federation_admin.messages.show.no_body') %></span>
         <% end %>

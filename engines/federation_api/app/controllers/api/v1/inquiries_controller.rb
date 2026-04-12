@@ -31,6 +31,12 @@ module Api
       # GET /api/v1/inquiries/:id
       def show
         inquiry = current_organization.inquiries.active.of_active_members.find_by!(id: params[:id])
+
+        opted_in_ids = Federation::AccessControl.opted_in_member_ids(current_organization)
+        unless opted_in_ids.include?(inquiry.member_id)
+          return respond_with_error(I18n.t("federation_api.errors.resource_not_found", default: "Resource not found"), status: :not_found)
+        end
+
         respond_with_data(serialize_post(inquiry, detailed: true))
       end
 

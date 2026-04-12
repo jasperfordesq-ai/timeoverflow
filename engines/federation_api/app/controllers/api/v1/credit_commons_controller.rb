@@ -8,7 +8,7 @@ module Api
       def about
         org = current_organization || (params[:organization_id].present? ? Organization.find_by(id: params[:organization_id]) : nil)
         unless org
-          return respond_with_error("No organizations configured", status: :service_unavailable)
+          return respond_with_error(I18n.t("federation_api.errors.cc_no_organizations", default: "No organizations configured"), status: :service_unavailable)
         end
         config = FederationCcNodeConfig.for(org)
         respond_with_data(config.build_about_response)
@@ -44,8 +44,8 @@ module Api
         member = current_organization.members.active.find_by(member_uid: username) ||
                  current_organization.members.active.find_by(id: username)
 
-        return respond_with_error("Account not found", status: :not_found) unless member
-        return respond_with_error("Account has no balance record", status: :not_found) unless member.account
+        return respond_with_error(I18n.t("federation_api.errors.cc_account_not_found", default: "Account not found"), status: :not_found) unless member
+        return respond_with_error(I18n.t("federation_api.errors.cc_no_balance", default: "Account has no balance record"), status: :not_found) unless member.account
 
         balance = member.account.balance.to_i / 3600.0
         completed = FederationTransaction.completed.where(local_account_id: member.account.id)
@@ -61,25 +61,30 @@ module Api
       end
 
       def create_transaction
-        respond_with_error("Transaction creation via CC protocol is not yet implemented", status: :not_implemented)
+        respond_with_error(I18n.t("federation_api.errors.cc_not_implemented", default: "Transaction creation via CC protocol is not yet implemented"), status: :not_implemented)
       end
 
       def show_transaction
         # Scope by organization to prevent cross-partner transaction leaks
         scope = current_organization ? FederationTransaction.where(organization_id: current_organization.id) : FederationTransaction
         txn = scope.find_by(external_transaction_id: params[:uuid])
-        return respond_with_error("Transaction not found", status: :not_found) unless txn
+        return respond_with_error(I18n.t("federation_api.errors.transaction_not_found", default: "Transaction not found"), status: :not_found) unless txn
+
+        # Enforce org access for global API keys
+        if current_organization.nil? && txn.organization_id.present? && !@current_api_key.can_access_organization?(txn.organization_id)
+          return respond_with_error(I18n.t("federation_api.errors.transaction_not_found", default: "Transaction not found"), status: :not_found)
+        end
 
         adapter = Federation::Adapters::CreditCommonsAdapter.new(partner: txn.federation_partner)
         respond_with_data(adapter.to_cc_transaction(txn))
       end
 
       def transition_transaction
-        respond_with_error("State transitions via CC protocol are not yet implemented", status: :not_implemented)
+        respond_with_error(I18n.t("federation_api.errors.cc_transitions_not_implemented", default: "State transitions via CC protocol are not yet implemented"), status: :not_implemented)
       end
 
       def relay
-        respond_with_error("Multi-hop relay via CC protocol is not yet implemented", status: :not_implemented)
+        respond_with_error(I18n.t("federation_api.errors.cc_relay_not_implemented", default: "Multi-hop relay via CC protocol is not yet implemented"), status: :not_implemented)
       end
 
       def entries
@@ -101,7 +106,12 @@ module Api
       def transaction_entries
         scope = current_organization ? FederationTransaction.where(organization_id: current_organization.id) : FederationTransaction
         txn = scope.find_by(external_transaction_id: params[:uuid])
-        return respond_with_error("Transaction not found", status: :not_found) unless txn
+        return respond_with_error(I18n.t("federation_api.errors.transaction_not_found", default: "Transaction not found"), status: :not_found) unless txn
+
+        # Enforce org access for global API keys
+        if current_organization.nil? && txn.organization_id.present? && !@current_api_key.can_access_organization?(txn.organization_id)
+          return respond_with_error(I18n.t("federation_api.errors.transaction_not_found", default: "Transaction not found"), status: :not_found)
+        end
 
         adapter = Federation::Adapters::CreditCommonsAdapter.new(partner: txn.federation_partner)
         respond_with_data(adapter.generate_entries(txn))

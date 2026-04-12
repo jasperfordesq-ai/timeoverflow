@@ -27,6 +27,7 @@ class FederationTransaction < ActiveRecord::Base
     }
   }
   validates :status, presence: true, inclusion: { in: STATUSES }
+  validates :organization_id, presence: true
   validates :remote_user_identifier, presence: true, length: { maximum: 255 }
   validates :external_transaction_id, uniqueness: { scope: :federation_partner_id },
             allow_nil: true

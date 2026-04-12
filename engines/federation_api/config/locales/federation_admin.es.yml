@@ -658,6 +658,12 @@ es:
       partner_update_failed: "Error al actualizar el socio. Consulte los registros del servidor para más detalles."
 
     common:
+      page: "Página"
+      of: "de"
+      previous: "Anterior"
+      next: "Siguiente"
+      unknown: "Desconocido"
+      not_available: "N/D"
       inbound: "Entrante"
       outbound: "Saliente"
       pending: "Pendiente"

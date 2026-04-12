@@ -14,9 +14,9 @@
 <div class="row mb-4">
   <div class="col-md-6">
     <form method="get" action="<%= new_federation_hub_transfer_path %>">
-      <label class="form-label fw-bold"><%= t("federation_hub.transfers.select_org") %></label>
+      <label for="org_id_select" class="form-label fw-bold"><%= t("federation_hub.transfers.select_org") %></label>
       <div class="input-group">
-        <select name="org_id" class="form-control" required onchange="
+        <select name="org_id" id="org_id_select" class="form-control" required onchange="
           var opt = this.options[this.selectedIndex];
           document.getElementById('transfer_source_type').value = opt.dataset.type || '';
           this.form.submit();

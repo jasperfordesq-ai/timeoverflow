@@ -28,7 +28,7 @@
               </td>
               <td class="px-4 py-3 text-sm">
                 <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= run.healthy? ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
-                  <%= run.status %>
+                  <%= t("federation_admin.reconciliation_runs.show.statuses.#{run.status}", default: run.status.capitalize) %>
                 </span>
               </td>
               <td class="px-4 py-3 text-sm <%= run.critical_count > 0 ? 'text-red-600 font-bold' : 'text-gray-500' %>"><%= run.critical_count %></td>
@@ -41,6 +41,27 @@
         </tbody>
       </table>
     </div>
+    <% if @total_pages > 1 %>
+      <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3">
+        <div class="text-sm text-gray-700">
+          <%= t('federation_admin.common.page', default: 'Page') %> <span class="font-medium"><%= @current_page %></span> <%= t('federation_admin.common.of', default: 'of') %> <span class="font-medium"><%= @total_pages %></span>
+        </div>
+        <div class="flex space-x-2">
+          <% if @current_page > 1 %>
+            <a href="<%= federation_admin_reconciliation_runs_path(page: @current_page - 1) %>"
+               class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <%= t('federation_admin.common.previous', default: 'Previous') %>
+            </a>
+          <% end %>
+          <% if @current_page < @total_pages %>
+            <a href="<%= federation_admin_reconciliation_runs_path(page: @current_page + 1) %>"
+               class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <%= t('federation_admin.common.next', default: 'Next') %>
+            </a>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
   <% else %>
     <div class="text-center py-12">
       <p class="text-sm text-gray-500"><%= t("federation_admin.reconciliation_runs.empty") %></p>

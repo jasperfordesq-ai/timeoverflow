@@ -1,7 +1,14 @@
 module FederationAdmin
   class AuditLogsController < BaseController
+    PER_PAGE = 50
+
     def index
-      @logs = FederationAuditLog.recent.limit(100)
+      page = [(params[:page] || 1).to_i, 1].max
+      @logs = FederationAuditLog.recent
+      @total_count = @logs.count
+      @total_pages = (@total_count.to_f / PER_PAGE).ceil
+      @current_page = [page, @total_pages].min.clamp(1, Float::INFINITY)
+      @logs = @logs.offset((@current_page - 1) * PER_PAGE).limit(PER_PAGE)
     end
   end
 end

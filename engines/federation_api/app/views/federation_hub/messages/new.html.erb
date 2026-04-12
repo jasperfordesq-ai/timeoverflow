@@ -15,9 +15,9 @@
 <div class="row mb-4">
   <div class="col-md-6">
     <form method="get" action="<%= new_federation_hub_message_path %>">
-      <label class="form-label fw-bold"><%= t("federation_hub.messages.partner") %></label>
+      <label for="msg_partner_select" class="form-label fw-bold"><%= t("federation_hub.messages.partner") %></label>
       <div class="input-group">
-        <select name="partner_id" class="form-control" onchange="
+        <select name="partner_id" id="msg_partner_select" class="form-control" onchange="
           var opt = this.options[this.selectedIndex];
           document.getElementById('msg_source_type').value = opt.dataset.type || '';
           this.form.submit();

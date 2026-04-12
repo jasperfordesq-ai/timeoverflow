@@ -1,10 +1,17 @@
 module FederationAdmin
   class PartnersController < BaseController
+    PER_PAGE = 25
+
     def index
       @partners = FederationPartner.all
       sort_col = %w[id name status platform_type created_at].include?(params[:sort]) ? params[:sort] : "created_at"
       sort_dir = params[:dir] == "asc" ? :asc : :desc
       @partners = @partners.order(sort_col => sort_dir)
+      @total_count = @partners.count
+      page = [(params[:page] || 1).to_i, 1].max
+      @total_pages = (@total_count.to_f / PER_PAGE).ceil
+      @current_page = [page, [@total_pages, 1].max].min
+      @partners = @partners.offset((@current_page - 1) * PER_PAGE).limit(PER_PAGE)
     end
 
     def show
@@ -17,6 +24,7 @@ module FederationAdmin
     end
 
     def new
+      @partner = FederationPartner.new
       @organizations = Organization.order(:name)
     end
 

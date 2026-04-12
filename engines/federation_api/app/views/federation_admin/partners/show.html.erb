@@ -107,12 +107,8 @@
     <div>
       <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.webhook_secret") %></dt>
       <dd class="mt-1 text-sm font-mono text-gray-900">
-        <span id="webhook-secret-masked">********************</span>
-        <span id="webhook-secret-raw" class="hidden break-all"><%= @partner.webhook_secret %></span>
-        <button onclick="var masked = document.getElementById('webhook-secret-masked'); var raw = document.getElementById('webhook-secret-raw'); if (raw.classList.contains('hidden')) { raw.classList.remove('hidden'); masked.classList.add('hidden'); this.textContent = '<%= j t("federation_admin.partners.show.hide") %>'; } else { raw.classList.add('hidden'); masked.classList.remove('hidden'); this.textContent = '<%= j t("federation_admin.partners.show.reveal") %>'; }"
-                class="ml-2 text-xs text-federation-600 hover:text-federation-800 font-medium">
-          <%= t("federation_admin.partners.show.reveal") %>
-        </button>
+        <span class="break-all">&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;<%= @partner.webhook_secret.to_s.last(8) %></span>
+        <span class="ml-2 text-xs text-gray-400"><%= t("federation_admin.partners.show.secret_note", default: "Full secret shown only at creation/rotation.") %></span>
         <% if @partner.rotation_in_progress? %>
           <span class="ml-3 inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-800">
             <%= t("federation_admin.partners.show.rotation_in_progress", date: @partner.secret_rotation_started_at&.then { |t| format_date(t) }) %>

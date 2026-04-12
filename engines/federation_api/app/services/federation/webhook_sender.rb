@@ -3,6 +3,9 @@
 # Signs payloads with HMAC-SHA256 using the partner's webhook_secret.
 # Logs all delivery attempts for audit purposes.
 #
+require "resolv"
+require "ipaddr"
+
 module Federation
   class WebhookSender
     # Read timeout from engine config (set via FEDERATION_WEBHOOK_TIMEOUT env var).
@@ -45,6 +48,8 @@ module Federation
 
     def deliver
       return unless @partner.webhook_url.present?
+
+      validate_url_safety!(@partner.webhook_url)
 
       body = build_body
       signature = sign(body)
@@ -121,6 +126,32 @@ module Federation
         raise ArgumentError, "webhook_secret is blank for partner #{@partner.id} — cannot sign webhook"
       end
       OpenSSL::HMAC.hexdigest("SHA256", @partner.webhook_secret, body)
+    end
+
+    # SSRF protection: reject URLs that resolve to private/loopback addresses.
+    PRIVATE_RANGES = [
+      IPAddr.new("127.0.0.0/8"),
+      IPAddr.new("10.0.0.0/8"),
+      IPAddr.new("172.16.0.0/12"),
+      IPAddr.new("192.168.0.0/16"),
+      IPAddr.new("169.254.0.0/16"),
+      IPAddr.new("::1/128"),
+      IPAddr.new("fc00::/7")
+    ].freeze
+
+    def validate_url_safety!(url)
+      uri = URI.parse(url)
+      raise ArgumentError, "Webhook URL has no host" unless uri.host
+
+      addresses = Resolv.getaddresses(uri.host)
+      raise ArgumentError, "Cannot resolve webhook host: #{uri.host}" if addresses.empty?
+
+      addresses.each do |addr|
+        ip = IPAddr.new(addr)
+        if PRIVATE_RANGES.any? { |range| range.include?(ip) }
+          raise ArgumentError, "Webhook URL resolves to private/loopback address (#{addr}) — SSRF blocked"
+        end
+      end
     end
 
     # M9: Return a sanitised copy of the payload safe for DB log storage.

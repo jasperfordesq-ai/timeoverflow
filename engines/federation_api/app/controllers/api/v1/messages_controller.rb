@@ -52,6 +52,11 @@ module Api
       # Also accepts:  { partner_id, remote_user_identifier, local_member_id,
       #                   local_member_email, local_member_uid, organization_id,
       #                   subject, body, external_message_id }
+      #
+      # Note: Params are validated by validate_message_params! (before_action)
+      # rather than Rails strong parameters, since this controller inherits from
+      # BaseController (ActionController::API) which does not include
+      # StrongParameters by default. All input is explicitly checked before use.
       def create
         partner = resolve_partner
         return respond_with_error(I18n.t("federation_api.errors.unknown_inactive_partner", default: "Unknown or inactive partner"), status: :not_found) unless partner&.active?

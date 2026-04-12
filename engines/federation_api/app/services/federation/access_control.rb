@@ -29,41 +29,41 @@ module Federation
       FederationMemberPreference.for(member).opted_in?
     end
 
-    def self.member_discoverable?(member)
-      return false unless org_enabled?(member.organization)
-      settings = FederationOrganizationSetting.for(member.organization)
+    def self.member_discoverable?(member, settings: nil, prefs: nil)
+      settings ||= FederationOrganizationSetting.for(member.organization)
+      return false unless settings.federation_enabled?
       return false unless settings.share_member_profiles?
-      prefs = FederationMemberPreference.for(member)
+      prefs ||= FederationMemberPreference.for(member)
       prefs.opted_in? && prefs.discoverable?
     end
 
-    def self.member_can_receive?(member, partner: nil)
-      return false unless org_enabled?(member.organization)
-      settings = FederationOrganizationSetting.for(member.organization)
+    def self.member_can_receive?(member, partner: nil, settings: nil, prefs: nil)
+      settings ||= FederationOrganizationSetting.for(member.organization)
+      return false unless settings.federation_enabled?
       return false unless settings.allows_inbound?
       return false if partner && settings.blocks_partner?(partner.id)
-      prefs = FederationMemberPreference.for(member)
+      prefs ||= FederationMemberPreference.for(member)
       return false unless prefs.opted_in? && prefs.allow_inbound_transfers
       return false if partner && prefs.blocks_partner?(partner.id)
       true
     end
 
-    def self.member_can_send?(member, partner: nil)
-      return false unless org_enabled?(member.organization)
-      settings = FederationOrganizationSetting.for(member.organization)
+    def self.member_can_send?(member, partner: nil, settings: nil, prefs: nil)
+      settings ||= FederationOrganizationSetting.for(member.organization)
+      return false unless settings.federation_enabled?
       return false unless settings.allows_outbound?
       return false if partner && settings.blocks_partner?(partner.id)
-      prefs = FederationMemberPreference.for(member)
+      prefs ||= FederationMemberPreference.for(member)
       return false unless prefs.opted_in? && prefs.allow_outbound_transfers
       return false if partner && prefs.blocks_partner?(partner.id)
       true
     end
 
-    def self.member_listings_visible?(member)
-      return false unless org_enabled?(member.organization)
-      settings = FederationOrganizationSetting.for(member.organization)
+    def self.member_listings_visible?(member, settings: nil, prefs: nil)
+      settings ||= FederationOrganizationSetting.for(member.organization)
+      return false unless settings.federation_enabled?
       return false unless settings.share_listings?
-      prefs = FederationMemberPreference.for(member)
+      prefs ||= FederationMemberPreference.for(member)
       prefs.opted_in? && prefs.share_listings
     end
 
@@ -109,10 +109,10 @@ module Federation
       {
         org_federation_enabled: settings.federation_enabled?,
         member_opted_in: prefs.opted_in?,
-        discoverable_to_partners: member_discoverable?(member),
-        can_receive_transfers: member_can_receive?(member),
-        can_send_transfers: member_can_send?(member),
-        listings_visible: member_listings_visible?(member)
+        discoverable_to_partners: member_discoverable?(member, settings: settings, prefs: prefs),
+        can_receive_transfers: member_can_receive?(member, settings: settings, prefs: prefs),
+        can_send_transfers: member_can_send?(member, settings: settings, prefs: prefs),
+        listings_visible: member_listings_visible?(member, settings: settings, prefs: prefs)
       }
     end
   end

@@ -52,6 +52,12 @@ module Api
       def show
         post = current_organization.posts.active.of_active_members
                  .where(type: %w[Offer Inquiry]).find_by!(id: params[:id])
+
+        opted_in_ids = Federation::AccessControl.opted_in_member_ids(current_organization)
+        unless opted_in_ids.include?(post.member_id)
+          return respond_with_error(I18n.t("federation_api.errors.resource_not_found", default: "Resource not found"), status: :not_found)
+        end
+
         respond_with_data(serialize_listing(post, detailed: true))
       end
 

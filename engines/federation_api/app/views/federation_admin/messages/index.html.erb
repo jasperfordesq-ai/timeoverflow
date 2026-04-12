@@ -86,7 +86,7 @@
               <td class="px-4 py-3 text-sm font-mono text-gray-900">
                 <a href="<%= federation_admin_message_path(msg) %>" class="text-federation-600 hover:text-federation-900"><%= msg.id %></a>
               </td>
-              <td class="px-4 py-3 text-sm text-gray-700"><%= msg.federation_partner&.name || 'N/A' %></td>
+              <td class="px-4 py-3 text-sm text-gray-700"><%= msg.federation_partner&.name || t("federation_admin.common.not_available", default: "N/A") %></td>
               <td class="px-4 py-3 text-sm">
                 <% if msg.direction == 'inbound' %>
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.messages.index.inbound') %></span>

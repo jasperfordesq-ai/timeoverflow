@@ -3,6 +3,7 @@ class FederationCcEntry < ActiveRecord::Base
 
   STATES = %w[P V C E X].freeze
 
+  validates :organization_id, presence: true
   validates :transaction_uuid, presence: true
   validates :payer, presence: true
   validates :payee, presence: true

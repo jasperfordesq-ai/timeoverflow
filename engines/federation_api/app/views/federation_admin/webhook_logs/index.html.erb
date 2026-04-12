@@ -79,7 +79,7 @@
                 <a href="<%= federation_admin_webhook_log_path(log) %>" class="text-federation-600 hover:text-federation-800"><%= log.id %></a>
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                <%= log.federation_partner&.name || "N/A" %>
+                <%= log.federation_partner&.name || t("federation_admin.common.not_available", default: "N/A") %>
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap font-mono"><%= log.event_type %></td>
               <td class="px-4 py-3 text-sm whitespace-nowrap">

@@ -44,12 +44,14 @@ module Api
             database: db_ok ? "ok" : "error",
             cache: cache_ok ? "ok" : "error",
             federation_api: "ok"
-          },
-          organizations_count: (Organization.count rescue 0),
-          federation_partners_count: (FederationPartner.active.count rescue 0)
+          }
         }
 
-        respond_with_data(health_data, status: status)
+        if all_ok
+          respond_with_data(health_data, status: status)
+        else
+          respond_with_error(I18n.t("federation_api.errors.unhealthy", default: "Service unhealthy"), status: :service_unavailable, meta: health_data)
+        end
       end
     end
   end

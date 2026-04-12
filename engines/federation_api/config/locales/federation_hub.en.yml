@@ -107,6 +107,7 @@ en:
       send_message: "Message"
       browse_unavailable: "Direct member browsing is not yet available for this partner. Members from this community will appear here once the feature is enabled."
       no_browse_method: "No browsing method available for this partner."
+      total: "total"
     listings:
       title: "Partner Listings"
       subtitle: "Discover offers and inquiries from partner timebanking communities."
@@ -124,6 +125,13 @@ en:
       choose_partner: "Select a partner community above to browse their listings."
       listing_fallback: "Listing #%{id}"
       browse_unavailable: "Direct listing browsing is not yet available for this partner. Listings from this community will appear here once the feature is enabled."
+      sort_by: "Sort:"
+      sort_title: "Title"
+      sort_type: "Type"
+      sort_user: "User"
+      read_more: "Read more"
+      read_less: "Show less"
+      total: "total"
     messages:
       title: "Federation Messages"
       compose: "New Message"

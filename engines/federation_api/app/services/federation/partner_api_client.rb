@@ -9,6 +9,9 @@
 #
 # Authentication: Bearer token via the partner's api_key_hash field.
 #
+require "resolv"
+require "ipaddr"
+
 module Federation
   class PartnerApiClient
     TIMEOUT = 10
@@ -182,6 +185,8 @@ module Federation
     end
 
     def execute(uri, request)
+      validate_url_safety!(uri.to_s)
+
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = uri.scheme == "https"
       http.open_timeout = TIMEOUT
@@ -204,6 +209,32 @@ module Federation
       @partner.record_failure!
       Rails.logger.error("[Federation::PartnerApiClient] Request to #{@partner.name} failed: #{e.class}: #{e.message}")
       { "success" => false, "error" => e.message }
+    end
+
+    # SSRF protection: reject URLs that resolve to private/loopback addresses.
+    PRIVATE_RANGES = [
+      IPAddr.new("127.0.0.0/8"),
+      IPAddr.new("10.0.0.0/8"),
+      IPAddr.new("172.16.0.0/12"),
+      IPAddr.new("192.168.0.0/16"),
+      IPAddr.new("169.254.0.0/16"),
+      IPAddr.new("::1/128"),
+      IPAddr.new("fc00::/7")
+    ].freeze
+
+    def validate_url_safety!(url)
+      uri = URI.parse(url)
+      raise ArgumentError, "URL has no host" unless uri.host
+
+      addresses = Resolv.getaddresses(uri.host)
+      raise ArgumentError, "Cannot resolve host: #{uri.host}" if addresses.empty?
+
+      addresses.each do |addr|
+        ip = IPAddr.new(addr)
+        if PRIVATE_RANGES.any? { |range| range.include?(ip) }
+          raise ArgumentError, "URL resolves to private/loopback address (#{addr}) — SSRF blocked"
+        end
+      end
     end
 
     # --- Response transformation helpers ---

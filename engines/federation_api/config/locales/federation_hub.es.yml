@@ -107,6 +107,7 @@ es:
       send_message: "Mensaje"
       browse_unavailable: "La exploración directa de miembros aún no está disponible para este socio."
       no_browse_method: "No hay método de exploración disponible para este socio."
+      total: "total"
     listings:
       title: "Anuncios de Socios"
       subtitle: "Descubre ofertas y demandas de comunidades de bancos de tiempo asociadas."
@@ -124,6 +125,13 @@ es:
       choose_partner: "Selecciona una comunidad arriba para explorar sus anuncios."
       listing_fallback: "Anuncio #%{id}"
       browse_unavailable: "La exploración de anuncios aún no está disponible para este socio."
+      sort_by: "Ordenar:"
+      sort_title: "Título"
+      sort_type: "Tipo"
+      sort_user: "Usuario"
+      read_more: "Leer más"
+      read_less: "Mostrar menos"
+      total: "total"
     messages:
       title: "Mensajes de Federación"
       compose: "Nuevo Mensaje"

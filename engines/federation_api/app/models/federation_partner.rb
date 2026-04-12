@@ -53,7 +53,7 @@ class FederationPartner < ActiveRecord::Base
 
   # Scope: only partners that can access a specific org.
   scope :for_organization, ->(org_id) {
-    where("permitted_organization_ids = '[]'::jsonb OR permitted_organization_ids @> ?", [org_id].to_json)
+    where("permitted_organization_ids IS NULL OR permitted_organization_ids = '[]'::jsonb OR permitted_organization_ids @> ?", [org_id].to_json)
   }
 
   def active?
@@ -75,11 +75,13 @@ class FederationPartner < ActiveRecord::Base
   def record_failure!
     return if status == "terminated"  # don't touch terminated partners
 
-    # Atomic increment + conditional suspension in one reload cycle
-    # to avoid stale in-memory reads under concurrency.
-    increment!(:consecutive_failures)
+    # Fully atomic: increment + conditional suspension in a single SQL statement
+    # to eliminate race windows under concurrent webhook deliveries.
+    self.class.where(id: id).update_all([
+      "consecutive_failures = consecutive_failures + 1, status = CASE WHEN consecutive_failures + 1 >= 5 THEN 'suspended' ELSE status END, updated_at = ?",
+      Time.current
+    ])
     reload
-    update!(status: "suspended") if consecutive_failures >= 5
   end
 
   def record_success!

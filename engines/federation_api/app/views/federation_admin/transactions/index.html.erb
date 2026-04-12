@@ -112,7 +112,7 @@
                 <%= truncate(txn.external_transaction_id.to_s, length: 16) %>
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                <%= txn.federation_partner&.name || "N/A" %>
+                <%= txn.federation_partner&.name || t("federation_admin.common.not_available", default: "N/A") %>
               </td>
               <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap"><%= txn.organization_id %></td>
               <td class="px-4 py-3 text-sm whitespace-nowrap">

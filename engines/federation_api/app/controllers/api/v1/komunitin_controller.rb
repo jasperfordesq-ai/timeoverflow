@@ -101,9 +101,9 @@ module Api
                         status: :bad_request, content_type: "application/vnd.api+json"
         end
         begin
-          body = JSON.parse(raw)
+          body = JSON.parse(raw, max_nesting: 20)
         rescue JSON::ParserError => e
-          return render json: { errors: [{ status: "400", title: "Bad Request", detail: "Invalid JSON: #{e.message}" }] },
+          return render json: { errors: [{ status: "400", title: "Bad Request", detail: "Invalid JSON" }] },
                         status: :bad_request, content_type: "application/vnd.api+json"
         end
         attrs = body.dig("data", "attributes") || {}
@@ -116,10 +116,7 @@ module Api
         payer_id = rels.dig("payer", "data", "id")
         payee_id = rels.dig("payee", "data", "id")
 
-        respond_with_error(
-          "Komunitin transfer processing is not yet implemented",
-          status: :not_implemented
-        )
+        render json: { errors: [{ status: "501", title: "Not Implemented", detail: I18n.t("federation_api.errors.komunitin_transfers_not_implemented", default: "Transfer creation via Komunitin protocol is handled through the REST API") }] }, status: :not_implemented, content_type: "application/vnd.api+json"
       end
 
       private

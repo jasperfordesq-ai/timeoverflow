@@ -96,6 +96,7 @@ module Federation
             external_transaction_id: external_transaction_id,
             direction: "inbound",
             local_account_id: member.account.id,
+            organization_id: org.id,
             remote_user_identifier: remote_user_identifier,
             amount: amount,
             reason: reason
@@ -174,6 +175,7 @@ module Federation
           external_transaction_id: external_transaction_id,
           direction: "outbound",
           local_account_id: local_account.id,
+          organization_id: org.id,
           remote_user_identifier: remote_user_identifier,
           amount: amount,
           reason: reason

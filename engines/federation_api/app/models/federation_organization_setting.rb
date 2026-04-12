@@ -39,6 +39,10 @@ class FederationOrganizationSetting < ActiveRecord::Base
 
   validate :sanitize_blocked_partner_ids
 
+  def internal_federation_enabled?
+    enable_internal_federation
+  end
+
   private
 
   def sanitize_blocked_partner_ids
@@ -49,9 +53,5 @@ class FederationOrganizationSetting < ActiveRecord::Base
       Rails.logger.warn("[FederationOrganizationSetting] Stripping orphaned partner IDs #{orphaned} from org setting #{id || '(new)'}")
       self.blocked_partner_ids = valid_ids
     end
-  end
-
-  def internal_federation_enabled?
-    enable_internal_federation
   end
 end

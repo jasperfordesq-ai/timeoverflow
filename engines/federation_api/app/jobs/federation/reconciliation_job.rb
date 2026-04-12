@@ -195,26 +195,29 @@ module Federation
       end
 
       # Check 4: Transfer movement integrity (eager-load to avoid N+1)
+      # Pre-build org_id -> account_ids lookup to avoid N+1 in Check 4b.
+      org_account_ids_cache = {}
+
       FederationTransaction.completed.where.not(transfer_id: nil)
         .includes(transfer: :movements).find_each do |fed_txn|
         transfer = fed_txn.transfer
         next unless transfer
 
-        movements = transfer.movements
-        if movements.count != 2
+        movements = transfer.movements.to_a
+        if movements.size != 2
           issues << {
             type: "movement_count_mismatch",
             severity: "critical",
             federation_transaction_id: fed_txn.id,
             transfer_id: transfer.id,
             expected_movements: 2,
-            actual_movements: movements.count,
-            message: "Transfer #{transfer.id} has #{movements.count} movements (expected 2)"
+            actual_movements: movements.size,
+            message: "Transfer #{transfer.id} has #{movements.size} movements (expected 2)"
           }
         end
 
         # Movements should sum to zero (double-entry)
-        movement_sum = movements.sum(:amount)
+        movement_sum = movements.sum(&:amount)
         if movement_sum != 0
           issues << {
             type: "movement_imbalance",
@@ -228,10 +231,10 @@ module Federation
 
         # Check 4b: Account ownership — verify at least one movement's account
         # belongs to the federation transaction's organization.
-        if fed_txn.organization_id.present? && movements.count == 2
-          org_account_ids = Account.where(organization_id: fed_txn.organization_id).pluck(:id)
-          movement_account_ids = movements.pluck(:account_id)
-          unless (movement_account_ids & org_account_ids).any?
+        if fed_txn.organization_id.present? && movements.size == 2
+          org_account_ids_cache[fed_txn.organization_id] ||= Account.where(organization_id: fed_txn.organization_id).pluck(:id)
+          movement_account_ids = movements.map(&:account_id)
+          unless (movement_account_ids & org_account_ids_cache[fed_txn.organization_id]).any?
             issues << {
               type: "account_ownership_mismatch",
               severity: "critical",

@@ -115,7 +115,8 @@ module Api
       rescue ActiveRecord::RecordNotFound => e
         respond_with_error(I18n.t("federation_api.errors.resource_not_found", default: "Resource not found"), status: :not_found)
       rescue ArgumentError => e
-        respond_with_error(e.message, status: :unprocessable_entity)
+        Rails.logger.warn("[Federation::Transfer] ArgumentError: #{e.message}")
+        respond_with_error(I18n.t("federation_api.errors.transfer_argument_error", default: "Invalid transfer parameters"), status: :unprocessable_entity)
       rescue => e
         Rails.logger.error("[Federation::Transfer] Unexpected error: #{e.class}: #{e.message}")
         respond_with_error(I18n.t("federation_api.errors.transfer_failed", default: "Transfer failed"), status: :internal_server_error)
@@ -164,9 +165,9 @@ module Api
           partner_id = partner&.id
         end
 
-        # Convert Nexus hours to TO seconds
-        nexus_amount = params[:amount].to_i
-        amount_seconds = nexus_amount * 3600
+        # Convert Nexus hours to TO seconds (use .to_f to handle fractional hours)
+        nexus_amount = params[:amount].to_f
+        amount_seconds = (nexus_amount * 3600).round
 
         # Rewrite params to TO native format
         params[:partner_id] = partner_id
@@ -254,16 +255,6 @@ module Api
           end
           txn
         end
-      end
-
-      def create_local_transfer(source:, destination:, amount:, reason:)
-        transfer = Transfer.new
-        transfer.source = source.id
-        transfer.destination = destination.id
-        transfer.amount = amount
-        transfer.reason = "[Federation] #{reason}"
-        transfer.save!
-        transfer
       end
 
       def serialize_transaction(fed_txn, local_transfer = nil)

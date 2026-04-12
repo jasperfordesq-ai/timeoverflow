@@ -1,6 +1,7 @@
 class FederationCcNodeConfig < ActiveRecord::Base
   belongs_to :organization, optional: true
 
+  validates :organization_id, presence: true, uniqueness: true
   validates :node_slug, presence: true, uniqueness: true,
             format: { with: /\A[0-9a-z][0-9a-z-]{1,13}[0-9a-z]\z/, message: :invalid_node_slug }
   validates :exchange_rate, numericality: { greater_than: 0 }

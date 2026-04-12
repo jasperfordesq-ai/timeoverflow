@@ -41,7 +41,7 @@
           <small class="text-muted"><%= format_date(msg.created_at) %></small>
         </div>
         <div class="mt-1">
-          <%= simple_format(sanitize(msg.body)) %>
+          <%= simple_format(sanitize(msg.body, tags: [])) %>
         </div>
         <% if msg.outbound? %>
           <small class="text-muted">

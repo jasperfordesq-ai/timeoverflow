@@ -18,7 +18,8 @@
     <%= javascript_include_tag 'application' %>
     <script><%= raw File.read(FederationApi::Engine.root.join("app/assets/javascripts/federation_form_helpers.js")) rescue "" %></script>
   </head>
-  <body>
+  <body class="d-flex flex-column min-vh-100">
+    <a href="#main-content" class="visually-hidden-focusable">Skip to main content</a>
     <noscript>
       <div class="alert alert-warning text-center mb-0">
         <small><%= t("federation_hub.layout.noscript_warning", default: "JavaScript is required for some Federation Hub features (transfers, live filtering).") %></small>
@@ -74,7 +75,7 @@
         <div class="container">
           <div class="row">
             <div class="col-12">
-              <ul class="nav nav-pills actions-menu">
+              <ul class="nav nav-pills actions-menu flex-wrap">
                 <li class="nav-item">
                   <a class="nav-link <%= 'active' if request.path == federation_hub_root_path %>" href="<%= federation_hub_root_path %>">
                     <%= t("federation_hub.nav.dashboard") %>
@@ -104,7 +105,7 @@
                   <a class="nav-link <%= 'active' if request.path.start_with?(federation_hub_messages_path) %>" href="<%= federation_hub_messages_path %>">
                     <%= t("federation_hub.nav.messages") %>
                     <% if unread_message_count > 0 %>
-                      <span class="badge bg-warning text-dark"><%= @unread_message_count %></span>
+                      <span class="badge bg-warning text-dark"><%= unread_message_count %></span>
                     <% end %>
                   </a>
                 </li>
@@ -120,7 +121,7 @@
       </nav>
     <% end %>
 
-    <div class="container content">
+    <div class="container content flex-grow-1" id="main-content">
       <%# Breadcrumbs %>
       <% if content_for?(:breadcrumbs) %>
         <nav aria-label="breadcrumb" class="mt-2 mb-3">
@@ -151,7 +152,7 @@
     </div>
 
     <%# Modal — matches TimeOverflow's structure %>
-    <div class="modal fade" id="modal">
+    <div class="modal fade" id="modal" aria-hidden="true" aria-labelledby="modal-title">
       <div class="modal-dialog" style="max-width: 500px;">
         <div class="modal-content"></div>
       </div>

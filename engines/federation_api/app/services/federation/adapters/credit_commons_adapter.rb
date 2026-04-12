@@ -221,7 +221,7 @@ module Federation
 
       # Parse a CC transaction from controller params into canonical format
       def parse_cc_transaction(params)
-        data = params.to_unsafe_h rescue params.to_h
+        data = params.respond_to?(:to_h) ? params.to_h : params
         transform_inbound_transfer(data)
       end
 
@@ -274,7 +274,7 @@ module Federation
         { data: data, meta: meta }
       end
 
-      def serialize_error(message, status: nil, errors: nil)
+      def serialize_error(message, status: nil, errors: nil, meta: {})
         # CC error format: CCViolation / CCFailure — also include success: false
         # for consistency with REST adapter's error envelope.
         body = { success: false, error: message, errors: [{ class: "CCViolation", message: message }] }

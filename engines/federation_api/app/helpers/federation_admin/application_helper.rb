@@ -45,8 +45,8 @@ module FederationAdmin
       else
         ""
       end
-      params_hash = request.query_parameters.merge(sort: column, dir: new_dir)
-      link_to("#{h(label)}#{arrow}".html_safe, "?#{params_hash.to_query}", class: "hover:text-federation-600")
+      safe_params = { sort: column, dir: new_dir, page: request.query_parameters[:page] }.compact
+      link_to "#{label}#{arrow}", "?#{safe_params.to_query}", class: "hover:text-federation-600"
     end
   end
 end

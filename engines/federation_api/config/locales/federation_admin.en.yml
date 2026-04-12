@@ -658,6 +658,12 @@ en:
       partner_update_failed: "Failed to update partner. Check the server logs for details."
 
     common:
+      page: "Page"
+      of: "of"
+      previous: "Previous"
+      next: "Next"
+      unknown: "Unknown"
+      not_available: "N/A"
       inbound: "Inbound"
       outbound: "Outbound"
       pending: "Pending"

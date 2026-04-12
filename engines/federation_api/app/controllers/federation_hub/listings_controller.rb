@@ -43,7 +43,7 @@ module FederationHub
       # Method 1: Webhook event (preferred — works with all partners)
       if partner.api_key_hash.present?
         begin
-          result = client.send(:post, client.send(:build_uri, "/receive"), {
+          result = client.send(:post, "/receive", {
             event: "listings.list",
             timestamp: Time.current.iso8601,
             platform: "timeoverflow",

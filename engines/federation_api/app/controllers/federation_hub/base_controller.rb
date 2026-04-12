@@ -11,6 +11,7 @@
 #
 module FederationHub
   class BaseController < ActionController::Base
+    before_action :set_locale
     before_action :authenticate_member!
     layout "federation_hub"
     helper FederationHub::ApplicationHelper
@@ -51,6 +52,14 @@ module FederationHub
 
     def federation_org_settings
       @federation_org_settings ||= current_organization ? FederationOrganizationSetting.for(current_organization) : nil
+    end
+
+    def set_locale
+      I18n.locale =
+        params[:locale] ||
+        current_user&.locale ||
+        session[:locale] ||
+        I18n.default_locale
     end
 
     def authenticate_member!

@@ -8,6 +8,7 @@
 #
 module FederationAdmin
   class BaseController < ActionController::Base
+    before_action :set_locale
     before_action :authenticate_federation_admin!
     layout "federation_admin"
     helper FederationAdmin::ApplicationHelper
@@ -18,6 +19,14 @@ module FederationAdmin
 
     # Reuse Devise's session. The host app defines `current_user` via Devise;
     # since this is a non-isolated engine, it's available here automatically.
+    def set_locale
+      I18n.locale =
+        params[:locale] ||
+        current_user&.locale ||
+        session[:locale] ||
+        I18n.default_locale
+    end
+
     def authenticate_federation_admin!
       unless current_user&.superadmin?
         if current_user

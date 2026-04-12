@@ -36,4 +36,8 @@ class FederationOrganizationSetting < ActiveRecord::Base
   def blocks_partner?(partner_id)
     (blocked_partner_ids || []).include?(partner_id)
   end
+
+  def internal_federation_enabled?
+    enable_internal_federation
+  end
 end

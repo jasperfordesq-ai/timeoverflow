@@ -1,0 +1,109 @@
+<% content_for(:title) { t("federation_hub.transfers.title") } %>
+
+<div class="row">
+  <div class="col-md-12">
+    <h1><%= t("federation_hub.transfers.title") %></h1>
+    <p class="text-muted"><%= t("federation_hub.transfers.subtitle") %></p>
+  </div>
+</div>
+
+<%# Step 1: Select target organization %>
+<div class="row mb-4">
+  <div class="col-md-6">
+    <form method="get" action="<%= new_federation_hub_transfer_path %>">
+      <label class="form-label fw-bold"><%= t("federation_hub.transfers.select_org") %></label>
+      <div class="input-group">
+        <select name="org_id" class="form-control" onchange="this.form.submit()">
+          <option value=""><%= t("federation_hub.transfers.choose_org") %></option>
+          <% @internal_orgs.each do |org| %>
+            <option value="<%= org.id %>" <%= 'selected' if @selected_org_id.to_s == org.id.to_s %>><%= org.name %></option>
+          <% end %>
+        </select>
+        <button type="submit" class="btn btn-info"><%= t("federation_hub.transfers.select") %></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<% if @selected_org_id.blank? %>
+  <div class="alert alert-info">
+    <% if @internal_orgs.any? %>
+      <%= t("federation_hub.transfers.choose_org_prompt") %>
+    <% else %>
+      <%= t("federation_hub.transfers.no_orgs_available") %>
+    <% end %>
+  </div>
+<% elsif @destination_members.any? %>
+  <%# Step 2: Select recipient and amount %>
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card border-info">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><%= t("federation_hub.transfers.send_to", org: @selected_org_name) %></h5>
+        </div>
+        <div class="card-body">
+          <form method="post" action="<%= federation_hub_transfers_path %>">
+            <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+            <input type="hidden" name="org_id" value="<%= @selected_org_id %>">
+
+            <%# Recipient %>
+            <div class="mb-3">
+              <label for="destination_member_id" class="form-label fw-bold"><%= t("federation_hub.transfers.recipient") %></label>
+              <select name="destination_member_id" id="destination_member_id" class="form-control" required>
+                <option value=""><%= t("federation_hub.transfers.select_recipient") %></option>
+                <% @destination_members.each do |m| %>
+                  <option value="<%= m["id"] %>"><%= m["username"] %></option>
+                <% end %>
+              </select>
+            </div>
+
+            <%# Amount %>
+            <div class="mb-3">
+              <label class="form-label fw-bold"><%= t("federation_hub.transfers.amount") %></label>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="input-group">
+                    <input type="number" name="hours" min="0" max="999" value="0" class="form-control" id="transfer_hours">
+                    <span class="input-group-text"><%= t("federation_hub.transfers.hours") %></span>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="input-group">
+                    <input type="number" name="minutes" min="0" max="59" value="0" class="form-control" id="transfer_minutes">
+                    <span class="input-group-text"><%= t("federation_hub.transfers.minutes") %></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <%# Reason %>
+            <div class="mb-3">
+              <label for="reason" class="form-label fw-bold"><%= t("federation_hub.transfers.reason") %></label>
+              <textarea name="reason" id="reason" class="form-control" rows="2"
+                        placeholder="<%= t("federation_hub.transfers.reason_placeholder") %>"></textarea>
+            </div>
+
+            <%# Your balance %>
+            <div class="mb-3">
+              <p class="text-muted">
+                <%= t("federation_hub.transfers.your_balance") %>:
+                <strong><%= (current_member.account&.balance.to_f / 3600).round(1) %>h</strong>
+              </p>
+            </div>
+
+            <button type="submit" class="btn btn-success btn-lg">
+              <%= t("federation_hub.transfers.send_button") %>
+            </button>
+            <a href="<%= federation_hub_root_path %>" class="btn btn-outline-secondary btn-lg ms-2">
+              <%= t("federation_hub.transfers.cancel") %>
+            </a>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+<% else %>
+  <div class="alert alert-warning">
+    <%= t("federation_hub.transfers.no_members", org: @selected_org_name) %>
+  </div>
+<% end %>

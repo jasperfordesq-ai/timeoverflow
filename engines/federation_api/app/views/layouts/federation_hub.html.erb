@@ -85,6 +85,11 @@
                   </a>
                 </li>
                 <li class="nav-item">
+                  <a class="nav-link <%= 'active' if request.path.start_with?(new_federation_hub_transfer_path) %>" href="<%= new_federation_hub_transfer_path %>">
+                    <%= t("federation_hub.nav.transfers") %>
+                  </a>
+                </li>
+                <li class="nav-item">
                   <a class="nav-link <%= 'active' if request.path.start_with?(federation_hub_messages_path) %>" href="<%= federation_hub_messages_path %>">
                     <%= t("federation_hub.nav.messages") %>
                   </a>

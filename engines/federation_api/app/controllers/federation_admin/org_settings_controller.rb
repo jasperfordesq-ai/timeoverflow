@@ -26,7 +26,7 @@ module FederationAdmin
         federation_enabled discoverable_by_partners
         allow_inbound_transfers allow_outbound_transfers
         share_member_count share_listings share_member_profiles
-        auto_approve_partnerships
+        auto_approve_partnerships enable_internal_federation
       ]
 
       attrs = {}

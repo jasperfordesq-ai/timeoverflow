@@ -150,6 +150,7 @@ module FederationApi
           resources :partners, only: [:index, :show]
           resources :members, only: [:index]
           resources :listings, only: [:index]
+          resources :transfers, only: [:new, :create]
           resources :messages, only: [:index, :show, :new, :create]
         end
       end

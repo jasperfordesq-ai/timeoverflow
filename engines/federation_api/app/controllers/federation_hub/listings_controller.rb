@@ -1,17 +1,32 @@
 module FederationHub
   class ListingsController < BaseController
     def index
-      @partners = FederationPartner.active.order(name: :asc)
-      @selected_partner_id = params[:partner_id]
+      @external_partners = FederationPartner.active.order(name: :asc)
+      @internal_orgs = Federation::InternalBrowser.browsable_organizations(current_organization)
+      @selected_id = params[:partner_id]
+      @selected_type = params[:source_type] # "internal" or "external"
       @listings = []
 
-      if @selected_partner_id.present?
-        partner = FederationPartner.active.find_by(id: @selected_partner_id)
-        @source_name = partner&.name || "Unknown Partner"
-
-        if partner
-          @listings = fetch_partner_listings(partner)
+      if @selected_id.present?
+        if @selected_type == "internal"
+          org = @internal_orgs.find_by(id: @selected_id)
+          if org
+            @source_name = org.name
+            @listings = Federation::InternalBrowser.listings(
+              org,
+              viewer_organization: current_organization,
+              type: params[:type],
+              search: params[:q]
+            )
+          end
+        else
+          partner = @external_partners.find_by(id: @selected_id)
+          if partner
+            @source_name = partner.name
+            @listings = fetch_partner_listings(partner)
+          end
         end
+        @source_name ||= "Unknown"
       end
     end
 
@@ -20,7 +35,6 @@ module FederationHub
     def fetch_partner_listings(partner)
       client = Federation::PartnerApiClient.new(partner: partner)
 
-      # Method 1: Webhook event (preferred — works with all partners)
       if partner.api_key_hash.present?
         begin
           result = client.send(:post, "/receive", {
@@ -43,7 +57,6 @@ module FederationHub
         end
       end
 
-      # Method 2: REST browse (only if browse_base_url is explicitly set)
       if partner.browse_base_url.present?
         begin
           result = client.fetch_listings(

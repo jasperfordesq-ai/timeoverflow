@@ -11,13 +11,40 @@
 <div class="row mb-4">
   <div class="col-md-8">
     <form method="get" action="<%= federation_hub_listings_path %>" class="d-flex gap-2">
-      <select name="partner_id" class="form-control" onchange="this.form.submit()">
+      <select name="partner_id" class="form-control" onchange="
+        var opt = this.options[this.selectedIndex];
+        document.getElementById('listings_source_type').value = opt.dataset.type || '';
+        this.form.submit();
+      ">
         <option value=""><%= t("federation_hub.listings.select_partner") %></option>
-        <% @partners.each do |p| %>
-          <option value="<%= p.id %>" <%= 'selected' if @selected_partner_id.to_s == p.id.to_s %>><%= p.name %></option>
+
+        <% if @internal_orgs.any? %>
+          <optgroup label="<%= t("federation_hub.common.internal_orgs") %>">
+            <% @internal_orgs.each do |org| %>
+              <option value="<%= org.id %>"
+                      data-type="internal"
+                      <%= 'selected' if @selected_id.to_s == org.id.to_s && @selected_type == "internal" %>>
+                <%= org.name %>
+              </option>
+            <% end %>
+          </optgroup>
+        <% end %>
+
+        <% if @external_partners.any? %>
+          <optgroup label="<%= t("federation_hub.common.external_partners") %>">
+            <% @external_partners.each do |p| %>
+              <option value="<%= p.id %>"
+                      data-type="external"
+                      <%= 'selected' if @selected_id.to_s == p.id.to_s && @selected_type != "internal" %>>
+                <%= p.name %>
+              </option>
+            <% end %>
+          </optgroup>
         <% end %>
       </select>
-      <% if @selected_partner_id.present? %>
+      <input type="hidden" name="source_type" id="listings_source_type" value="<%= @selected_type %>">
+
+      <% if @selected_id.present? %>
         <select name="type" class="form-control" onchange="this.form.submit()">
           <option value=""><%= t("federation_hub.listings.all_types") %></option>
           <option value="offer" <%= 'selected' if params[:type] == 'offer' %>><%= t("federation_hub.listings.offers") %></option>
@@ -30,7 +57,7 @@
   </div>
 </div>
 
-<% if @selected_partner_id.blank? %>
+<% if @selected_id.blank? %>
   <div class="alert alert-info">
     <%= t("federation_hub.listings.choose_partner") %>
   </div>

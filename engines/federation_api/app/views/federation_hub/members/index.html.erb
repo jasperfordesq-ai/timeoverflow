@@ -7,22 +7,48 @@
   </div>
 </div>
 
-<%# Partner selector %>
+<%# Partner selector with grouped options %>
 <div class="row mb-4">
   <div class="col-md-6">
     <form method="get" action="<%= federation_hub_members_path %>">
       <div class="input-group">
-        <select name="partner_id" class="form-control" onchange="this.form.submit()">
+        <select name="partner_id" class="form-control" onchange="
+          var opt = this.options[this.selectedIndex];
+          document.getElementById('source_type_field').value = opt.dataset.type || '';
+          this.form.submit();
+        ">
           <option value=""><%= t("federation_hub.members.select_partner") %></option>
-          <% @partners.each do |p| %>
-            <option value="<%= p.id %>" <%= 'selected' if @selected_partner_id.to_s == p.id.to_s %>><%= p.name %></option>
+
+          <% if @internal_orgs.any? %>
+            <optgroup label="<%= t("federation_hub.common.internal_orgs") %>">
+              <% @internal_orgs.each do |org| %>
+                <option value="<%= org.id %>"
+                        data-type="internal"
+                        <%= 'selected' if @selected_id.to_s == org.id.to_s && @selected_type == "internal" %>>
+                  <%= org.name %>
+                </option>
+              <% end %>
+            </optgroup>
+          <% end %>
+
+          <% if @external_partners.any? %>
+            <optgroup label="<%= t("federation_hub.common.external_partners") %>">
+              <% @external_partners.each do |p| %>
+                <option value="<%= p.id %>"
+                        data-type="external"
+                        <%= 'selected' if @selected_id.to_s == p.id.to_s && @selected_type != "internal" %>>
+                  <%= p.name %>
+                </option>
+              <% end %>
+            </optgroup>
           <% end %>
         </select>
+        <input type="hidden" name="source_type" id="source_type_field" value="<%= @selected_type %>">
         <button type="submit" class="btn btn-info"><%= t("federation_hub.members.browse") %></button>
       </div>
     </form>
   </div>
-  <% if @selected_partner_id.present? && @source_name %>
+  <% if @selected_id.present? && @source_name %>
     <div class="col-md-6">
       <p class="text-muted mt-2">
         <%= t("federation_hub.members.showing_from", source: @source_name) %>
@@ -32,7 +58,7 @@
   <% end %>
 </div>
 
-<% if @selected_partner_id.blank? %>
+<% if @selected_id.blank? %>
   <div class="alert alert-info">
     <%= t("federation_hub.members.choose_partner") %>
   </div>
@@ -62,7 +88,7 @@
                 <% end %>
               </p>
             <% end %>
-            <small class="text-muted"><%= @source_name %></small>
+            <small class="text-muted"><%= member["organization"] || @source_name %></small>
           </div>
         </div>
       </div>

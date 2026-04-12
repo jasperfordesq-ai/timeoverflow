@@ -21,7 +21,9 @@ module Federation
     def send_outbound(member:, remote_user_identifier:, subject: nil, body:, organization: nil)
       org = organization || member.organization
 
-      raise ArgumentError, "Partner cannot share profiles" unless @partner.can_share_profiles?
+      unless @partner.feature_gates&.dig("messaging_enabled")
+        raise ArgumentError, "Messaging is not enabled for this partner"
+      end
       raise ArgumentError, "Federation is not enabled for this organization" unless Federation::AccessControl.org_enabled?(org)
 
       message = FederationMessage.create!(
@@ -60,7 +62,10 @@ module Federation
         deliver_via_webhook(message, payload)
         message.deliver! # Optimistic — webhook delivery is async with retries
       else
-        Rails.logger.warn("[Federation::MessageHandler] Partner #{@partner.id} has no api_endpoint or webhook_url — message #{message.id} stored but not delivered")
+        message.update!(status: "failed", metadata: (message.metadata || {}).merge(
+          "delivery_error" => "Partner has no API endpoint or webhook URL configured"
+        ))
+        raise ArgumentError, "Partner has no delivery endpoint configured — message could not be sent"
       end
 
       message

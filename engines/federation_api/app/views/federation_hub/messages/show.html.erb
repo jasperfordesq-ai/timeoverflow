@@ -64,6 +64,8 @@
       <input type="hidden" name="partner_id" value="<%= @message.federation_partner_id %>">
       <input type="hidden" name="recipient_id" value="<%= @message.remote_user_identifier %>">
       <input type="hidden" name="reply_to" value="<%= @message.id %>">
+      <% reply_subject = @message.subject.present? && !@message.subject.start_with?("Re:") ? "Re: #{@message.subject}" : @message.subject %>
+      <input type="hidden" name="subject" value="<%= reply_subject %>">
 
       <div class="mb-2">
         <textarea name="body" rows="3" class="form-control" required

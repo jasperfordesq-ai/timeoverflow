@@ -62,15 +62,20 @@ module FederationHub
         return
       end
 
-      unless Federation::AccessControl.member_can_send?(current_member)
-        flash[:alert] = t("federation_hub.transfers.sender_not_allowed")
-        redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type)
-        return
-      end
-
       if source_type == "external"
+        partner = FederationPartner.active.find_by(id: selected_id)
+        unless Federation::AccessControl.member_can_send?(current_member, partner: partner)
+          flash[:alert] = t("federation_hub.transfers.sender_not_allowed")
+          redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type)
+          return
+        end
         create_external_transfer(selected_id, dest_identifier, amount, reason, hours, minutes)
       else
+        unless Federation::AccessControl.member_can_send?(current_member)
+          flash[:alert] = t("federation_hub.transfers.sender_not_allowed")
+          redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type)
+          return
+        end
         create_internal_transfer(selected_id, dest_identifier.to_i, amount, reason, hours, minutes)
       end
     end

@@ -169,6 +169,7 @@ en:
       success: "Successfully sent %{amount} to %{recipient} at %{org}."
       failed: "Transfer failed: %{error}"
       invalid_amount: "Please enter an amount greater than zero."
+      amount_too_large: "Transfer amount exceeds the maximum of %{max}."
       no_source_account: "Your account could not be found."
       org_not_available: "The selected community is not available for transfers."
       member_not_found: "The selected member could not be found."

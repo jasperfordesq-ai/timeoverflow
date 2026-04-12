@@ -1,56 +1,60 @@
 # Cross-organization time transfers via the Federation Hub.
 #
-# Uses TimeOverflow's native Transfer model — which is already org-agnostic
-# (it just moves time between Account IDs). The existing UI only shows
-# same-org accounts; this controller enables cross-org transfers between
-# members who have opted into federation.
-#
 # For internal (same-instance) orgs: direct DB transfer, instant.
-# For external partners: delegates to the federation API (webhook/REST).
+# For external partners: uses TransferHandler to debit locally + webhook to partner.
 #
 module FederationHub
   class TransfersController < BaseController
     def new
       @internal_orgs = Federation::InternalBrowser.browsable_organizations(current_organization)
-      @external_partners = FederationPartner.active.order(name: :asc)
+      @external_partners = FederationPartner.active.where("feature_gates->>'transfers_enabled' = ?", "true").order(name: :asc)
 
-      @selected_org_id = params[:org_id]
+      @selected_id = params[:org_id]
+      @selected_type = params[:source_type] # "internal" or "external"
       @pre_selected_member_id = params[:member_id]
       @destination_members = []
 
-      if @selected_org_id.present?
-        org = @internal_orgs.find_by(id: @selected_org_id)
-        if org
-          @selected_org_name = org.name
-          @destination_members = Federation::InternalBrowser.members(org, viewer_organization: current_organization)
+      if @selected_id.present?
+        if @selected_type == "external"
+          partner = @external_partners.find_by(id: @selected_id)
+          if partner
+            @selected_name = partner.name
+            @destination_members = fetch_external_members(partner)
+          end
+        else
+          org = @internal_orgs.find_by(id: @selected_id)
+          if org
+            @selected_name = org.name
+            @destination_members = Federation::InternalBrowser.members(org, viewer_organization: current_organization)
+          end
         end
       end
     end
 
     def create
-      dest_member_id = params[:destination_member_id].to_i
-      org_id = params[:org_id].to_i
+      dest_identifier = params[:destination_member_id].to_s.strip
+      selected_id = params[:org_id].to_i
+      source_type = params[:source_type]
       hours = params[:hours].to_i
       minutes = params[:minutes].to_i
       amount = (hours * 3600) + (minutes * 60)
       reason = params[:reason].to_s.strip
 
       # Validate amount
-      max_amount = 360_000 # 100 hours in seconds
+      max_amount = 360_000
       if amount <= 0
         flash[:alert] = t("federation_hub.transfers.invalid_amount")
-        redirect_to new_federation_hub_transfer_path(org_id: org_id)
+        redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type)
         return
       end
 
       if amount > max_amount
         flash[:alert] = t("federation_hub.transfers.amount_too_large",
-          max: "#{max_amount / 3600}h", default: "Transfer amount exceeds the maximum of #{max_amount / 3600} hours.")
-        redirect_to new_federation_hub_transfer_path(org_id: org_id)
+          max: "#{max_amount / 3600}h")
+        redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type)
         return
       end
 
-      # Find source account (current member's account)
       source_account = current_member.account
       unless source_account
         flash[:alert] = t("federation_hub.transfers.no_source_account")
@@ -58,7 +62,22 @@ module FederationHub
         return
       end
 
-      # Find destination — internal org member
+      unless Federation::AccessControl.member_can_send?(current_member)
+        flash[:alert] = t("federation_hub.transfers.sender_not_allowed")
+        redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type)
+        return
+      end
+
+      if source_type == "external"
+        create_external_transfer(selected_id, dest_identifier, amount, reason, hours, minutes)
+      else
+        create_internal_transfer(selected_id, dest_identifier.to_i, amount, reason, hours, minutes)
+      end
+    end
+
+    private
+
+    def create_internal_transfer(org_id, dest_member_id, amount, reason, hours, minutes)
       target_org = Organization.find_by(id: org_id)
       unless target_org && Federation::InternalBrowser.can_browse?(current_organization, target_org)
         flash[:alert] = t("federation_hub.transfers.org_not_available")
@@ -80,23 +99,14 @@ module FederationHub
         return
       end
 
-      # Verify destination member has opted in to federation
       unless Federation::AccessControl.member_can_receive?(dest_member)
         flash[:alert] = t("federation_hub.transfers.recipient_not_opted_in")
         redirect_to new_federation_hub_transfer_path(org_id: org_id)
         return
       end
 
-      # Verify current member can send
-      unless Federation::AccessControl.member_can_send?(current_member)
-        flash[:alert] = t("federation_hub.transfers.sender_not_allowed")
-        redirect_to new_federation_hub_transfer_path(org_id: org_id)
-        return
-      end
-
-      # Create the transfer using TimeOverflow's native model
       transfer = Transfer.new(
-        source: source_account,
+        source: current_member.account,
         destination: dest_account,
         amount: amount,
         reason: reason.presence || t("federation_hub.transfers.default_reason",
@@ -104,11 +114,8 @@ module FederationHub
       )
 
       if transfer.save
-        # The native Transfer + Movements already create a full audit trail.
-        # Log a note in Rails logger for federation tracking.
-        Rails.logger.info("[FederationHub::Transfer] Cross-org transfer ##{transfer.id}: " \
-          "#{current_organization.name} → #{target_org.name}, #{amount}s, " \
-          "member #{current_member.id} → #{dest_member.id}")
+        Rails.logger.info("[FederationHub::Transfer] Internal cross-org ##{transfer.id}: " \
+          "#{current_organization.name} → #{target_org.name}, #{amount}s")
 
         flash[:notice] = t("federation_hub.transfers.success",
           amount: "#{hours}h #{minutes}m",
@@ -120,6 +127,56 @@ module FederationHub
           error: transfer.errors.full_messages.join(", "))
         redirect_to new_federation_hub_transfer_path(org_id: org_id)
       end
+    end
+
+    def create_external_transfer(partner_id, remote_user_id, amount, reason, hours, minutes)
+      partner = FederationPartner.active.find_by(id: partner_id)
+      unless partner&.can_transact?
+        flash[:alert] = t("federation_hub.transfers.org_not_available")
+        redirect_to new_federation_hub_transfer_path
+        return
+      end
+
+      handler = Federation::TransferHandler.new(partner: partner)
+      fed_txn = handler.initiate_outbound(
+        member: current_member,
+        remote_user_identifier: remote_user_id,
+        amount: amount,
+        reason: reason.presence || t("federation_hub.transfers.default_reason",
+          from_org: current_organization.name, to_org: partner.name),
+        organization: current_organization
+      )
+
+      flash[:notice] = t("federation_hub.transfers.external_success",
+        amount: "#{hours}h #{minutes}m",
+        partner: partner.name,
+        default: "Transfer of #{hours}h #{minutes}m sent to #{partner.name}. It will be completed once the partner confirms.")
+      redirect_to federation_hub_root_path
+    rescue => e
+      Rails.logger.error("[FederationHub::Transfer] External transfer failed: #{e.class}: #{e.message}")
+      flash[:alert] = t("federation_hub.transfers.failed", error: e.message)
+      redirect_to new_federation_hub_transfer_path(org_id: partner_id, source_type: "external")
+    end
+
+    def fetch_external_members(partner)
+      client = Federation::PartnerApiClient.new(partner: partner)
+      if partner.api_key_hash.present?
+        result = client.send(:post, "/receive", {
+          event: "members.list",
+          timestamp: Time.current.iso8601,
+          platform: "timeoverflow",
+          data: {}
+        })
+        if result["success"] != false
+          data = result["data"] || result
+          members = data.dig("result", "members") || data["members"] || []
+          return members.is_a?(Array) ? members : []
+        end
+      end
+      []
+    rescue => e
+      Rails.logger.warn("[FederationHub::Transfers] Failed to fetch members from #{partner.name}: #{e.message}")
+      []
     end
   end
 end

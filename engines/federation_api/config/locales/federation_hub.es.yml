@@ -178,3 +178,5 @@ es:
       sender_not_allowed: "No tienes permitido enviar transferencias federadas. Revisa tu configuración de federación."
       default_reason: "Transferencia federada de %{from_org} a %{to_org}"
       no_members: "No hay miembros de %{org} disponibles para transferencias."
+      external_success: "Transferencia de %{amount} enviada a %{partner}. Se completará cuando el socio confirme."
+      external_note: "Las transferencias externas se envían a la plataforma del socio para su procesamiento. Tu saldo se debitará inmediatamente y el destinatario recibirá el crédito cuando el socio confirme."

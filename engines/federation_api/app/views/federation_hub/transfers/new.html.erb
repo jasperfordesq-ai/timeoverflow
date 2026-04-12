@@ -7,27 +7,53 @@
   </div>
 </div>
 
-<%# Step 1: Select target organization %>
+<%# Step 1: Select target community %>
 <div class="row mb-4">
   <div class="col-md-6">
     <form method="get" action="<%= new_federation_hub_transfer_path %>">
       <label class="form-label fw-bold"><%= t("federation_hub.transfers.select_org") %></label>
       <div class="input-group">
-        <select name="org_id" class="form-control" onchange="this.form.submit()">
+        <select name="org_id" class="form-control" onchange="
+          var opt = this.options[this.selectedIndex];
+          document.getElementById('transfer_source_type').value = opt.dataset.type || '';
+          this.form.submit();
+        ">
           <option value=""><%= t("federation_hub.transfers.choose_org") %></option>
-          <% @internal_orgs.each do |org| %>
-            <option value="<%= org.id %>" <%= 'selected' if @selected_org_id.to_s == org.id.to_s %>><%= org.name %></option>
+
+          <% if @internal_orgs.any? %>
+            <optgroup label="<%= t("federation_hub.common.internal_orgs") %>">
+              <% @internal_orgs.each do |org| %>
+                <option value="<%= org.id %>"
+                        data-type="internal"
+                        <%= 'selected' if @selected_id.to_s == org.id.to_s && @selected_type != "external" %>>
+                  <%= org.name %>
+                </option>
+              <% end %>
+            </optgroup>
+          <% end %>
+
+          <% if @external_partners.any? %>
+            <optgroup label="<%= t("federation_hub.common.external_partners") %>">
+              <% @external_partners.each do |p| %>
+                <option value="<%= p.id %>"
+                        data-type="external"
+                        <%= 'selected' if @selected_id.to_s == p.id.to_s && @selected_type == "external" %>>
+                  <%= p.name %>
+                </option>
+              <% end %>
+            </optgroup>
           <% end %>
         </select>
+        <input type="hidden" name="source_type" id="transfer_source_type" value="<%= @selected_type %>">
         <button type="submit" class="btn btn-info"><%= t("federation_hub.transfers.select") %></button>
       </div>
     </form>
   </div>
 </div>
 
-<% if @selected_org_id.blank? %>
+<% if @selected_id.blank? %>
   <div class="alert alert-info">
-    <% if @internal_orgs.any? %>
+    <% if @internal_orgs.any? || @external_partners.any? %>
       <%= t("federation_hub.transfers.choose_org_prompt") %>
     <% else %>
       <%= t("federation_hub.transfers.no_orgs_available") %>
@@ -39,12 +65,13 @@
     <div class="col-md-8">
       <div class="card border-info">
         <div class="card-header bg-info text-white">
-          <h5 class="mb-0"><%= t("federation_hub.transfers.send_to", org: @selected_org_name) %></h5>
+          <h5 class="mb-0"><%= t("federation_hub.transfers.send_to", org: @selected_name) %></h5>
         </div>
         <div class="card-body">
           <form method="post" action="<%= federation_hub_transfers_path %>">
             <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
-            <input type="hidden" name="org_id" value="<%= @selected_org_id %>">
+            <input type="hidden" name="org_id" value="<%= @selected_id %>">
+            <input type="hidden" name="source_type" value="<%= @selected_type %>">
 
             <%# Recipient %>
             <div class="mb-3">
@@ -63,7 +90,7 @@
               <div class="row">
                 <div class="col-md-4">
                   <div class="input-group">
-                    <input type="number" name="hours" min="0" max="999" value="0" class="form-control" id="transfer_hours">
+                    <input type="number" name="hours" min="0" max="100" value="0" class="form-control" id="transfer_hours">
                     <span class="input-group-text"><%= t("federation_hub.transfers.hours") %></span>
                   </div>
                 </div>
@@ -89,6 +116,11 @@
                 <%= t("federation_hub.transfers.your_balance") %>:
                 <strong><%= format_federation_hours(current_member.account&.balance) %></strong>
               </p>
+              <% if @selected_type == "external" %>
+                <p class="text-muted small">
+                  <%= t("federation_hub.transfers.external_note") %>
+                </p>
+              <% end %>
             </div>
 
             <button type="submit" class="btn btn-success btn-lg">
@@ -104,6 +136,6 @@
   </div>
 <% else %>
   <div class="alert alert-warning">
-    <%= t("federation_hub.transfers.no_members", org: @selected_org_name) %>
+    <%= t("federation_hub.transfers.no_members", org: @selected_name) %>
   </div>
 <% end %>

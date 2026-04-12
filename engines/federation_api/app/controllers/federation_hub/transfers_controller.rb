@@ -139,12 +139,11 @@ module FederationHub
 
       handler = Federation::TransferHandler.new(partner: partner)
       fed_txn = handler.initiate_outbound(
-        member: current_member,
+        local_account: current_member.account,
         remote_user_identifier: remote_user_id,
         amount: amount,
         reason: reason.presence || t("federation_hub.transfers.default_reason",
-          from_org: current_organization.name, to_org: partner.name),
-        organization: current_organization
+          from_org: current_organization.name, to_org: partner.name)
       )
 
       flash[:notice] = t("federation_hub.transfers.external_success",

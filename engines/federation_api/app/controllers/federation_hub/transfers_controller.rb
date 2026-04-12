@@ -7,7 +7,7 @@ module FederationHub
   class TransfersController < BaseController
     def new
       @internal_orgs = Federation::InternalBrowser.browsable_organizations(current_organization)
-      @external_partners = FederationPartner.active.where("feature_gates->>'transfers_enabled' = ?", "true").order(name: :asc)
+      @external_partners = FederationPartner.active.where("feature_gates->>'transactions_enabled' = ?", "true").order(name: :asc)
 
       @selected_id = params[:org_id]
       @selected_type = params[:source_type] # "internal" or "external"

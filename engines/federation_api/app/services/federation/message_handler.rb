@@ -74,9 +74,20 @@ module Federation
       client = Federation::PartnerApiClient.new(partner: @partner)
       result = client.post_message(payload)
 
-      if result["success"] == false
-        Rails.logger.warn("[Federation::MessageHandler] API delivery failed for message #{message.id}: #{result['error']}")
-        message.update!(metadata: (message.metadata || {}).merge("delivery_error" => result["error"], "delivery_attempted_at" => Time.current.iso8601))
+      # Check both top-level failure and nested result rejection
+      inner_result = result.dig("data", "result") || {}
+      rejected = result["success"] == false ||
+                 inner_result["status"] == "rejected" ||
+                 inner_result["success"] == false
+
+      if rejected
+        error = inner_result["reason"] || inner_result["error"] || result["error"] || "Unknown delivery error"
+        Rails.logger.warn("[Federation::MessageHandler] API delivery failed for message #{message.id}: #{error}")
+        message.update!(metadata: (message.metadata || {}).merge(
+          "delivery_error" => error,
+          "delivery_attempted_at" => Time.current.iso8601
+        ))
+        message.update!(status: "failed") if inner_result["status"] == "rejected"
         return false
       end
 

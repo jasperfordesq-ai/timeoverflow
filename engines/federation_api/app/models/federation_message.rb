@@ -20,7 +20,6 @@ class FederationMessage < ActiveRecord::Base
   validates :subject, length: { maximum: 255 }
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :organization_id, presence: true
-  validates :local_member_id, presence: true
   validates :external_message_id,
             uniqueness: { scope: :federation_partner_id },
             allow_nil: true
@@ -46,5 +45,13 @@ class FederationMessage < ActiveRecord::Base
 
   def outbound?
     direction == "outbound"
+  end
+
+  # Safe accessor: returns the associated member or nil.
+  # Inbound messages may not have a local member initially, so the
+  # belongs_to is optional. This avoids raising on missing associations.
+  def local_member
+    return nil if local_member_id.blank?
+    Member.find_by(id: local_member_id)
   end
 end

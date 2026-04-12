@@ -6,7 +6,7 @@
 
 <div class="row mb-3">
   <div class="col-md-12">
-    <a href="<%= federation_hub_messages_path %>" class="text-muted">&larr; <%= t("federation_hub.messages.back") %></a>
+    <a href="<%= federation_hub_messages_path %>" class="text-muted"><span aria-hidden="true">&larr;</span> <%= t("federation_hub.messages.back") %></a>
   </div>
 </div>
 
@@ -72,9 +72,9 @@
       <input type="hidden" name="subject" value="<%= reply_subject %>">
 
       <div class="mb-2">
-        <textarea name="body" rows="3" class="form-control" required maxlength="10000"
+        <textarea name="body" rows="3" class="form-control" required aria-required="true" maxlength="10000"
                   placeholder="<%= t("federation_hub.messages.reply_placeholder") %>" data-char-counter="true"></textarea>
-        <small class="text-muted char-counter"></small>
+        <small class="text-muted char-counter" aria-live="polite"></small>
       </div>
       <button type="submit" class="btn btn-info">
         <%= t("federation_hub.messages.reply_button") %>

@@ -190,6 +190,9 @@ module Api
         if params[:body].blank?
           return respond_with_error(I18n.t("federation_api.errors.missing_body", default: "Missing required field: body"), status: :bad_request)
         end
+        if params[:body].to_s.length > 10_000
+          return respond_with_error(I18n.t("federation_api.errors.body_too_long", max: 10_000, default: "body must be %{max} characters or less"), status: :bad_request)
+        end
         recipient = params[:recipient_id] || params[:local_member_id] || params[:local_member_uid] || params[:local_member_email]
         if recipient.blank?
           return respond_with_error(I18n.t("federation_api.errors.missing_recipient", default: "Missing recipient identifier (recipient_id, local_member_id, local_member_uid, or local_member_email)"), status: :bad_request)

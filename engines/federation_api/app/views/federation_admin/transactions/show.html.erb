@@ -50,7 +50,7 @@
             <%= @transaction.federation_partner.name %>
           </a>
         <% else %>
-          <span class="text-gray-400">N/A</span>
+          <span class="text-gray-400"><%= t("federation_admin.common.not_available", default: "N/A") %></span>
         <% end %>
       </dd>
     </div>

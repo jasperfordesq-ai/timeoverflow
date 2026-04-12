@@ -53,4 +53,6 @@ en:
       cc_relay_not_implemented: "Multi-hop relay via CC protocol is not yet implemented"
       transaction_not_found: "Transaction not found"
       unhealthy: "Service unhealthy"
+      transfer_argument_error: "Invalid transfer parameters"
+      field_too_long: "Field '%{field}' exceeds maximum length of %{max} characters"
       komunitin_transfers_not_implemented: "Transfer creation via Komunitin protocol is handled through the REST API"

@@ -87,7 +87,7 @@ class FederationApiKey < ActiveRecord::Base
       return
     end
     unknown = permissions.keys - KNOWN_PERMISSIONS
-    errors.add(:permissions, "contains unknown keys: #{unknown.join(', ')}") if unknown.any?
+    errors.add(:permissions, "contains unknown keys: #{unknown.join(', ')}. Valid keys are: #{KNOWN_PERMISSIONS.join(', ')}") if unknown.any?
     non_bool = permissions.select { |_, v| ![true, false].include?(v) }
     errors.add(:permissions, "values must be booleans") if non_bool.any?
   end

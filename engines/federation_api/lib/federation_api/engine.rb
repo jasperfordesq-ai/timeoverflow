@@ -21,11 +21,29 @@ module FederationApi
     # ---------------------------------------------------------------
 
     # --- Federation configuration from ENV --------------------------
+    #
+    # Environment variables (all optional, sensible defaults provided):
+    #
+    #   FEDERATION_ENABLED              - "true" to activate federation (default: "false")
+    #   FEDERATION_WEBHOOK_TIMEOUT      - HTTP timeout in seconds for outbound webhooks (default: 10, min: 1)
+    #   FEDERATION_MAX_TRANSFER_AMOUNT  - Cap on transfer amount in seconds (default: 360000 = 100 hrs, min: 0)
+    #   FEDERATION_RATE_LIMIT           - Max API requests per minute per key (default: 100, min: 1)
+    #   FEDERATION_STALE_WARNING_TIMEOUT - Seconds before pending txns are flagged (default: 3600)
+    #   FEDERATION_REVERSAL_TIMEOUT     - Seconds before pending txns are auto-reversed (default: 86400)
+    #
     initializer "federation_api.configuration", before: :load_config_initializers do |app|
       app.config.federation = ActiveSupport::OrderedOptions.new
+
+      # Master toggle: set to "true" to activate all federation features.
       app.config.federation.enabled       = ENV.fetch("FEDERATION_ENABLED", "false") == "true"
+
+      # Timeout for outbound webhook HTTP requests (seconds). Minimum 1.
       app.config.federation.webhook_timeout    = [ENV.fetch("FEDERATION_WEBHOOK_TIMEOUT", "10").to_i, 1].max
+
+      # Maximum allowed transfer amount in seconds. 360000 = 100 hours. Minimum 0 (disabled).
       app.config.federation.max_transfer_amount = [ENV.fetch("FEDERATION_MAX_TRANSFER_AMOUNT", "360000").to_i, 0].max
+
+      # API rate limit: max requests per minute per API key. Minimum 1.
       app.config.federation.rate_limit          = [ENV.fetch("FEDERATION_RATE_LIMIT", "100").to_i, 1].max
 
       # Startup validation: warn about misconfigured ENV vars so ops can

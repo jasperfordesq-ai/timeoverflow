@@ -37,16 +37,7 @@ module Federation
         raise ArgumentError, "Amount #{amount} exceeds maximum (#{max_amount} seconds)"
       end
 
-      # IDEMPOTENCY fast-path: check before entering transaction block so
-      # common duplicates return a clean success without touching the DB transaction.
       external_transaction_id = payload["external_transaction_id"]
-      if external_transaction_id.present?
-        existing = FederationTransaction.find_by(
-          federation_partner: partner,
-          external_transaction_id: external_transaction_id
-        )
-        return existing if existing
-      end
 
       handler = new(partner: partner)
       handler.process_inbound(
@@ -79,10 +70,20 @@ module Federation
 
       begin
         ActiveRecord::Base.transaction(isolation: :repeatable_read) do
-          # H7: Second idempotency check INSIDE the transaction with a row lock
-          # to eliminate the TOCTOU window between the fast-path check and INSERT.
-          # If a concurrent request slipped through, we find and return the
-          # committed record without creating a duplicate.
+          # IDEMPOTENCY fast-path: moved inside the transaction to eliminate the
+          # TOCTOU window. Common duplicates return a clean success without
+          # progressing further.
+          if external_transaction_id.present?
+            existing = FederationTransaction.find_by(
+              federation_partner: @partner,
+              external_transaction_id: external_transaction_id
+            )
+            return existing if existing
+          end
+
+          # H7: Lock-based idempotency check — if a concurrent request is in
+          # flight (INSERT not yet committed), the FOR UPDATE lock waits for it
+          # to resolve, then we check again. SKIP LOCKED avoids deadlocks.
           if external_transaction_id.present?
             locked_existing = FederationTransaction.where(
               federation_partner: @partner,
@@ -109,6 +110,13 @@ module Federation
           transfer.amount = amount
           transfer.reason = "[Federation] #{reason.presence || "Cross-platform transfer"}"
           transfer.save!
+
+          # Synchronous double-entry validation: verify the transfer
+          # created exactly 2 movements summing to zero before proceeding.
+          movements = transfer.movements.reload
+          unless movements.size == 2 && movements.sum(&:amount) == 0
+            raise ActiveRecord::Rollback, "Double-entry violation: #{movements.size} movements, sum=#{movements.sum(&:amount)}"
+          end
 
           fed_txn.complete!(local_transfer: transfer)
         end

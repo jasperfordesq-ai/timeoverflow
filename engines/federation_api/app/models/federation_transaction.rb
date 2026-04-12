@@ -29,6 +29,7 @@ class FederationTransaction < ActiveRecord::Base
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :organization_id, presence: true
   validates :remote_user_identifier, presence: true, length: { maximum: 255 }
+  validates :reason, length: { maximum: 500 }, allow_blank: true
   validates :external_transaction_id, uniqueness: { scope: :federation_partner_id },
             allow_nil: true
 
@@ -44,7 +45,12 @@ class FederationTransaction < ActiveRecord::Base
   private def denormalize_organization_id
     return if organization_id.present?
     if local_account_id.present?
-      self.organization_id = Account.where(id: local_account_id).pick(:organization_id)
+      org_id = Account.where(id: local_account_id).pick(:organization_id)
+      if org_id.nil?
+        errors.add(:organization_id, "could not be derived: account #{local_account_id} has no associated organization")
+      else
+        self.organization_id = org_id
+      end
     end
   end
   public

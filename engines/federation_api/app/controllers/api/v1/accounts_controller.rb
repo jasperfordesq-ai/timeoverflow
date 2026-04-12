@@ -7,6 +7,11 @@ module Api
   module V1
     class AccountsController < BaseController
       before_action -> { require_permission!(:transactions) }
+      # Note: require_organization! is intentionally NOT used here because
+      # accounts are resolved via find_scoped_account! which enforces org
+      # scoping through the API key's org or the explicit organization_id
+      # param. Global keys can access accounts across permitted orgs, so
+      # a blanket require_organization! would break valid cross-org queries.
 
       # GET /api/v1/accounts/:id
       def show

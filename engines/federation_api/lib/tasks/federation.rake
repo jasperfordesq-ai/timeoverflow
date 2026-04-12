@@ -156,6 +156,8 @@ namespace :federation do
     partners = FederationPartner.active
     puts "Checking #{partners.count} active partners...\n"
 
+    any_failures = false
+
     partners.each do |partner|
       print "  #{partner.name}... "
       begin
@@ -167,15 +169,25 @@ namespace :federation do
         response = http.request(Net::HTTP::Get.new(uri))
         if response.code.to_i < 300
           partner.record_success!
-          puts "✓ OK (#{response.code})"
+          puts "OK (#{response.code})"
         else
           partner.record_failure!
-          puts "✗ FAILED (#{response.code})"
+          puts "FAILED (#{response.code})"
+          any_failures = true
         end
       rescue => e
         partner.record_failure!
-        puts "✗ ERROR: #{e.message}"
+        puts "ERROR: #{e.message}"
+        any_failures = true
       end
+    end
+
+    if partners.none?
+      abort "No active partners to check."
+    end
+
+    if any_failures
+      abort "One or more health checks failed."
     end
   end
 
@@ -201,21 +213,25 @@ namespace :federation do
 
     if ENV["EXECUTE"] == "true"
       if Rails.env.production?
-        abort "⚠️  Refusing to execute test transfer in production. Set FORCE_PRODUCTION=true to override."  unless ENV["FORCE_PRODUCTION"] == "true"
+        abort "Refusing to execute test transfer in production. Set FORCE_PRODUCTION=true to override."  unless ENV["FORCE_PRODUCTION"] == "true"
       end
-      handler = Federation::TransferHandler.new(partner: partner)
-      txn = handler.process_inbound(
-        external_transaction_id: "test_#{SecureRandom.hex(8)}",
-        local_member_uid: member.member_uid,
-        local_organization_id: org.id,
-        remote_user_identifier: "test@nexus.example.com",
-        amount: 3600,
-        reason: "Federation test transfer"
-      )
-      puts "✓ Transfer completed!"
-      puts "  Federation TX ID: #{txn.id}"
-      puts "  Local Transfer ID: #{txn.transfer_id}"
-      puts "  New balance: #{member.account.reload.balance}"
+      begin
+        handler = Federation::TransferHandler.new(partner: partner)
+        txn = handler.process_inbound(
+          external_transaction_id: "test_#{SecureRandom.hex(8)}",
+          local_member_uid: member.member_uid,
+          local_organization_id: org.id,
+          remote_user_identifier: "test@nexus.example.com",
+          amount: 3600,
+          reason: "Federation test transfer"
+        )
+        puts "Transfer completed!"
+        puts "  Federation TX ID: #{txn.id}"
+        puts "  Local Transfer ID: #{txn.transfer_id}"
+        puts "  New balance: #{member.account.reload.balance}"
+      rescue => e
+        abort "Test transfer failed: #{e.class}: #{e.message}"
+      end
     else
       puts "This is a dry run. Set EXECUTE=true to actually create the transfer."
     end

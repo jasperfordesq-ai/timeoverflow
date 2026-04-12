@@ -212,10 +212,12 @@ module Api
         end
 
         # M5: Limit reason length to prevent outsized payloads in webhook logs and DB.
-        # Strip and sanitize the reason field.
-        params[:reason] = params[:reason].to_s.strip if params[:reason].present?
-        if params[:reason].present? && params[:reason].length > 500
-          return respond_with_error(I18n.t("federation_api.errors.reason_too_long", max: 500, default: "reason must be %{max} characters or less"), status: :bad_request)
+        # Strip whitespace and compress multiple spaces/newlines into single spaces.
+        if params[:reason].present?
+          params[:reason] = params[:reason].to_s.strip.gsub(/[\s]+/, " ")
+          if params[:reason].length > 500
+            return respond_with_error(I18n.t("federation_api.errors.reason_too_long", max: 500, default: "reason must be %{max} characters or less"), status: :bad_request)
+          end
         end
       end
 

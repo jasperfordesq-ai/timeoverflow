@@ -15,7 +15,7 @@
 
 <!-- Filter Bar -->
 <div class="bg-white shadow rounded-lg p-4 mb-6">
-  <form method="get" action="<%= federation_admin_transactions_path %>" class="flex flex-wrap items-end gap-4">
+  <form method="get" action="<%= federation_admin_transactions_path %>" class="flex flex-wrap items-end gap-4" aria-label="<%= t('federation_admin.transactions.index.filter_transactions', default: 'Filter transactions') %>">
     <div>
       <label for="search" class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.transactions.index.search_placeholder') %></label>
       <input type="text" name="search" id="search" value="<%= params[:search] %>" placeholder="<%= t('federation_admin.transactions.index.search_placeholder') %>"

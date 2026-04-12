@@ -92,13 +92,13 @@
               <div class="row">
                 <div class="col-md-4">
                   <div class="input-group">
-                    <input type="number" name="hours" min="0" max="100" value="0" class="form-control" id="transfer_hours" required>
+                    <input type="number" name="hours" min="0" max="100" step="1" value="0" class="form-control" id="transfer_hours" required aria-required="true">
                     <span class="input-group-text"><%= t("federation_hub.transfers.hours") %></span>
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="input-group">
-                    <input type="number" name="minutes" min="0" max="59" value="0" class="form-control" id="transfer_minutes">
+                    <input type="number" name="minutes" min="0" max="59" step="1" value="0" class="form-control" id="transfer_minutes">
                     <span class="input-group-text"><%= t("federation_hub.transfers.minutes") %></span>
                   </div>
                 </div>
@@ -129,7 +129,7 @@
                     data-confirm="<%= t("federation_hub.transfers.confirm_send") %>">
               <%= t("federation_hub.transfers.send_button") %>
             </button>
-            <small id="balance-warning" class="text-danger d-none ms-3"></small>
+            <small id="balance-warning" class="text-danger d-none ms-3" data-balance="<%= current_member.account&.balance.to_i %>"></small>
             <a href="<%= federation_hub_root_path %>" class="btn btn-outline-secondary btn-lg ms-2">
               <%= t("federation_hub.transfers.cancel") %>
             </a>
@@ -151,10 +151,12 @@
   var warning = document.getElementById('balance-warning');
   if (!hoursEl || !minsEl || !warning) return;
 
-  var balanceSeconds = <%= current_member.account&.balance.to_i %>;
+  var balanceSeconds = parseInt(warning.getAttribute('data-balance'), 10) || 0;
 
   function checkBalance() {
-    var amount = (parseInt(hoursEl.value, 10) || 0) * 3600 + (parseInt(minsEl.value, 10) || 0) * 60;
+    var hours = hoursEl ? parseInt(hoursEl.value, 10) || 0 : 0;
+    var mins = minsEl ? parseInt(minsEl.value, 10) || 0 : 0;
+    var amount = hours * 3600 + mins * 60;
     if (amount > 0 && amount > balanceSeconds) {
       warning.textContent = '<%= j t("federation_hub.transfers.exceeds_balance") %>';
       warning.classList.remove('d-none');

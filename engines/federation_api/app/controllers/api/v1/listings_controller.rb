@@ -27,8 +27,9 @@ module Api
         visible_ids = Federation::AccessControl.opted_in_member_ids(current_organization)
         posts = posts.where(user_id: Member.where(id: visible_ids).select(:user_id))
 
-        # Filter by type if requested
-        case params[:type]
+        # Filter by type if requested (case-insensitive comparison)
+        type_filter = params[:type].to_s.downcase.strip
+        case type_filter
         when "offer"
           posts = posts.where(type: "Offer")
         when "inquiry"

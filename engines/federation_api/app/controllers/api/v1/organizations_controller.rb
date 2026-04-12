@@ -8,6 +8,14 @@ module Api
   module V1
     class OrganizationsController < BaseController
       # GET /api/v1/organizations
+      #
+      # Org scoping for the index action is handled by scoped_organizations:
+      #   - Org-scoped API keys see only their own organization.
+      #   - Global API keys see orgs in their permitted_organization_ids list
+      #     (or all orgs if unrestricted). An optional partner_id param further
+      #     narrows results to that partner's permitted orgs.
+      # This intentional design lets federation partners discover all orgs
+      # they are allowed to interact with.
       def index
         organizations = scoped_organizations
         organizations, meta = paginate(organizations)

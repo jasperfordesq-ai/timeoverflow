@@ -6,7 +6,7 @@
 
 <div class="row mb-3">
   <div class="col-md-12">
-    <a href="<%= federation_hub_messages_path %>" class="text-muted">&larr; <%= t("federation_hub.messages.back") %></a>
+    <a href="<%= federation_hub_messages_path %>" class="text-muted"><span aria-hidden="true">&larr;</span> <%= t("federation_hub.messages.back") %></a>
     <h1><%= t("federation_hub.messages.compose") %></h1>
   </div>
 </div>
@@ -63,7 +63,7 @@
 
             <div class="mb-3">
               <label for="recipient_id" class="form-label fw-bold"><%= t("federation_hub.messages.recipient") %> <span class="text-danger">*</span></label>
-              <select name="recipient_id" id="recipient_id" class="form-control" required>
+              <select name="recipient_id" id="recipient_id" class="form-control" required aria-required="true">
                 <option value=""><%= t("federation_hub.messages.select_recipient", default: "Choose a member...") %></option>
                 <% @recipient_members.each do |m| %>
                   <option value="<%= m["id"] %>" <%= 'selected' if @pre_recipient.to_s == m["id"].to_s %>>
@@ -75,16 +75,18 @@
 
             <div class="mb-3">
               <label for="subject" class="form-label fw-bold"><%= t("federation_hub.messages.subject_label") %> <span class="text-danger">*</span></label>
-              <input type="text" name="subject" id="subject" class="form-control" required maxlength="255"
-                     placeholder="<%= t("federation_hub.messages.subject_placeholder") %>" data-char-counter="true">
-              <small class="text-muted char-counter" aria-live="polite"></small>
+              <input type="text" name="subject" id="subject" class="form-control" required aria-required="true" maxlength="255"
+                     placeholder="<%= t("federation_hub.messages.subject_placeholder") %>" data-char-counter="true"
+                     aria-describedby="subject-counter">
+              <small id="subject-counter" class="text-muted char-counter" aria-live="polite"></small>
             </div>
 
             <div class="mb-3">
               <label for="body" class="form-label fw-bold"><%= t("federation_hub.messages.body_label") %> <span class="text-danger">*</span></label>
-              <textarea name="body" id="body" rows="6" class="form-control" required maxlength="10000"
-                        placeholder="<%= t("federation_hub.messages.body_placeholder") %>" data-char-counter="true"></textarea>
-              <small class="text-muted char-counter" aria-live="polite"></small>
+              <textarea name="body" id="body" rows="6" class="form-control" required aria-required="true" maxlength="10000"
+                        placeholder="<%= t("federation_hub.messages.body_placeholder") %>" data-char-counter="true"
+                        aria-describedby="body-counter"></textarea>
+              <small id="body-counter" class="text-muted char-counter" aria-live="polite"></small>
             </div>
 
             <button type="submit" class="btn btn-info"><%= t("federation_hub.messages.send_button") %></button>

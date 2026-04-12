@@ -53,4 +53,6 @@ es:
       cc_relay_not_implemented: "El relevo multi-salto a través del protocolo CC aún no está implementado"
       transaction_not_found: "Transacción no encontrada"
       unhealthy: "Servicio no disponible"
+      transfer_argument_error: "Parámetros de transferencia inválidos"
+      field_too_long: "El campo '%{field}' excede la longitud máxima de %{max} caracteres"
       komunitin_transfers_not_implemented: "La creación de transferencias a través del protocolo Komunitin se gestiona mediante la API REST"

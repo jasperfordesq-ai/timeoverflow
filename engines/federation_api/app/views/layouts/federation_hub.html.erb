@@ -142,7 +142,7 @@
                        end %>
         <div class="alert <%= alert_css %> alert-dismissible fade show" role="alert">
           <%= message %>
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="<%= t('federation_hub.common.close', default: 'Close') %>"></button>
         </div>
       <% end %>
 
@@ -152,7 +152,7 @@
     </div>
 
     <%# Modal — matches TimeOverflow's structure %>
-    <div class="modal fade" id="modal" aria-hidden="true" aria-labelledby="modal-title">
+    <div class="modal fade" id="modal" aria-hidden="true" aria-labelledby="modal-title" role="dialog">
       <div class="modal-dialog" style="max-width: 500px;">
         <div class="modal-content"></div>
       </div>

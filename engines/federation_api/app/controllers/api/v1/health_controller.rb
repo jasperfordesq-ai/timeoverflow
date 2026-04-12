@@ -50,7 +50,13 @@ module Api
         if all_ok
           respond_with_data(health_data, status: status)
         else
-          respond_with_error(I18n.t("federation_api.errors.unhealthy", default: "Service unhealthy"), status: :service_unavailable, meta: health_data)
+          # When unhealthy, put health data in both `data` and `meta` for client
+          # compatibility: some clients read `data`, others read `meta`.
+          respond_with_data(
+            health_data,
+            status: status,
+            meta: health_data.merge(error: I18n.t("federation_api.errors.unhealthy", default: "Service unhealthy"))
+          )
         end
       end
     end

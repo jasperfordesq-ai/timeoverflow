@@ -8,11 +8,11 @@
 
 <!-- Filter bar -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 px-5 py-4 mb-6">
-  <form method="get" action="<%= federation_admin_messages_path %>" class="flex flex-wrap items-end gap-4">
+  <form method="get" action="<%= federation_admin_messages_path %>" class="flex flex-wrap items-end gap-4" aria-label="<%= t('federation_admin.messages.index.filter_messages', default: 'Filter messages') %>">
     <!-- Direction -->
     <div>
-      <label class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.direction') %></label>
-      <select name="direction" data-auto-submit class="rounded-lg border-gray-300 text-sm focus:ring-federation-500 focus:border-federation-500">
+      <label for="msg_direction" class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.direction') %></label>
+      <select name="direction" id="msg_direction" data-auto-submit class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-federation-500 focus:border-federation-500">
         <option value=""><%= t('federation_admin.messages.index.all') %></option>
         <option value="inbound" <%= 'selected' if params[:direction] == 'inbound' %>><%= t('federation_admin.messages.index.inbound') %></option>
         <option value="outbound" <%= 'selected' if params[:direction] == 'outbound' %>><%= t('federation_admin.messages.index.outbound') %></option>
@@ -21,8 +21,8 @@
 
     <!-- Status -->
     <div>
-      <label class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.status') %></label>
-      <select name="status" data-auto-submit class="rounded-lg border-gray-300 text-sm focus:ring-federation-500 focus:border-federation-500">
+      <label for="msg_status" class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.status') %></label>
+      <select name="status" id="msg_status" data-auto-submit class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-federation-500 focus:border-federation-500">
         <option value=""><%= t('federation_admin.messages.index.all') %></option>
         <% %w[pending delivered read failed].each do |s| %>
           <option value="<%= s %>" <%= 'selected' if params[:status] == s %>><%= t("federation_admin.messages.index.#{s}") %></option>
@@ -32,8 +32,8 @@
 
     <!-- Partner -->
     <div>
-      <label class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.partner') %></label>
-      <select name="partner_id" data-auto-submit class="rounded-lg border-gray-300 text-sm focus:ring-federation-500 focus:border-federation-500">
+      <label for="msg_partner_id" class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.partner') %></label>
+      <select name="partner_id" id="msg_partner_id" data-auto-submit class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-federation-500 focus:border-federation-500">
         <option value=""><%= t('federation_admin.messages.index.all_partners') %></option>
         <% @partners.each do |p| %>
           <option value="<%= p.id %>" <%= 'selected' if params[:partner_id].to_s == p.id.to_s %>><%= p.name %></option>
@@ -43,8 +43,8 @@
 
     <!-- Organization -->
     <div>
-      <label class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.organization') %></label>
-      <select name="organization_id" data-auto-submit class="rounded-lg border-gray-300 text-sm focus:ring-federation-500 focus:border-federation-500">
+      <label for="msg_organization_id" class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.organization') %></label>
+      <select name="organization_id" id="msg_organization_id" data-auto-submit class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-federation-500 focus:border-federation-500">
         <option value=""><%= t('federation_admin.messages.index.all_organizations') %></option>
         <% @organizations.each do |o| %>
           <option value="<%= o.id %>" <%= 'selected' if params[:organization_id].to_s == o.id.to_s %>><%= o.name %></option>
@@ -68,6 +68,7 @@
   <% if @messages.any? %>
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
+        <caption class="sr-only"><%= t('federation_admin.messages.index.title') %></caption>
         <thead class="bg-gray-50">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.messages.index.table.id') %></th>

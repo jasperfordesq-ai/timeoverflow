@@ -19,10 +19,12 @@ module Api
         members = members.where(id: discoverable_ids)
 
         if params[:search].present?
-          # Sanitize ILIKE wildcards (%, _) so literal searches work correctly
+          # Sanitize ILIKE wildcards (%, _) so literal searches work correctly.
+          # Email is intentionally excluded from search to prevent enumeration
+          # via the federation API. Search only on username and member_uid.
           sanitized = ActiveRecord::Base.sanitize_sql_like(params[:search])
           members = members.joins(:user).where(
-            "users.username ILIKE :q OR users.email ILIKE :q",
+            "users.username ILIKE :q OR members.member_uid ILIKE :q",
             q: "%#{sanitized}%"
           )
         end
@@ -37,7 +39,11 @@ module Api
 
       # GET /api/v1/members/:id
       def show
-        member = current_organization.members.active.includes(:user, :account).find_by!(id: params[:id])
+        # Include offers and inquiries for detailed views to prevent N+1 queries
+        # when serialize_member computes offers_count / inquiries_count.
+        member = current_organization.members.active
+                   .includes(:user, :account, :offers, :inquiries)
+                   .find_by!(id: params[:id])
         respond_with_data(serialize_member(member, detailed: true))
       end
 

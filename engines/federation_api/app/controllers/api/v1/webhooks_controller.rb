@@ -40,24 +40,57 @@ module Api
           return respond_with_error(I18n.t("federation_api.errors.inactive_partner", default: "Inactive partner"), status: :forbidden)
         end
 
+        # Message body length validation: reject payloads where any text field
+        # exceeds 10,000 characters to prevent oversized data in DB/logs.
+        text_fields = %w[reason description body message subject sender_name]
+        text_fields.each do |field|
+          value = payload[field]
+          if value.is_a?(String) && value.length > 10_000
+            return respond_with_error(I18n.t("federation_api.errors.field_too_long", field: field, max: 10_000, default: "Field '%{field}' exceeds maximum length of %{max} characters"), status: :bad_request)
+          end
+        end
+
+        # Transfer amount validation: check before dispatching to TransferHandler
+        # to reject obviously invalid amounts at the webhook layer.
+        if %w[transaction.requested transaction.created].include?(event_type)
+          amount = payload["amount"].to_i
+          max_amount = (Rails.application.config.federation.max_transfer_amount.then { |v| v > 0 ? v : 360_000 } rescue 360_000)
+          if amount <= 0
+            return respond_with_error(I18n.t("federation_api.errors.invalid_amount", default: "amount must be a positive integer (seconds)"), status: :bad_request)
+          end
+          if amount > max_amount
+            return respond_with_error(I18n.t("federation_api.errors.amount_exceeds_max", max: max_amount, default: "amount exceeds maximum (%{max} seconds)"), status: :bad_request)
+          end
+        end
+
         # Replay attack prevention: derive a deterministic nonce from the request.
         # If a partner sends X-Federation-Nonce we use that; otherwise we derive
         # one from SHA256(body + timestamp) so the same replayed request always
         # produces the same nonce and is rejected idempotently.
         nonce = derive_request_nonce
-        if nonce.present? && FederationWebhookLog.exists?(federation_partner: partner, request_nonce: nonce)
+
+        # Fix TOCTOU: wrap nonce check + log creation in a single rescue block
+        # so that a concurrent duplicate hitting the DB unique constraint returns
+        # the idempotent response instead of 500.
+        begin
+          if nonce.present? && FederationWebhookLog.exists?(federation_partner: partner, request_nonce: nonce)
+            return respond_with_data({ received: true, event: event_type, duplicate: true })
+          end
+
+          # Log the incoming webhook
+          log = FederationWebhookLog.create!(
+            federation_partner: partner,
+            event_type: event_type,
+            direction: "inbound",
+            status: "pending",
+            request_nonce: nonce,
+            payload: { event: event_type, partner_id: partner_id, data: payload }
+          )
+        rescue ActiveRecord::RecordNotUnique
+          # Concurrent duplicate hit the DB unique constraint on nonce — return
+          # the idempotent response rather than a 500 error.
           return respond_with_data({ received: true, event: event_type, duplicate: true })
         end
-
-        # Log the incoming webhook
-        log = FederationWebhookLog.create!(
-          federation_partner: partner,
-          event_type: event_type,
-          direction: "inbound",
-          status: "pending",
-          request_nonce: nonce,
-          payload: { event: event_type, partner_id: partner_id, data: payload }
-        )
 
         begin
           handle_event(event_type, payload, partner)
@@ -78,17 +111,23 @@ module Api
       private
 
       # Sliding-window rate limit for webhooks by IP (not by API key since webhooks skip auth).
+      # Default: 200 requests per minute per IP. Override via FEDERATION_WEBHOOK_IP_RATE_LIMIT env var.
       def enforce_webhook_rate_limit!
         ip = request.remote_ip
         limit = ENV.fetch("FEDERATION_WEBHOOK_IP_RATE_LIMIT", "200").to_i
         estimated = sliding_window_read("federation_webhook_rate:#{ip}")
 
         if estimated > limit
-          respond_with_error(I18n.t("federation_api.errors.webhook_rate_limit_exceeded", default: "Rate limit exceeded"), status: :too_many_requests)
+          response.set_header("Retry-After", "60")
+          respond_with_error(I18n.t("federation_api.errors.webhook_rate_limit_exceeded", default: "Rate limited. Maximum %{limit} requests per minute.", limit: limit), status: :too_many_requests)
         end
       end
 
       def verify_webhook_signature!
+        # Increment rate limit counter immediately upon receipt — invalid
+        # signatures still consume rate limit budget to prevent brute-force.
+        sliding_window_increment("federation_webhook_rate:#{request.remote_ip}")
+
         # Accept either Nexus-style (X-Federation-Signature) or simple (X-Webhook-Signature)
         signature = request.headers["X-Federation-Signature"] || request.headers["X-Webhook-Signature"]
         return respond_with_error(I18n.t("federation_api.errors.missing_signature", default: "Missing signature"), status: :unauthorized) if signature.blank?
@@ -175,9 +214,6 @@ module Api
         end
 
         @verified_partner = partner
-        # Increment IP rate counter only after successful authentication
-        # to prevent unauthenticated requests from exhausting the budget.
-        sliding_window_increment("federation_webhook_rate:#{request.remote_ip}")
       end
 
       # Derive a deterministic nonce for replay prevention.
@@ -199,13 +235,15 @@ module Api
 
       # Per-partner rate limit — supplements the per-IP limit. Prevents a single
       # partner from flooding the webhook endpoint across multiple source IPs.
+      # Default: 100 requests per minute per partner. Override via FEDERATION_WEBHOOK_PARTNER_RATE_LIMIT env var.
       def enforce_partner_rate_limit!(partner)
         limit = ENV.fetch("FEDERATION_WEBHOOK_PARTNER_RATE_LIMIT", "100").to_i
         sliding_window_increment("federation_webhook_partner:#{partner.id}")
         estimated = sliding_window_read("federation_webhook_partner:#{partner.id}")
 
         if estimated > limit
-          respond_with_error(I18n.t("federation_api.errors.partner_rate_limit_exceeded", default: "Partner rate limit exceeded"), status: :too_many_requests)
+          response.set_header("Retry-After", "60")
+          respond_with_error(I18n.t("federation_api.errors.partner_rate_limit_exceeded", default: "Rate limited. Maximum %{limit} requests per minute per partner.", limit: limit), status: :too_many_requests)
         end
       end
 
@@ -240,12 +278,36 @@ module Api
           if partner.status == "terminated"
             Rails.logger.warn("[Federation] Rejected reactivation of terminated partner #{partner.id}")
           else
+            old_status = partner.status
             partner.update!(status: "active")
+            FederationAuditLog.record!(
+              action: "partner.status_changed",
+              actor: nil,
+              target: partner,
+              changes_made: { status: [old_status, "active"], via: "webhook", event: event_type },
+              ip_address: request.remote_ip
+            ) rescue nil
           end
         when "partnership.suspended", "partnership.rejected"
+          old_status = partner.status
           partner.update!(status: "suspended")
+          FederationAuditLog.record!(
+            action: "partner.status_changed",
+            actor: nil,
+            target: partner,
+            changes_made: { status: [old_status, "suspended"], via: "webhook", event: event_type },
+            ip_address: request.remote_ip
+          ) rescue nil
         when "partnership.terminated"
+          old_status = partner.status
           partner.update!(status: "terminated")
+          FederationAuditLog.record!(
+            action: "partner.status_changed",
+            actor: nil,
+            target: partner,
+            changes_made: { status: [old_status, "terminated"], via: "webhook", event: event_type },
+            ip_address: request.remote_ip
+          ) rescue nil
         when "partnership.level_changed"
           level = payload["level"].to_i
           # Fix #11: Only allow level decreases via webhook (downgrades).
@@ -255,8 +317,16 @@ module Api
           # permitted unilaterally since they reduce privilege.
           if level.between?(1, 4)
             if level <= partner.partnership_level
+              old_level = partner.partnership_level
               partner.update!(partnership_level: level)
               Rails.logger.info("[Federation] Partner #{partner.id} level changed to #{level} (downgrade/same)")
+              FederationAuditLog.record!(
+                action: "partner.level_changed",
+                actor: nil,
+                target: partner,
+                changes_made: { partnership_level: [old_level, level], via: "webhook", event: event_type },
+                ip_address: request.remote_ip
+              ) rescue nil
             else
               Rails.logger.warn("[Federation] Rejected level upgrade attempt for partner #{partner.id}: #{partner.partnership_level} → #{level} (requires admin approval)")
             end

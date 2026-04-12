@@ -114,10 +114,13 @@ module Federation
         very_stale.find_each do |txn|
           begin
             ActiveRecord::Base.transaction do
-              # Lock the row to prevent concurrent reconciliation runs from
-              # processing the same transaction (double-reversal prevention).
-              txn = FederationTransaction.lock.find_by(id: txn.id)
-              next unless txn&.pending?  # skip if already processed by another worker
+              # Lock the row with FOR UPDATE SKIP LOCKED to prevent concurrent
+              # reconciliation runs from processing the same transaction (double-
+              # reversal prevention). SKIP LOCKED avoids blocking if another
+              # worker already holds the lock — the row is simply skipped.
+              txn = FederationTransaction.where(id: txn.id, status: "pending")
+                                         .lock("FOR UPDATE SKIP LOCKED").first
+              next unless txn  # skip if already processed or locked by another worker
 
               # Idempotency: skip if already reversed by a prior run
               if txn.metadata&.dig("reversal_transfer_id").present?
@@ -219,6 +222,20 @@ module Federation
         # Movements should sum to zero (double-entry)
         movement_sum = movements.sum(&:amount)
         if movement_sum != 0
+          # Mark the federation transaction metadata with corruption flag
+          # so admin dashboards can surface these immediately.
+          begin
+            fed_txn.update!(
+              metadata: (fed_txn.metadata || {}).merge(
+                "corrupted" => true,
+                "corruption_reason" => "Movement imbalance: sum=#{movement_sum}, count=#{movements.size}",
+                "corruption_detected_at" => Time.current.iso8601
+              )
+            )
+          rescue => e
+            Rails.logger.error("[Federation::Reconciliation] Failed to mark fed_txn #{fed_txn.id} as corrupted: #{e.class}: #{e.message}")
+          end
+
           issues << {
             type: "movement_imbalance",
             severity: "critical",

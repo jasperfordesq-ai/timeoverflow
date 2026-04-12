@@ -110,17 +110,23 @@ module Federation
           end
 
           if partner_accepted
-            begin
+            # Check if a reversal has already occurred (e.g. ReconciliationJob
+            # reversed the transfer while this webhook was in flight). If so,
+            # mark as disputed instead of completing.
+            if fed_txn.metadata&.dig("reversal_transfer_id").present?
+              Rails.logger.warn(
+                "[Federation::WebhookDelivery] Fed_txn #{fed_txn_id} was reversed while webhook was in flight — marking disputed"
+              )
+              fed_txn.update!(
+                status: "disputed",
+                metadata: (fed_txn.metadata || {}).merge(
+                  "dispute_reason" => "Reversal occurred before webhook delivery completed",
+                  "disputed_at" => Time.current.iso8601
+                )
+              )
+            else
               fed_txn.complete!
               Rails.logger.info("[Federation::WebhookDelivery] Completed fed_txn #{fed_txn_id} after confirmed delivery")
-            rescue => e
-              # L2: Completing the federation record failed — log but don't re-raise.
-              # The webhook was delivered successfully; the record can be reconciled
-              # manually or via ReconciliationJob.
-              Rails.logger.error(
-                "[Federation::WebhookDelivery] Webhook delivered but failed to complete " \
-                "fed_txn #{fed_txn_id}: #{e.class}: #{e.message}"
-              )
             end
           end
         end

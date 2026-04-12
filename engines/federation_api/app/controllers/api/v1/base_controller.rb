@@ -16,6 +16,7 @@ module Api
       rescue_from ActiveRecord::RecordNotFound, with: :not_found
       rescue_from ActiveRecord::RecordInvalid, with: :unprocessable_entity
       rescue_from ActionController::ParameterMissing, with: :bad_request
+      rescue_from StandardError, with: :handle_unexpected_error
 
       private
 
@@ -107,10 +108,14 @@ module Api
         # Weighted estimate: previous window's remainder + current window's count
         estimated = (previous_count * (1 - elapsed_fraction)) + current_count
 
-        response.set_header("X-RateLimit-Limit", limit.to_s)
-        response.set_header("X-RateLimit-Remaining", [limit - estimated.ceil, 0].max.to_s)
+        # Only expose rate limit headers after successful authentication
+        if @current_api_key
+          response.set_header("X-RateLimit-Limit", limit.to_s)
+          response.set_header("X-RateLimit-Remaining", [limit - estimated.ceil, 0].max.to_s)
+        end
 
         if estimated > limit
+          response.set_header("Retry-After", "60")
           respond_with_error(I18n.t("federation_api.errors.rate_limited", limit: limit, default: "Rate limit exceeded — maximum %{limit} requests per minute"), status: :too_many_requests)
         end
       end
@@ -123,7 +128,7 @@ module Api
       # on the Accept header. JSON:API clients (Komunitin) send
       # "application/vnd.api+json"; all others get the standard REST envelope.
       def current_response_adapter
-        @current_response_adapter ||= if request.headers["Accept"]&.include?("vnd.api+json")
+        @current_response_adapter ||= if request.headers["Accept"]&.match?(/\Aapplication\/vnd\.api\+json/)
           Federation::Adapters::JsonApiAdapter.new(partner: nil)
         else
           Federation::Adapters::RestAdapter.new(partner: nil)
@@ -157,14 +162,25 @@ module Api
 
       def unprocessable_entity(exception)
         # Return field-level error codes without exposing schema details.
-        sanitized = exception.record.errors.map do |error|
-          { field: error.attribute.to_s, code: error.type.to_s }
+        # Defensive nil check: RecordInvalid can sometimes have a nil record
+        # (e.g., when raised manually without an associated model instance).
+        sanitized = if exception.record&.errors
+          exception.record.errors.map do |error|
+            { field: error.attribute.to_s, code: error.type.to_s }
+          end
+        else
+          [{ code: "invalid" }]
         end
         respond_with_error(I18n.t("federation_api.errors.validation_failed", default: "Validation failed"), status: :unprocessable_entity, errors: sanitized)
       end
 
       def bad_request(_exception)
         respond_with_error(I18n.t("federation_api.errors.bad_request", default: "Bad request"), status: :bad_request)
+      end
+
+      def handle_unexpected_error(exception)
+        Rails.logger.error("[Federation::API] Unexpected error: #{exception.class}: #{exception.message}\n#{exception.backtrace&.first(10)&.join("\n")}")
+        respond_with_error("Internal server error", status: :internal_server_error)
       end
 
       # Pagination helper

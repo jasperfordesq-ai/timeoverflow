@@ -1,11 +1,8 @@
 module FederationAdmin
   class OrgSettingsController < BaseController
     def index
-      @organizations = Organization.order(:name)
-      @settings_map = {}
-      FederationOrganizationSetting.all.each do |s|
-        @settings_map[s.organization_id] = s
-      end
+      @organizations = Organization.includes(:account).order(:name)
+      @settings_map = FederationOrganizationSetting.all.index_by(&:organization_id)
       @opted_in_counts = FederationMemberPreference.opted_in
         .group(:organization_id).count
       @total_member_counts = Member.where(active: true)

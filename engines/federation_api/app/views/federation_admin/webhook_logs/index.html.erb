@@ -9,7 +9,7 @@
 
 <!-- Filter Bar -->
 <div class="bg-white shadow rounded-lg p-4 mb-6">
-  <form method="get" action="<%= federation_admin_webhook_logs_path %>" class="flex flex-wrap items-end gap-4">
+  <form method="get" action="<%= federation_admin_webhook_logs_path %>" class="flex flex-wrap items-end gap-4" aria-label="<%= t('federation_admin.webhook_logs.index.filter_webhooks', default: 'Filter webhook logs') %>">
     <div>
       <label for="status" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.webhook_logs.index.status') %></label>
       <select name="status" id="status" data-auto-submit

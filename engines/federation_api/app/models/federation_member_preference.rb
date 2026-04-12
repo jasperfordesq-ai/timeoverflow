@@ -25,7 +25,13 @@ class FederationMemberPreference < ActiveRecord::Base
   end
 
   def opted_in?
-    opted_in
+    return false unless opted_in
+    # Timestamp consistency: if opted_out_at is present and more recent than
+    # opted_in_at, the boolean flag may be stale. Treat as not opted-in.
+    if opted_out_at.present? && opted_in_at.present? && opted_out_at > opted_in_at
+      return false
+    end
+    true
   end
 
   def discoverable?

@@ -87,7 +87,7 @@
             <div class="mb-3">
               <p class="text-muted">
                 <%= t("federation_hub.transfers.your_balance") %>:
-                <strong><%= (current_member.account&.balance.to_f / 3600).round(1) %>h</strong>
+                <strong><%= format_federation_hours(current_member.account&.balance) %></strong>
               </p>
             </div>
 

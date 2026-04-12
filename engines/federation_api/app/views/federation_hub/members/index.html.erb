@@ -74,7 +74,7 @@
             <% if member["balance"] %>
               <p class="card-text">
                 <span class="badge bg-info">
-                  <%= (member["balance"].to_f / 3600).round(1) %>h <%= t("federation_hub.members.balance") %>
+                  <%= format_federation_hours(member["balance"]) %> <%= t("federation_hub.members.balance") %>
                 </span>
               </p>
             <% end %>

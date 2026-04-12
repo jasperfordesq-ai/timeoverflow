@@ -26,7 +26,10 @@
             <% end %>
           </div>
           <div>
-            <small class="text-muted"><%= msg.remote_user_identifier %></small>
+            <small class="text-muted">
+              <%= msg.inbound? ? t("federation_hub.messages.from") : t("federation_hub.messages.to") %>:
+              <%= msg.remote_user_identifier %>
+            </small>
             <small class="text-muted ms-2"><%= t("federation_hub.messages.time_ago", time: time_ago_in_words(msg.created_at)) %></small>
           </div>
         </div>

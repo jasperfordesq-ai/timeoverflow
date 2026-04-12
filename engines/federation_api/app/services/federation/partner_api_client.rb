@@ -51,15 +51,18 @@ module Federation
     # falls back to sending a health_check event to the webhook receiver,
     # which Nexus and other partners support.
     def health_check
-      result = get(@adapter.map_endpoint("health"))
+      result = health_probe(@adapter.map_endpoint("health"))
       if result["success"] == false && result["error"]&.include?("404")
         # Fallback: POST health_check event to the webhook/receive endpoint
-        post(@adapter.map_endpoint("receive"), {
+        fallback = post(@adapter.map_endpoint("receive"), {
           event: "health_check",
           timestamp: Time.current.iso8601,
           platform: "timeoverflow",
           data: {}
         })
+        # If fallback succeeded, undo the failure from the 404 probe
+        @partner.record_success! if fallback["success"] != false
+        fallback
       else
         result
       end
@@ -93,6 +96,29 @@ module Federation
     private
 
     # --- Transport layer ---
+
+    # Like get() but does NOT record failure on error — used for probing
+    # endpoints that may not exist (e.g., /health before fallback to /receive).
+    def health_probe(path)
+      uri = build_uri(path)
+      request = Net::HTTP::Get.new(uri)
+      set_headers(request)
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == "https"
+      http.open_timeout = TIMEOUT
+      http.read_timeout = TIMEOUT
+      response = http.request(request)
+
+      if response.code.to_i < 300
+        @partner.record_success!
+        JSON.parse(response.body)
+      else
+        { "success" => false, "error" => "Partner returned #{response.code}" }
+      end
+    rescue => e
+      { "success" => false, "error" => e.message }
+    end
 
     def get(path, params = {})
       uri = build_uri(path)

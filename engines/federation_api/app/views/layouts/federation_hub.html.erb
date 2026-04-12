@@ -90,8 +90,12 @@
                   </a>
                 </li>
                 <li class="nav-item">
+                  <% unread_count = FederationMessage.where(organization_id: current_organization&.id, local_member_id: current_member&.id, direction: "inbound").where(read_at: nil).count rescue 0 %>
                   <a class="nav-link <%= 'active' if request.path.start_with?(federation_hub_messages_path) %>" href="<%= federation_hub_messages_path %>">
                     <%= t("federation_hub.nav.messages") %>
+                    <% if unread_count > 0 %>
+                      <span class="badge bg-warning text-dark"><%= unread_count %></span>
+                    <% end %>
                   </a>
                 </li>
                 <li class="nav-item">

@@ -11,26 +11,34 @@
   </div>
 </div>
 
-<% if @messages.any? %>
-  <% @messages.each do |msg| %>
-    <a href="<%= federation_hub_message_path(msg) %>" class="text-decoration-none">
-      <div class="card mb-2 <%= msg.inbound? && !msg.read_at ? 'card-info border-info' : '' %>">
-        <div class="card-body py-2 d-flex justify-content-between align-items-center">
-          <div>
-            <span class="badge <%= msg.inbound? ? 'bg-success' : 'bg-info' %> me-2">
-              <%= msg.inbound? ? t("federation_hub.messages.received") : t("federation_hub.messages.sent_label") %>
-            </span>
-            <strong class="text-dark"><%= msg.subject.present? ? msg.subject : truncate(msg.body, length: 60) %></strong>
-            <% if msg.inbound? && !msg.read_at %>
-              <span class="badge bg-warning text-dark ms-1"><%= t("federation_hub.messages.unread") %></span>
-            <% end %>
+<% if @conversations.any? %>
+  <% @conversations.each do |convo| %>
+    <a href="<%= federation_hub_message_path(convo[:latest_message]) %>" class="text-decoration-none">
+      <div class="card mb-2 <%= convo[:unread_count] > 0 ? 'card-info border-info' : '' %>">
+        <div class="card-body py-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <% if convo[:unread_count] > 0 %>
+                <span class="badge bg-warning text-dark me-1"><%= convo[:unread_count] %></span>
+              <% end %>
+              <strong class="text-dark"><%= convo[:remote_user_name] %></strong>
+              <small class="text-muted ms-2"><%= convo[:partner_name] %></small>
+            </div>
+            <div>
+              <small class="text-muted"><%= t("federation_hub.messages.time_ago", time: time_ago_in_words(convo[:last_activity])) %></small>
+              <% if convo[:message_count] > 1 %>
+                <span class="badge bg-secondary ms-1"><%= convo[:message_count] %></span>
+              <% end %>
+            </div>
           </div>
-          <div>
+          <div class="mt-1">
+            <% latest = convo[:latest_message] %>
             <small class="text-muted">
-              <%= msg.inbound? ? t("federation_hub.messages.from") : t("federation_hub.messages.to") %>:
-              <%= msg.remote_user_identifier %>
+              <% if latest.outbound? %>
+                <span class="text-info"><%= t("federation_hub.messages.you") %>:</span>
+              <% end %>
+              <%= truncate(latest.body.to_s, length: 100) %>
             </small>
-            <small class="text-muted ms-2"><%= t("federation_hub.messages.time_ago", time: time_ago_in_words(msg.created_at)) %></small>
           </div>
         </div>
       </div>

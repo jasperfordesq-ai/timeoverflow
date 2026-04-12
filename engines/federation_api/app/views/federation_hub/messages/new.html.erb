@@ -15,29 +15,35 @@
           <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
 
           <div class="mb-3">
-            <label for="partner_id" class="form-label"><%= t("federation_hub.messages.partner") %></label>
+            <label for="partner_id" class="form-label fw-bold"><%= t("federation_hub.messages.partner") %></label>
             <select name="partner_id" id="partner_id" class="form-control" required>
               <option value=""><%= t("federation_hub.messages.select_partner") %></option>
               <% @partners.each do |p| %>
-                <option value="<%= p.id %>"><%= p.name %></option>
+                <option value="<%= p.id %>" <%= 'selected' if @pre_partner_id.to_s == p.id.to_s %>><%= p.name %></option>
               <% end %>
             </select>
           </div>
 
           <div class="mb-3">
-            <label for="recipient_id" class="form-label"><%= t("federation_hub.messages.recipient") %></label>
+            <label for="recipient_id" class="form-label fw-bold"><%= t("federation_hub.messages.recipient") %></label>
+            <% if @pre_recipient_name.present? %>
+              <p class="form-text mb-1"><%= t("federation_hub.messages.sending_to", name: @pre_recipient_name) %></p>
+            <% end %>
             <input type="text" name="recipient_id" id="recipient_id" class="form-control" required
+                   value="<%= @pre_recipient %>"
                    placeholder="<%= t("federation_hub.messages.recipient_placeholder") %>">
           </div>
 
           <div class="mb-3">
-            <label for="subject" class="form-label"><%= t("federation_hub.messages.subject_label") %></label>
-            <input type="text" name="subject" id="subject" class="form-control">
+            <label for="subject" class="form-label fw-bold"><%= t("federation_hub.messages.subject_label") %></label>
+            <input type="text" name="subject" id="subject" class="form-control"
+                   placeholder="<%= t("federation_hub.messages.subject_placeholder") %>">
           </div>
 
           <div class="mb-3">
-            <label for="body" class="form-label"><%= t("federation_hub.messages.body_label") %></label>
-            <textarea name="body" id="body" rows="6" class="form-control" required></textarea>
+            <label for="body" class="form-label fw-bold"><%= t("federation_hub.messages.body_label") %></label>
+            <textarea name="body" id="body" rows="6" class="form-control" required
+                      placeholder="<%= t("federation_hub.messages.body_placeholder") %>"></textarea>
           </div>
 
           <button type="submit" class="btn btn-info"><%= t("federation_hub.messages.send_button") %></button>

@@ -90,12 +90,19 @@
             <% end %>
             <div class="d-flex justify-content-between align-items-center mt-2">
               <small class="text-muted"><%= member["organization"] || @source_name %></small>
-              <% if @selected_type == "internal" %>
-                <a href="<%= new_federation_hub_transfer_path(org_id: @selected_id, member_id: member["id"]) %>"
-                   class="btn btn-sm btn-success">
-                  <%= t("federation_hub.members.send_time") %>
-                </a>
-              <% end %>
+              <div class="d-flex gap-1">
+                <% if @selected_type == "internal" %>
+                  <a href="<%= new_federation_hub_transfer_path(org_id: @selected_id, member_id: member["id"]) %>"
+                     class="btn btn-sm btn-success">
+                    <%= t("federation_hub.members.send_time") %>
+                  </a>
+                <% else %>
+                  <a href="<%= new_federation_hub_message_path(partner_id: @selected_id, recipient_id: member["id"], recipient_name: member["username"]) %>"
+                     class="btn btn-sm btn-info">
+                    <%= t("federation_hub.members.send_message") %>
+                  </a>
+                <% end %>
+              </div>
             </div>
           </div>
         </div>

@@ -19,13 +19,13 @@ module Api
         partner_id = params[:partner_id] || params[:tenant_id]
 
         if event_type.blank?
-          return respond_with_error("Missing required field: event", status: :bad_request)
+          return respond_with_error(I18n.t("federation_api.errors.missing_event", default: "Missing required field: event"), status: :bad_request)
         end
 
         # Use the partner verified by HMAC signature (avoids double-lookup divergence).
         partner = @verified_partner || FederationPartner.find_by(id: partner_id)
         unless partner
-          return respond_with_error("Unknown partner", status: :not_found)
+          return respond_with_error(I18n.t("federation_api.errors.unknown_partner", default: "Unknown partner"), status: :not_found)
         end
 
         # Per-partner rate limit (in addition to per-IP limit in before_action)
@@ -37,7 +37,7 @@ module Api
         # All other events require an active partner.
         partnership_events = %w[partnership.activated partnership.approved partnership.suspended partnership.rejected partnership.terminated partnership.level_changed]
         unless partner.active? || partnership_events.include?(event_type)
-          return respond_with_error("Inactive partner", status: :forbidden)
+          return respond_with_error(I18n.t("federation_api.errors.inactive_partner", default: "Inactive partner"), status: :forbidden)
         end
 
         # Replay attack prevention: derive a deterministic nonce from the request.
@@ -71,7 +71,7 @@ module Api
             status: "failed",
             response_body: "#{e.class}: #{e.message}"
           )
-          respond_with_error("Webhook processing failed", status: :internal_server_error)
+          respond_with_error(I18n.t("federation_api.errors.webhook_processing_failed", default: "Webhook processing failed"), status: :internal_server_error)
         end
       end
 
@@ -184,7 +184,10 @@ module Api
         body = request.raw_post
         return nil if body.blank? && timestamp.blank?
 
-        Digest::SHA256.hexdigest("#{body}:#{timestamp}")
+        # Include partner_id to prevent nonce collisions when two partners
+        # send identical payloads at the same second.
+        partner_id = @verified_partner&.id || "unknown"
+        Digest::SHA256.hexdigest("#{partner_id}:#{body}:#{timestamp}")
       end
 
       # Per-partner rate limit — supplements the per-IP limit. Prevents a single

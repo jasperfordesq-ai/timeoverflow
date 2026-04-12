@@ -20,8 +20,8 @@ module Federation
 
     def transfer_received(to:, member:, amount_hours:, sender_name:, reason:, partner_name:)
       @member = member
-      @amount_hours = amount_hours
-      @sender_name = sender_name
+      @amount_hours = amount_hours.presence || 0
+      @sender_name = sender_name.presence || I18n.t("federation_mailer.common.default_name", default: "Federation Member")
       @reason = reason
       @partner_name = partner_name
 
@@ -35,8 +35,8 @@ module Federation
 
     def transfer_sent(to:, member:, amount_hours:, recipient_name:, reason:, partner_name:)
       @member = member
-      @amount_hours = amount_hours
-      @recipient_name = recipient_name
+      @amount_hours = amount_hours.presence || 0
+      @recipient_name = recipient_name.presence || I18n.t("federation_mailer.common.default_name", default: "Federation Member")
       @reason = reason
       @partner_name = partner_name
 

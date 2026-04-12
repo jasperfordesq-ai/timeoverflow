@@ -22,8 +22,8 @@
   <script>if (typeof Rails !== 'undefined' && !window._rails_loaded) Rails.start();</script>
   <script><%= raw File.read(FederationApi::Engine.root.join("app/assets/javascripts/federation_form_helpers.js")) rescue "" %></script>
   <style>
-    [data-flash] { animation: fadeOut 8s ease-in-out forwards; }
-    @keyframes fadeOut { 0%,85% { opacity: 1; } 100% { opacity: 0; display: none; } }
+    [data-flash] { animation: fadeOut 12s ease-in-out forwards; }
+    @keyframes fadeOut { 0%,90% { opacity: 1; } 100% { opacity: 0; display: none; } }
     .overflow-x-auto { position: relative; }
     .scroll-shadow { background:
       linear-gradient(to right, white 30%, rgba(255,255,255,0)),
@@ -38,6 +38,7 @@
 
   </style>
   <%= csrf_meta_tags %>
+  <noscript><style>.js-only{display:none!important}</style></noscript>
 </head>
 <body class="h-full">
   <div class="min-h-full">
@@ -53,7 +54,7 @@
         <!-- Top row: brand + back link -->
         <div class="flex h-12 items-center justify-between">
           <a href="<%= federation_admin_root_path %>" class="flex items-center gap-2 text-white font-bold tracking-tight">
-            <span class="text-xl">🔗</span>
+            <span class="text-xl" aria-hidden="true">&#128279;</span>
             <%= t("federation_admin.layout.brand") %>
           </a>
           <div class="flex items-center gap-3">

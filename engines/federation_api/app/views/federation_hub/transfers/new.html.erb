@@ -71,15 +71,14 @@
           <h5 class="mb-0"><%= t("federation_hub.transfers.send_to", org: @selected_name) %></h5>
         </div>
         <div class="card-body">
-          <form method="post" action="<%= federation_hub_transfers_path %>">
-            <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+          <%= form_tag(federation_hub_transfers_path, method: :post) do %>
             <input type="hidden" name="org_id" value="<%= @selected_id %>">
             <input type="hidden" name="source_type" value="<%= @selected_type %>">
 
             <%# Recipient %>
             <div class="mb-3">
-              <label for="destination_member_id" class="form-label fw-bold"><%= t("federation_hub.transfers.recipient") %> <span class="text-danger">*</span></label>
-              <select name="destination_member_id" id="destination_member_id" class="form-control" required>
+              <label for="destination_member_id" class="form-label fw-bold"><%= t("federation_hub.transfers.recipient") %> <span class="text-danger" aria-hidden="true">*</span><span class="visually-hidden"> (<%= t("federation_hub.common.required", default: "required") %>)</span></label>
+              <select name="destination_member_id" id="destination_member_id" class="form-control" required aria-required="true">
                 <option value=""><%= t("federation_hub.transfers.select_recipient") %></option>
                 <% @destination_members.each do |m| %>
                   <option value="<%= m["id"] %>" <%= 'selected' if @pre_selected_member_id.to_s == m["id"].to_s %>><%= m["username"] %></option>
@@ -89,7 +88,7 @@
 
             <%# Amount %>
             <div class="mb-3">
-              <label class="form-label fw-bold"><%= t("federation_hub.transfers.amount") %> <span class="text-danger">*</span></label>
+              <label class="form-label fw-bold"><%= t("federation_hub.transfers.amount") %> <span class="text-danger" aria-hidden="true">*</span><span class="visually-hidden"> (<%= t("federation_hub.common.required", default: "required") %>)</span></label>
               <div class="row">
                 <div class="col-md-4">
                   <div class="input-group">
@@ -134,7 +133,7 @@
             <a href="<%= federation_hub_root_path %>" class="btn btn-outline-secondary btn-lg ms-2">
               <%= t("federation_hub.transfers.cancel") %>
             </a>
-          </form>
+          <% end %>
         </div>
       </div>
     </div>

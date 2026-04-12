@@ -249,11 +249,11 @@ module Federation
         end
       end
 
-      def serialize_error(message, status: nil, errors: nil)
+      def serialize_error(message, status: nil, errors: nil, meta: {})
         primary = JsonApiSerializer.serialize_error(
           title: "Error",
           detail: message,
-          status: status || "422"
+          status: (status || "422").to_s
         )
 
         if errors.present?
@@ -264,6 +264,7 @@ module Federation
           primary[:errors].concat(extra)
         end
 
+        primary[:meta] = meta if meta.present?
         primary
       end
 

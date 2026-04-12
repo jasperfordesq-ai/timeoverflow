@@ -93,7 +93,7 @@ class FederationTransaction < ActiveRecord::Base
   def metadata_size_limit
     return if metadata.blank?
     if metadata.to_json.bytesize > 100_000
-      errors.add(:metadata, "exceeds 100 KB size limit")
+      errors.add(:metadata, I18n.t("federation_api.errors.metadata_too_large", max_kb: 100, default: "exceeds %{max_kb} KB size limit"))
     end
   end
 end

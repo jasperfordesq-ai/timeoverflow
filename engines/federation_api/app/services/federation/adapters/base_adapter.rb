@@ -112,7 +112,7 @@ module Federation
       end
 
       # Serialize an error into the protocol's error format.
-      def serialize_error(message, status: nil, errors: nil)
+      def serialize_error(message, status: nil, errors: nil, meta: {})
         raise NotImplementedError, "#{self.class}#serialize_error"
       end
 

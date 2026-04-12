@@ -19,7 +19,8 @@
     <form method="post" action="<%= test_webhook_federation_admin_partner_path(@partner) %>" class="inline">
       <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
       <button type="submit"
-              class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+              class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+              data-disable-with="<%= t("federation_admin.partners.show.test_webhook") %>...">
         <%= t("federation_admin.partners.show.test_webhook") %>
       </button>
     </form>
@@ -44,7 +45,8 @@
     <form method="post" action="<%= health_check_federation_admin_partner_path(@partner) %>" class="inline">
       <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
       <button type="submit"
-              class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+              class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+              data-disable-with="<%= t("federation_admin.partners.show.health_check") %>...">
         <%= t("federation_admin.partners.show.health_check") %>
       </button>
     </form>
@@ -65,7 +67,7 @@
       <dd class="mt-1">
         <% status_colors = { "active" => "bg-green-100 text-green-800", "pending" => "bg-yellow-100 text-yellow-800", "suspended" => "bg-red-100 text-red-800", "terminated" => "bg-gray-100 text-gray-600" } %>
         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= status_colors[@partner.status] %>">
-          <%= @partner.status.capitalize %>
+          <%= t("federation_admin.common.#{@partner.status}", default: @partner.status.capitalize) %>
         </span>
       </dd>
     </div>
@@ -80,7 +82,7 @@
     </div>
     <div>
       <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.platform_type") %></dt>
-      <dd class="mt-1 text-sm text-gray-900 capitalize"><%= @partner.platform_type %></dd>
+      <dd class="mt-1 text-sm text-gray-900"><%= t("federation_admin.common.platform_types.#{@partner.platform_type}", default: @partner.platform_type.capitalize) %></dd>
     </div>
     <div>
       <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.protocol_type") %></dt>
@@ -257,7 +259,7 @@
                   <%= wh.status %>
                 </span>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-500"><%= wh.try(:response_code) || "-" %></td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-500"><%= wh.response_code&.to_s.presence || "-" %></td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500"><%= wh.created_at.then { |t| format_date(t) } %></td>
             </tr>
           <% end %>

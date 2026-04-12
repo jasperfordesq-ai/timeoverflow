@@ -24,7 +24,7 @@ module Api
         @current_api_key = FederationApiKey.authenticate(raw_key)
 
         unless @current_api_key
-          respond_with_error("Invalid or expired API key", status: :unauthorized)
+          respond_with_error(I18n.t("federation_api.errors.invalid_api_key", default: "Invalid or expired API key"), status: :unauthorized)
           return
         end
 
@@ -49,7 +49,7 @@ module Api
 
       def require_permission!(permission)
         unless @current_api_key.has_permission?(permission)
-          respond_with_error("API key lacks '#{permission}' permission", status: :forbidden)
+          respond_with_error(I18n.t("federation_api.errors.missing_permission", permission: permission, default: "API key lacks '%{permission}' permission"), status: :forbidden)
         end
       end
 
@@ -74,13 +74,13 @@ module Api
 
       def require_organization!
         unless current_organization
-          respond_with_error("organization_id is required", status: :bad_request)
+          respond_with_error(I18n.t("federation_api.errors.org_required", default: "organization_id is required"), status: :bad_request)
           return
         end
         # Enforce org-level federation setting: if the org has explicitly
         # disabled federation, reject the request.
         unless Federation::AccessControl.org_enabled?(current_organization)
-          respond_with_error("Federation is not enabled for this organization", status: :forbidden)
+          respond_with_error(I18n.t("federation_api.errors.federation_disabled", default: "Federation is not enabled for this organization"), status: :forbidden)
         end
       end
 
@@ -111,7 +111,7 @@ module Api
         response.set_header("X-RateLimit-Remaining", [limit - estimated.ceil, 0].max.to_s)
 
         if estimated > limit
-          respond_with_error("Rate limit exceeded — maximum #{limit} requests per minute", status: :too_many_requests)
+          respond_with_error(I18n.t("federation_api.errors.rate_limited", limit: limit, default: "Rate limit exceeded — maximum %{limit} requests per minute"), status: :too_many_requests)
         end
       end
 
@@ -134,17 +134,25 @@ module Api
       # automatic content negotiation for JSON:API clients.
       # meta is always included (even if empty) for consistent destructuring.
       def respond_with_data(data, status: :ok, meta: {}, resource_type: nil)
+        meta = meta.merge(request_id: request.request_id) if request.respond_to?(:request_id)
         body = current_response_adapter.serialize_response(data, meta: meta, resource_type: resource_type)
+        response.set_header("X-Request-Id", request.request_id) if request.respond_to?(:request_id)
+        response.set_header("X-API-Version", "1.0")
         render json: body, status: status, content_type: current_response_adapter.content_type
       end
 
       def respond_with_error(message, status: :unprocessable_entity, errors: nil)
-        body = current_response_adapter.serialize_error(message, status: status, errors: errors)
+        status_code = Rack::Utils::SYMBOL_TO_STATUS_CODE[status] || status
+        error_meta = { status_code: status_code, timestamp: Time.current.iso8601 }
+        error_meta[:request_id] = request.request_id if request.respond_to?(:request_id)
+        body = current_response_adapter.serialize_error(message, status: status_code, errors: errors, meta: error_meta)
+        response.set_header("X-Request-Id", request.request_id) if request.respond_to?(:request_id)
+        response.set_header("X-API-Version", "1.0")
         render json: body, status: status, content_type: current_response_adapter.content_type
       end
 
       def not_found(_exception)
-        respond_with_error("Not found", status: :not_found)
+        respond_with_error(I18n.t("federation_api.errors.not_found", default: "Not found"), status: :not_found)
       end
 
       def unprocessable_entity(exception)
@@ -152,11 +160,11 @@ module Api
         sanitized = exception.record.errors.map do |error|
           { field: error.attribute.to_s, code: error.type.to_s }
         end
-        respond_with_error("Validation failed", status: :unprocessable_entity, errors: sanitized)
+        respond_with_error(I18n.t("federation_api.errors.validation_failed", default: "Validation failed"), status: :unprocessable_entity, errors: sanitized)
       end
 
       def bad_request(_exception)
-        respond_with_error("Bad request", status: :bad_request)
+        respond_with_error(I18n.t("federation_api.errors.bad_request", default: "Bad request"), status: :bad_request)
       end
 
       # Pagination helper

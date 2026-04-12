@@ -29,7 +29,7 @@ module Api
         partner = FederationPartner.active.find(params[:partner_id])
 
         unless partner.can_transact?
-          return respond_with_error("Partner is not enabled for transactions", status: :forbidden)
+          return respond_with_error(I18n.t("federation_api.errors.partner_cannot_transact", default: "Partner is not enabled for transactions"), status: :forbidden)
         end
 
         # IDEMPOTENCY: Check if this external transaction already processed
@@ -48,21 +48,21 @@ module Api
         org = local_account.organization
 
         unless org
-          return respond_with_error("Account has no associated organization", status: :unprocessable_entity)
+          return respond_with_error(I18n.t("federation_api.errors.account_no_org", default: "Account has no associated organization"), status: :unprocessable_entity)
         end
 
         unless org.account
-          return respond_with_error("Organization has no federation pool account", status: :unprocessable_entity)
+          return respond_with_error(I18n.t("federation_api.errors.org_no_pool_account", default: "Organization has no federation pool account"), status: :unprocessable_entity)
         end
 
         # Verify federation is enabled for this organization.
         unless Federation::AccessControl.org_enabled?(org)
-          return respond_with_error("Federation is not enabled for this organization", status: :forbidden)
+          return respond_with_error(I18n.t("federation_api.errors.federation_disabled", default: "Federation is not enabled for this organization"), status: :forbidden)
         end
 
         # Verify the partner is authorized to transact with this organization.
         unless partner.can_access_organization?(org)
-          return respond_with_error("Partner is not authorized for this organization", status: :forbidden)
+          return respond_with_error(I18n.t("federation_api.errors.partner_not_authorized", default: "Partner is not authorized for this organization"), status: :forbidden)
         end
 
         handler = Federation::TransferHandler.new(partner: partner)
@@ -149,7 +149,7 @@ module Api
         end
 
         unless recipient&.account
-          return respond_with_error("Could not resolve recipient member or account", status: :unprocessable_entity)
+          return respond_with_error(I18n.t("federation_api.errors.recipient_not_found", default: "Could not resolve recipient member or account"), status: :unprocessable_entity)
         end
 
         # Infer partner from API key's org context, or single-partner shortcut.
@@ -175,7 +175,7 @@ module Api
         params[:remote_user_identifier] = params[:sender_id] || "unknown_remote_user"
         params[:amount] = amount_seconds.to_s
         params[:reason] = params[:description] if params[:reason].blank?
-        params[:external_transaction_id] ||= "nexus_#{Digest::SHA256.hexdigest("#{partner_id}:#{params[:sender_id]}:#{params[:recipient_id]}:#{params[:amount]}:#{params[:description]}")[0..15]}"
+        params[:external_transaction_id] ||= "nexus_#{Digest::SHA256.hexdigest("#{partner_id}:#{params[:sender_id]}:#{params[:recipient_id]}:#{params[:amount]}:#{params[:description]}")[0..31]}"
       end
 
       def validate_transfer_params!
@@ -188,31 +188,33 @@ module Api
         missing << "direction" if params[:direction].blank?
 
         if missing.any?
-          return respond_with_error("Missing required fields: #{missing.join(', ')}", status: :bad_request)
+          return respond_with_error(I18n.t("federation_api.errors.missing_fields", fields: missing.join(", "), default: "Missing required fields: %{fields}"), status: :bad_request)
         end
 
         # Direction must be valid
         unless %w[inbound outbound].include?(params[:direction])
-          return respond_with_error("direction must be 'inbound' or 'outbound'", status: :bad_request)
+          return respond_with_error(I18n.t("federation_api.errors.invalid_direction", default: "direction must be 'inbound' or 'outbound'"), status: :bad_request)
         end
 
         # Amount must be a whole positive integer
         unless params[:amount].to_s.match?(/\A\d+\z/)
-          return respond_with_error("amount must be a positive integer (seconds)", status: :bad_request)
+          return respond_with_error(I18n.t("federation_api.errors.invalid_amount", default: "amount must be a positive integer (seconds)"), status: :bad_request)
         end
         amount = params[:amount].to_i
         if amount <= 0
-          return respond_with_error("amount must be a positive integer (seconds)", status: :bad_request)
+          return respond_with_error(I18n.t("federation_api.errors.invalid_amount", default: "amount must be a positive integer (seconds)"), status: :bad_request)
         end
 
         max = MAX_AMOUNT.call
         if amount > max
-          return respond_with_error("amount exceeds maximum (#{max} seconds)", status: :bad_request)
+          return respond_with_error(I18n.t("federation_api.errors.amount_exceeds_max", max: max, default: "amount exceeds maximum (%{max} seconds)"), status: :bad_request)
         end
 
         # M5: Limit reason length to prevent outsized payloads in webhook logs and DB.
+        # Strip and sanitize the reason field.
+        params[:reason] = params[:reason].to_s.strip if params[:reason].present?
         if params[:reason].present? && params[:reason].length > 500
-          return respond_with_error("reason must be 500 characters or less", status: :bad_request)
+          return respond_with_error(I18n.t("federation_api.errors.reason_too_long", max: 500, default: "reason must be %{max} characters or less"), status: :bad_request)
         end
       end
 

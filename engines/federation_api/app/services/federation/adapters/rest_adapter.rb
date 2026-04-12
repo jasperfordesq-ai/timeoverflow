@@ -90,8 +90,8 @@ module Federation
         { success: true, data: data, meta: meta }
       end
 
-      def serialize_error(message, status: nil, errors: nil)
-        body = { success: false, error: message, meta: {} }
+      def serialize_error(message, status: nil, errors: nil, meta: {})
+        body = { success: false, error: message, meta: meta }
         body[:errors] = errors if errors.present?
         body
       end

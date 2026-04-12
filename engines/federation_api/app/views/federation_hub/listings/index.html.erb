@@ -11,7 +11,8 @@
 <div class="row mb-4">
   <div class="col-md-8">
     <form method="get" action="<%= federation_hub_listings_path %>" class="d-flex gap-2">
-      <select name="partner_id" class="form-control" onchange="
+      <label for="listings_partner_select" class="visually-hidden"><%= t("federation_hub.listings.select_partner") %></label>
+      <select name="partner_id" id="listings_partner_select" class="form-control" aria-label="<%= t("federation_hub.listings.select_partner") %>" onchange="
         var opt = this.options[this.selectedIndex];
         document.getElementById('listings_source_type').value = opt.dataset.type || '';
         this.form.submit();
@@ -45,7 +46,8 @@
       <input type="hidden" name="source_type" id="listings_source_type" value="<%= @selected_type %>">
 
       <% if @selected_id.present? %>
-        <select name="type" class="form-control" data-auto-submit>
+        <label for="listings_type_filter" class="visually-hidden"><%= t("federation_hub.listings.all_types") %></label>
+        <select name="type" id="listings_type_filter" class="form-control" data-auto-submit aria-label="<%= t("federation_hub.listings.all_types") %>">
           <option value=""><%= t("federation_hub.listings.all_types") %></option>
           <option value="offer" <%= 'selected' if params[:type] == 'offer' %>><%= t("federation_hub.listings.offers") %></option>
           <option value="inquiry" <%= 'selected' if params[:type] == 'inquiry' %>><%= t("federation_hub.listings.inquiries") %></option>
@@ -89,21 +91,21 @@
           <div class="d-flex justify-content-between align-items-start">
             <div>
               <h4 class="mb-1">
-                <%= sanitize(listing["title"].to_s.presence || listing["name"].to_s.presence || t("federation_hub.listings.listing_fallback", id: listing["id"]), tags: %w[b i em strong]) %>
+                <%= sanitize(listing["title"].to_s.presence || listing["name"].to_s.presence || t("federation_hub.listings.listing_fallback", id: listing["id"]), tags: []) %>
               </h4>
               <% if listing["description"].present? %>
                 <% desc = listing["description"].to_s %>
                 <% if desc.length > 200 %>
                   <p class="text-muted mb-2">
-                    <span class="listing-desc-short"><%= sanitize(truncate(desc, length: 200), tags: %w[b i em strong]) %>
+                    <span class="listing-desc-short"><%= sanitize(truncate(desc, length: 200), tags: []) %>
                       <a href="#" class="text-info listing-expand"><%= t("federation_hub.listings.read_more", default: "Read more") %></a>
                     </span>
-                    <span class="listing-desc-full" style="display:none"><%= sanitize(desc, tags: %w[b i em strong br p]) %>
+                    <span class="listing-desc-full" style="display:none"><%= simple_format(sanitize(desc, tags: []), {}, wrapper_tag: "span") %>
                       <a href="#" class="text-info listing-collapse"><%= t("federation_hub.listings.read_less", default: "Show less") %></a>
                     </span>
                   </p>
                 <% else %>
-                  <p class="text-muted mb-2"><%= sanitize(desc, tags: %w[b i em strong br p]) %></p>
+                  <p class="text-muted mb-2"><%= simple_format(sanitize(desc, tags: []), {}, wrapper_tag: "span") %></p>
                 <% end %>
               <% end %>
               <div class="d-flex flex-wrap gap-1">

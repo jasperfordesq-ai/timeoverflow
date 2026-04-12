@@ -106,7 +106,7 @@ module Federation
           transfer.source = org.account.id
           transfer.destination = member.account.id
           transfer.amount = amount
-          transfer.reason = "[Federation] #{reason}"
+          transfer.reason = "[Federation] #{reason.presence || "Cross-platform transfer"}"
           transfer.save!
 
           fed_txn.complete!(local_transfer: transfer)
@@ -185,7 +185,7 @@ module Federation
         local_transfer.source = local_account.id
         local_transfer.destination = org.account.id
         local_transfer.amount = amount
-        local_transfer.reason = "[Federation] #{reason}"
+        local_transfer.reason = "[Federation] #{reason.presence || "Cross-platform transfer"}"
         local_transfer.save!
 
         # Link transfer to fed_txn so ReconciliationJob can find it for reversal,

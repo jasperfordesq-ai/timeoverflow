@@ -19,6 +19,11 @@
     <script><%= raw File.read(FederationApi::Engine.root.join("app/assets/javascripts/federation_form_helpers.js")) rescue "" %></script>
   </head>
   <body>
+    <noscript>
+      <div class="alert alert-warning text-center mb-0">
+        <small>JavaScript is required for some Federation Hub features (transfers, live filtering).</small>
+      </div>
+    </noscript>
     <%# ALPHA development notice %>
     <div class="alert alert-warning text-center mb-0 rounded-0 py-1" role="alert">
       <small class="fw-bold"><%= t("federation_hub.layout.alpha_notice") %></small>

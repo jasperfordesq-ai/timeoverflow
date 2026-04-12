@@ -40,8 +40,13 @@ module FederationHub
       amount = (hours * 3600) + (minutes * 60)
       reason = params[:reason].to_s.strip
 
-      # Validate amount
-      max_amount = 360_000
+      # Validate amount — use same config as API controller for consistency
+      max_amount = begin
+        v = Rails.application.config.federation.max_transfer_amount
+        v.to_i > 0 ? v.to_i : 360_000
+      rescue
+        360_000
+      end
       if amount <= 0
         flash[:alert] = t("federation_hub.transfers.invalid_amount")
         redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type)
@@ -59,6 +64,13 @@ module FederationHub
       unless source_account
         flash[:alert] = t("federation_hub.transfers.no_source_account")
         redirect_to federation_hub_root_path
+        return
+      end
+
+      # Server-side balance validation — client-side check is UX only
+      if source_account.balance.to_i < amount
+        flash[:alert] = t("federation_hub.transfers.exceeds_balance")
+        redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type)
         return
       end
 

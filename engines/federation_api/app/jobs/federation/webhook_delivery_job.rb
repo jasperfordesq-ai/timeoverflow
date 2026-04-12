@@ -31,8 +31,22 @@ module Federation
           "remain pending — ReconciliationJob will auto-reverse after 24 h"
         )
       end
-      # Hook: add Sentry/PagerDuty/Slack alerting here, e.g.:
-      # Sentry.capture_exception(error, extra: { partner_id: partner_id, fed_txn_id: fed_txn_id }) rescue nil
+      # Attempt to send alert via Sentry if available
+      if defined?(Sentry)
+        Sentry.capture_exception(error, extra: { partner_id: partner_id, event: event, fed_txn_id: fed_txn_id }) rescue nil
+      end
+      # Record exhaustion in audit log for admin visibility
+      begin
+        FederationAuditLog.create!(
+          action: "webhook_delivery_exhausted",
+          actor: "system",
+          target_type: "FederationPartner",
+          target_id: partner_id,
+          details: { event: event, fed_txn_id: fed_txn_id, error: "#{error.class}: #{error.message}" }
+        )
+      rescue => log_err
+        Rails.logger.warn("[Federation::WebhookDelivery] Could not create audit log: #{log_err.message}")
+      end
     end
 
     # fed_txn_id is optional — only passed for outbound "transaction.requested"

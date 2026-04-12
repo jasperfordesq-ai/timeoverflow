@@ -19,12 +19,16 @@ module FederationAdmin
         permissions[perm] = params["permission_#{perm}"] == "1"
       end
 
+      permitted_org_ids = (params[:permitted_organization_ids] || []).reject(&:blank?).map(&:to_i)
+
       @api_key, @raw_key = FederationApiKey.generate!(
         name: params[:name],
         organization: org,
         permissions: permissions,
         expires_at: params[:expires_at].present? ? Time.parse(params[:expires_at]) : nil
       )
+      # Set permitted_organization_ids after creation (generate! doesn't accept it)
+      @api_key.update!(permitted_organization_ids: permitted_org_ids) if permitted_org_ids.any?
 
       audit!("api_key.created", target: @api_key, changes_made: { name: @api_key.name, organization_id: @api_key.organization_id })
       flash[:notice] = t("federation_admin.flash.api_key_created", default: "API key generated successfully. Copy the raw key now — it cannot be retrieved later.")
@@ -62,6 +66,8 @@ module FederationAdmin
           permissions: old_key.permissions || {},
           expires_at: old_key.expires_at
         )
+        # Carry over org allowlist from the old key
+        @api_key.update!(permitted_organization_ids: old_key.permitted_organization_ids) if old_key.permitted_organization_ids.present?
         old_key.update!(active: false)
       end
 

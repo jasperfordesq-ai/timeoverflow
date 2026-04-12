@@ -113,7 +113,7 @@
         </button>
         <% if @partner.rotation_in_progress? %>
           <span class="ml-3 inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-800">
-            <%= t("federation_admin.partners.show.rotation_in_progress", date: @partner.secret_rotation_started_at&.strftime("%Y-%m-%d %H:%M UTC")) %>
+            <%= t("federation_admin.partners.show.rotation_in_progress", date: @partner.secret_rotation_started_at&.then { |t| format_date(t) }) %>
           </span>
         <% end %>
       </dd>
@@ -161,15 +161,15 @@
     </div>
     <div>
       <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.last_health_check") %></dt>
-      <dd class="mt-1 text-sm text-gray-900"><%= @partner.last_health_check_at&.strftime("%Y-%m-%d %H:%M:%S UTC") || t("federation_admin.partners.show.never") %></dd>
+      <dd class="mt-1 text-sm text-gray-900"><%= @partner.last_health_check_at&.then { |t| format_date(t) } || t("federation_admin.partners.show.never") %></dd>
     </div>
     <div>
       <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.created") %></dt>
-      <dd class="mt-1 text-sm text-gray-900"><%= @partner.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></dd>
+      <dd class="mt-1 text-sm text-gray-900"><%= @partner.created_at.then { |t| format_date(t) } %></dd>
     </div>
     <div>
       <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.updated") %></dt>
-      <dd class="mt-1 text-sm text-gray-900"><%= @partner.updated_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></dd>
+      <dd class="mt-1 text-sm text-gray-900"><%= @partner.updated_at.then { |t| format_date(t) } %></dd>
     </div>
   </dl>
 </div>
@@ -213,7 +213,7 @@
                 </span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-500 text-xs"><%= txn.external_transaction_id || "-" %></td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500"><%= txn.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500"><%= txn.created_at.then { |t| format_date(t) } %></td>
             </tr>
           <% end %>
         </tbody>
@@ -258,7 +258,7 @@
                 </span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-500"><%= wh.try(:response_code) || "-" %></td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500"><%= wh.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500"><%= wh.created_at.then { |t| format_date(t) } %></td>
             </tr>
           <% end %>
         </tbody>

@@ -35,7 +35,7 @@
             <small class="text-muted d-block mt-1"><%= t("federation_hub.settings.opted_in_help") %></small>
             <% if @prefs&.opted_in? && @prefs.opted_in_at.present? %>
               <small class="text-muted d-block mt-2">
-                <%= t("federation_hub.settings.opted_in_since", date: @prefs.opted_in_at.strftime("%d %b %Y")) %>
+                <%= t("federation_hub.settings.opted_in_since", date: format_date(@prefs.opted_in_at)) %>
               </small>
             <% end %>
           </div>

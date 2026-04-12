@@ -1,11 +1,11 @@
-Hello <%= @member.user&.username || "Federation Member" %>,
+<%= t("federation_mailer.message_received.greeting", name: @member.user&.username || t("federation_mailer.common.default_name")) %>
 
-You have received a new message via federation from <%= @sender_name %> (<%= @partner_name %>).
+<%= t("federation_mailer.message_received.body", sender_name: @sender_name, partner_name: @partner_name) %>
 
-<% if @subject.present? %>Subject: <%= @subject %><% end %>
+<% if @subject.present? %><%= t("federation_mailer.message_received.subject_label") %> <%= @subject %><% end %>
 
 <%= @body_preview %>
 
 ---
-This message was sent via the TimeOverflow Federation network.
-To manage your federation preferences, visit your profile settings.
+<%= t("federation_mailer.common.sent_via") %>
+<%= t("federation_mailer.common.manage_preferences") %>

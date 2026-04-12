@@ -129,7 +129,7 @@
                 </span>
               </td>
               <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap font-mono"><%= txn.transfer_id || "-" %></td>
-              <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap"><%= txn.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+              <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap"><%= format_date(txn.created_at) %></td>
             </tr>
           <% end %>
         </tbody>

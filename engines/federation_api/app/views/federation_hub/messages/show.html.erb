@@ -38,7 +38,7 @@
               <span class="text-muted ms-2">&mdash; <%= msg.subject %></span>
             <% end %>
           </div>
-          <small class="text-muted"><%= msg.created_at.strftime("%d %b %Y %H:%M") %></small>
+          <small class="text-muted"><%= format_date(msg.created_at) %></small>
         </div>
         <div class="mt-1">
           <%= sanitize(simple_format(msg.body)) %>

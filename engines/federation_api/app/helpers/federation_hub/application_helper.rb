@@ -35,6 +35,13 @@ module FederationHub
       end
     end
 
+    def format_date(datetime)
+      return "\u2014" unless datetime
+      l(datetime, format: :long, default: datetime.strftime("%Y-%m-%d %H:%M UTC"))
+    rescue
+      datetime.strftime("%Y-%m-%d %H:%M UTC")
+    end
+
     def format_federation_hours(seconds)
       return "0h" unless seconds && seconds > 0
       "#{(seconds.to_f / 3600).round(1)}h"

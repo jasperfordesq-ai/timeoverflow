@@ -69,18 +69,18 @@
     </div>
     <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.api_keys.show.created') %></dt>
-      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @api_key.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></dd>
+      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @api_key.created_at.then { |t| format_date(t) } %></dd>
     </div>
     <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.api_keys.show.last_used') %></dt>
-      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @api_key.last_used_at&.strftime("%Y-%m-%d %H:%M:%S UTC") || t('federation_admin.api_keys.show.never') %></dd>
+      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @api_key.last_used_at&.then { |t| format_date(t) } || t('federation_admin.api_keys.show.never') %></dd>
     </div>
     <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.api_keys.show.expires') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
         <% if @api_key.expires_at.present? %>
           <span class="<%= @api_key.expired? ? 'text-red-600 font-medium' : '' %>">
-            <%= @api_key.expires_at.strftime("%Y-%m-%d") %>
+            <%= format_date(@api_key.expires_at) %>
             <%= t('federation_admin.api_keys.show.expired') if @api_key.expired? %>
           </span>
         <% else %>

@@ -234,7 +234,7 @@
                     </span>
                   </td>
                   <td class="px-6 py-3.5 whitespace-nowrap text-sm text-gray-500">
-                    <%= txn.created_at.strftime("%d %b %Y %H:%M") %>
+                    <%= format_date(txn.created_at) %>
                   </td>
                 </tr>
               <% end %>

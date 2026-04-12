@@ -16,7 +16,7 @@
 <div class="sm:flex sm:items-center sm:justify-between mb-8">
   <div>
     <h1 class="text-2xl font-bold text-gray-900"><%= t('federation_admin.transactions.show.title', id: @transaction.id) %></h1>
-    <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.transactions.show.created') %> <%= @transaction.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></p>
+    <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.transactions.show.created') %> <%= @transaction.created_at.then { |t| format_date(t) } %></p>
   </div>
   <div class="mt-4 sm:mt-0">
     <span class="inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold <%= status_badge_class(@transaction.status) %>">
@@ -119,22 +119,22 @@
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.completed_at') %></dt>
-      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.completed_at&.strftime("%Y-%m-%d %H:%M:%S UTC") || "-" %></dd>
+      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.completed_at&.then { |t| format_date(t) } || "-" %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.cancelled_at') %></dt>
-      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.cancelled_at&.strftime("%Y-%m-%d %H:%M:%S UTC") || "-" %></dd>
+      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.cancelled_at&.then { |t| format_date(t) } || "-" %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.created_at') %></dt>
-      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></dd>
+      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.created_at.then { |t| format_date(t) } %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.updated_at') %></dt>
-      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.updated_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></dd>
+      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.updated_at.then { |t| format_date(t) } %></dd>
     </div>
   </dl>
 </div>

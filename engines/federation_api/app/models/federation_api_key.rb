@@ -58,7 +58,23 @@ class FederationApiKey < ActiveRecord::Base
     permissions[permission.to_s] == true
   end
 
+  # Check if this key is allowed to access a specific organization.
+  # Org-scoped keys: only the assigned org.
+  # Global keys with permitted_organization_ids: only those orgs.
+  # Global keys with empty permitted_organization_ids: all orgs.
+  def can_access_organization?(org_or_id)
+    org_id = org_or_id.is_a?(Integer) ? org_or_id : org_or_id.id
+    if organization_id.present?
+      organization_id == org_id
+    elsif permitted_organization_ids.present? && permitted_organization_ids.any?
+      permitted_organization_ids.include?(org_id)
+    else
+      true # unrestricted global key
+    end
+  end
+
   validate :validate_permissions_schema
+  validate :validate_permitted_organization_ids
 
   private
 
@@ -76,5 +92,12 @@ class FederationApiKey < ActiveRecord::Base
     errors.add(:permissions, "contains unknown keys: #{unknown.join(', ')}") if unknown.any?
     non_bool = permissions.select { |_, v| ![true, false].include?(v) }
     errors.add(:permissions, "values must be booleans") if non_bool.any?
+  end
+
+  def validate_permitted_organization_ids
+    return if permitted_organization_ids.blank?
+    return unless permitted_organization_ids.is_a?(Array)
+    invalid = permitted_organization_ids.reject { |id| id.is_a?(Integer) && id > 0 }
+    errors.add(:permitted_organization_ids, "must contain only positive integers") if invalid.any?
   end
 end

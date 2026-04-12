@@ -193,9 +193,22 @@ en:
       external_success: "Transfer of %{amount} sent to %{partner}. It will be completed once the partner confirms."
       external_note: "External transfers are sent to the partner platform for processing. Your balance will be debited immediately, and the recipient will be credited once the partner confirms."
   federation_mailer:
+    common:
+      default_name: "Federation Member"
+      sent_via: "This message was sent via the TimeOverflow Federation network."
+      manage_preferences: "To manage your federation preferences, visit your profile settings."
+      balance_updated: "Your balance has been updated. You can view your account details in TimeOverflow."
+      reason_label: "Reason:"
     message_received:
       subject: "[Federation] New message from %{sender_name}"
+      greeting: "Hello %{name},"
+      body: "You have received a new message via federation from %{sender_name} (%{partner_name})."
+      subject_label: "Subject:"
     transfer_received:
       subject: "[Federation] You received %{amount} hours from %{sender_name}"
+      greeting: "Hello %{name},"
+      body: "You have received %{amount} hours of time credit from %{sender_name} via the federation network."
     transfer_sent:
       subject: "[Federation] You sent %{amount} hours to %{recipient_name}"
+      greeting: "Hello %{name},"
+      body: "You sent %{amount} hours of time credit to %{recipient_name} via the federation network."

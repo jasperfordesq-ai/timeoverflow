@@ -96,7 +96,7 @@
               </td>
               <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap font-mono"><%= log.response_code || "-" %></td>
               <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap"><%= log.attempt_number || "-" %></td>
-              <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap"><%= log.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+              <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap"><%= format_date(log.created_at) %></td>
             </tr>
           <% end %>
         </tbody>

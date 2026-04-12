@@ -103,19 +103,19 @@
       </div>
       <div>
         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.opted_in_at') %></dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @preference.opted_in_at&.strftime("%Y-%m-%d %H:%M UTC") || t('federation_admin.member_preferences.show.dash') %></dd>
+        <dd class="mt-1 text-sm text-gray-900"><%= @preference.opted_in_at ? format_date(@preference.opted_in_at) : t('federation_admin.member_preferences.show.dash') %></dd>
       </div>
       <div>
         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.opted_out_at') %></dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @preference.opted_out_at&.strftime("%Y-%m-%d %H:%M UTC") || t('federation_admin.member_preferences.show.dash') %></dd>
+        <dd class="mt-1 text-sm text-gray-900"><%= @preference.opted_out_at ? format_date(@preference.opted_out_at) : t('federation_admin.member_preferences.show.dash') %></dd>
       </div>
       <div>
         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.created_at') %></dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @preference.created_at&.strftime("%Y-%m-%d %H:%M UTC") || t('federation_admin.member_preferences.show.dash') %></dd>
+        <dd class="mt-1 text-sm text-gray-900"><%= @preference.created_at ? format_date(@preference.created_at) : t('federation_admin.member_preferences.show.dash') %></dd>
       </div>
       <div>
         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.updated_at') %></dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @preference.updated_at&.strftime("%Y-%m-%d %H:%M UTC") || t('federation_admin.member_preferences.show.dash') %></dd>
+        <dd class="mt-1 text-sm text-gray-900"><%= @preference.updated_at ? format_date(@preference.updated_at) : t('federation_admin.member_preferences.show.dash') %></dd>
       </div>
     </dl>
   </div>

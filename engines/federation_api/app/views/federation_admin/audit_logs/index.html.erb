@@ -23,7 +23,7 @@
         <tbody class="divide-y divide-gray-200">
           <% @logs.each do |log| %>
             <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap"><%= log.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+              <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap"><%= format_date(log.created_at) %></td>
               <td class="px-4 py-3 text-sm">
                 <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-federation-100 text-federation-800">
                   <%= log.action %>

@@ -1,10 +1,10 @@
-Hello <%= @member.user&.username || "Federation Member" %>,
+<%= t("federation_mailer.transfer_received.greeting", name: @member.user&.username || t("federation_mailer.common.default_name")) %>
 
-You have received <%= @amount_hours %> hours of time credit from <%= @sender_name %> via the federation network.
+<%= t("federation_mailer.transfer_received.body", amount: @amount_hours, sender_name: @sender_name) %>
 
-<% if @reason.present? %>Reason: <%= @reason %><% end %>
+<% if @reason.present? %><%= t("federation_mailer.common.reason_label") %> <%= @reason %><% end %>
 
-Your balance has been updated. You can view your account details in TimeOverflow.
+<%= t("federation_mailer.common.balance_updated") %>
 
 ---
-This notification was sent via the TimeOverflow Federation network.
+<%= t("federation_mailer.common.sent_via") %>

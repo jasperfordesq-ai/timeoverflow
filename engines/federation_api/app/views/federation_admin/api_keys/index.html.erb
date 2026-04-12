@@ -69,12 +69,12 @@
               <% end %>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              <%= key.last_used_at&.strftime("%Y-%m-%d %H:%M") || t('federation_admin.api_keys.index.never') %>
+              <%= key.last_used_at ? format_date(key.last_used_at) : t('federation_admin.api_keys.index.never') %>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               <% if key.expires_at.present? %>
                 <span class="<%= key.expired? ? 'text-red-600' : '' %>">
-                  <%= key.expires_at.strftime("%Y-%m-%d") %>
+                  <%= format_date(key.expires_at) %>
                 </span>
               <% else %>
                 <span class="text-gray-400"><%= t('federation_admin.api_keys.index.never') %></span>

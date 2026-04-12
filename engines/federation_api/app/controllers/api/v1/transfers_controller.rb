@@ -218,25 +218,23 @@ module Api
 
       # Find account scoped to accessible organizations.
       # If API key is org-specific, only that org's accounts are accessible.
-      # If API key is global (e.g. Nexus key with no org_id), the account
-      # must belong to an organization — we verify this and require the
-      # partner_id param to identify which partnership authorizes this access.
-      #
-      # TODO: A future migration should add a permitted_organization_ids
-      # JSON column to federation_api_keys to support fine-grained per-org
-      # allowlists for global keys, rather than allowing any org implicitly.
+      # If API key is global, check permitted_organization_ids for fine-grained
+      # org allowlists. Keys with empty permitted_organization_ids allow any org.
       def find_scoped_account!(account_id)
         if @current_api_key.organization
           # Key is org-scoped — strict: only this org's accounts.
           @current_api_key.organization.all_accounts.find(account_id)
         else
-          # Global key — account must belong to an org and that org must have
-          # at least one active federation partner (the partner making this call,
-          # identified by params[:partner_id] already validated at line 21).
+          # Global key — account must belong to an org.
           account = Account.find(account_id)
 
           unless account.organization.present?
             raise ActiveRecord::RecordNotFound, "Account #{account_id} has no associated organization"
+          end
+
+          # Enforce permitted_organization_ids if configured on the key.
+          unless @current_api_key.can_access_organization?(account.organization)
+            raise ActiveRecord::RecordNotFound, "API key does not have access to organization #{account.organization.id}"
           end
 
           account

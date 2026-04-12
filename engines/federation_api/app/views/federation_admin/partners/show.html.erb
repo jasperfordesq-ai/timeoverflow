@@ -79,6 +79,10 @@
       <dd class="mt-1 text-sm font-mono text-gray-900 break-all"><%= @partner.api_endpoint %></dd>
     </div>
     <div>
+      <dt class="text-sm font-medium text-gray-500">Browse API URL</dt>
+      <dd class="mt-1 text-sm font-mono text-gray-900 break-all"><%= @partner.browse_base_url.present? ? @partner.browse_base_url : "Using API Endpoint" %></dd>
+    </div>
+    <div>
       <dt class="text-sm font-medium text-gray-500">Webhook URL</dt>
       <dd class="mt-1 text-sm font-mono text-gray-900 break-all"><%= @partner.webhook_url.present? ? @partner.webhook_url : "Not configured" %></dd>
     </div>

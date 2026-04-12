@@ -100,7 +100,7 @@ module Federation
     # Like get() but does NOT record failure on error — used for probing
     # endpoints that may not exist (e.g., /health before fallback to /receive).
     def health_probe(path)
-      uri = build_uri(path)
+      uri = build_browse_uri(path)
       request = Net::HTTP::Get.new(uri)
       set_headers(request)
 
@@ -121,7 +121,7 @@ module Federation
     end
 
     def get(path, params = {})
-      uri = build_uri(path)
+      uri = build_browse_uri(path)
       uri.query = URI.encode_www_form(params) if params.any?
 
       request = Net::HTTP::Get.new(uri)
@@ -160,6 +160,14 @@ module Federation
       execute(uri, request)
     end
 
+    # Build URI for browsing/GET requests — uses browse_base_url if set,
+    # otherwise falls back to api_endpoint.
+    def build_browse_uri(path)
+      base = @partner.browse_base_url.presence || @partner.api_endpoint
+      URI("#{base}#{path}")
+    end
+
+    # Build URI for webhook/POST requests — always uses api_endpoint.
     def build_uri(path)
       URI("#{@partner.api_endpoint}#{path}")
     end

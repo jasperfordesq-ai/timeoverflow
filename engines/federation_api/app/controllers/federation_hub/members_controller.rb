@@ -4,26 +4,14 @@ module FederationHub
       @partners = FederationPartner.active.order(name: :asc)
       @selected_partner_id = params[:partner_id]
 
+      @members = []
+
       if @selected_partner_id.present?
         partner = FederationPartner.active.find_by(id: @selected_partner_id)
         @source_name = partner&.name || "Unknown Partner"
-        @members = []
 
         if partner
           @members = fetch_partner_members(partner)
-        end
-      else
-        # Default: show our own federation-opted-in members
-        @source_name = current_organization.name
-        opted_in_ids = Federation::AccessControl.discoverable_member_ids(current_organization)
-        members = current_organization.members.active.where(id: opted_in_ids).includes(:user, :account)
-        @members = members.map do |m|
-          {
-            "id" => m.id,
-            "username" => m.user&.username,
-            "balance" => m.account&.balance,
-            "tags" => m.respond_to?(:tag_list) ? m.tag_list : ""
-          }
         end
       end
     end

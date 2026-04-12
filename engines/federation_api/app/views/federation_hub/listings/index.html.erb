@@ -12,27 +12,33 @@
   <div class="col-md-8">
     <form method="get" action="<%= federation_hub_listings_path %>" class="d-flex gap-2">
       <select name="partner_id" class="form-control" onchange="this.form.submit()">
-        <option value=""><%= t("federation_hub.listings.local_listings", org: current_organization.name) %></option>
+        <option value=""><%= t("federation_hub.listings.select_partner") %></option>
         <% @partners.each do |p| %>
           <option value="<%= p.id %>" <%= 'selected' if @selected_partner_id.to_s == p.id.to_s %>><%= p.name %></option>
         <% end %>
       </select>
-      <select name="type" class="form-control" onchange="this.form.submit()">
-        <option value=""><%= t("federation_hub.listings.all_types") %></option>
-        <option value="offer" <%= 'selected' if params[:type] == 'offer' %>><%= t("federation_hub.listings.offers") %></option>
-        <option value="inquiry" <%= 'selected' if params[:type] == 'inquiry' %>><%= t("federation_hub.listings.inquiries") %></option>
-      </select>
-      <input type="text" name="q" value="<%= params[:q] %>" placeholder="<%= t("federation_hub.listings.search_placeholder") %>" class="form-control">
-      <button type="submit" class="btn btn-info"><%= t("federation_hub.listings.search") %></button>
+      <% if @selected_partner_id.present? %>
+        <select name="type" class="form-control" onchange="this.form.submit()">
+          <option value=""><%= t("federation_hub.listings.all_types") %></option>
+          <option value="offer" <%= 'selected' if params[:type] == 'offer' %>><%= t("federation_hub.listings.offers") %></option>
+          <option value="inquiry" <%= 'selected' if params[:type] == 'inquiry' %>><%= t("federation_hub.listings.inquiries") %></option>
+        </select>
+        <input type="text" name="q" value="<%= params[:q] %>" placeholder="<%= t("federation_hub.listings.search_placeholder") %>" class="form-control">
+        <button type="submit" class="btn btn-info"><%= t("federation_hub.listings.search") %></button>
+      <% end %>
     </form>
   </div>
 </div>
 
-<div class="row">
-  <div class="col-md-12">
-    <h4 class="mb-3"><%= t("federation_hub.listings.source_label", source: @source_name) %></h4>
+<% if @selected_partner_id.blank? %>
+  <div class="alert alert-info">
+    <%= t("federation_hub.listings.choose_partner") %>
+  </div>
+<% elsif @listings.any? %>
+  <div class="row">
+    <div class="col-md-12">
+      <h4 class="mb-3"><%= t("federation_hub.listings.source_label", source: @source_name) %></h4>
 
-    <% if @listings.any? %>
       <% @listings.each do |listing| %>
         <div class="post mb-3 p-3 border rounded bg-white">
           <div class="d-flex justify-content-between">
@@ -62,10 +68,10 @@
           <% end %>
         </div>
       <% end %>
-    <% else %>
-      <div class="alert alert-info">
-        <%= t("federation_hub.listings.none_found", partner: @source_name) %>
-      </div>
-    <% end %>
+    </div>
   </div>
-</div>
+<% else %>
+  <div class="alert alert-info">
+    <%= t("federation_hub.listings.none_found", partner: @source_name) %>
+  </div>
+<% end %>

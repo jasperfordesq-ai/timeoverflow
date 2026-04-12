@@ -13,6 +13,7 @@ module Api
       before_action :require_organization!, except: [:currencies]
       before_action -> { require_permission!(:transactions) }, only: [:accounts, :account]
       before_action -> { require_permission!(:transactions) }, only: [:transfers, :transfer, :create_transfer]
+      before_action :require_json_content_type!, only: [:create_transfer]
 
       # GET /api/v1/komunitin/currencies
       def currencies

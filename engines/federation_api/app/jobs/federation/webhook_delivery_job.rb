@@ -11,7 +11,7 @@ module Federation
   class WebhookDeliveryJob < ActiveJob::Base
     queue_as :federation
 
-    # M8: Log and alert when all retries are exhausted so ops can investigate.
+    # Log and alert when all retries are exhausted so ops can investigate.
     # The FederationTransaction stays "pending" and ReconciliationJob will
     # reverse it after 24 hours — this makes the permanent failure visible.
     retry_on StandardError, wait: :polynomially_longer, attempts: 3 do |job, error|
@@ -91,7 +91,12 @@ module Federation
           # HTTP 2xx alone isn't enough — the response body may indicate rejection.
           partner_accepted = true
           begin
-            body = JSON.parse(response.body) rescue nil
+            begin
+              body = JSON.parse(response.body)
+            rescue JSON::ParserError => json_err
+              Rails.logger.warn("[Federation::WebhookDelivery] Failed to parse response body as JSON: #{json_err.message}")
+              body = nil
+            end
             if body.is_a?(Hash) && body.key?("success") && body["success"] == false
               partner_accepted = false
               Rails.logger.warn(

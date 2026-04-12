@@ -63,6 +63,13 @@
 <%# Reply form %>
 <div class="card border-info">
   <div class="card-body">
+    <% if flash[:alert].present? %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= flash[:alert] %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="<%= t('federation_hub.common.close', default: 'Close') %>"></button>
+      </div>
+    <% end %>
+
     <form action="<%= federation_hub_messages_path %>" method="post" aria-label="<%= t('federation_hub.messages.reply_label', default: 'Reply message') %>">
       <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
       <input type="hidden" name="partner_id" value="<%= @message.federation_partner_id %>">

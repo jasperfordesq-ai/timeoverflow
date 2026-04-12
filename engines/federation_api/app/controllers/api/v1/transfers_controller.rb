@@ -11,6 +11,7 @@ module Api
   module V1
     class TransfersController < BaseController
       before_action -> { require_permission!(:transactions) }
+      before_action :require_json_content_type!, only: [:create]
       before_action :normalize_nexus_params!, only: [:create]
       before_action :validate_transfer_params!, only: [:create]
 

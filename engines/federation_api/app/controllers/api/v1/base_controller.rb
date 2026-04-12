@@ -9,6 +9,7 @@ module Api
     class BaseController < ActionController::API
       # devise-i18n compatibility handled by FederationApi::Engine initializer.
 
+      before_action :reject_oversized_params!
       before_action :authenticate_api_key!
       before_action :enforce_rate_limit!
       before_action :set_default_format
@@ -51,6 +52,7 @@ module Api
       def require_permission!(permission)
         unless @current_api_key.has_permission?(permission)
           respond_with_error(I18n.t("federation_api.errors.missing_permission", permission: permission, default: "API key lacks '%{permission}' permission"), status: :forbidden)
+          return
         end
       end
 
@@ -82,6 +84,7 @@ module Api
         # disabled federation, reject the request.
         unless Federation::AccessControl.org_enabled?(current_organization)
           respond_with_error(I18n.t("federation_api.errors.federation_disabled", default: "Federation is not enabled for this organization"), status: :forbidden)
+          return
         end
       end
 
@@ -119,6 +122,31 @@ module Api
         if estimated > limit
           response.set_header("Retry-After", "60")
           respond_with_error(I18n.t("federation_api.errors.rate_limited", limit: limit, default: "Rate limit exceeded — maximum %{limit} requests per minute"), status: :too_many_requests)
+          return
+        end
+      end
+
+      # Reject requests with excessively large parameter payloads (>10KB total).
+      # Prevents abuse via oversized query strings or JSON bodies that could
+      # consume excessive memory during parameter parsing.
+      def reject_oversized_params!
+        total_size = request.query_string.to_s.bytesize + request.raw_post.to_s.bytesize
+        if total_size > 10_240
+          respond_with_error(I18n.t("federation_api.errors.params_too_large", default: "Request parameters too large"), status: :bad_request)
+          return
+        end
+      end
+
+      # Validate Content-Type for POST/PUT/PATCH requests on API endpoints.
+      # Ensures clients send JSON, preventing accidental form submissions or
+      # content-type confusion attacks.
+      def require_json_content_type!
+        return unless %w[POST PUT PATCH].include?(request.method)
+
+        content_type = request.content_type.to_s.downcase
+        unless content_type.include?("application/json") || content_type.include?("application/vnd.api+json")
+          respond_with_error(I18n.t("federation_api.errors.invalid_content_type", default: "Content-Type must be application/json"), status: :unsupported_media_type)
+          return
         end
       end
 

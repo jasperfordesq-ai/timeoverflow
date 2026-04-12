@@ -36,7 +36,8 @@ class FederationMessage < ActiveRecord::Base
   end
 
   def mark_read!
-    update!(status: "read", read_at: Time.current) unless read_at.present?
+    return if status == "read"
+    update!(status: "read", read_at: Time.current)
   end
 
   def inbound?
@@ -52,6 +53,6 @@ class FederationMessage < ActiveRecord::Base
   # belongs_to is optional. This avoids raising on missing associations.
   def local_member
     return nil if local_member_id.blank?
-    Member.find_by(id: local_member_id)
+    @local_member ||= Member.find_by(id: local_member_id)
   end
 end

@@ -5,6 +5,7 @@ class FederationCcNodeConfig < ActiveRecord::Base
   validates :node_slug, presence: true, uniqueness: true,
             format: { with: /\A[0-9a-z][0-9a-z-]{1,13}[0-9a-z]\z/, message: :invalid_node_slug }
   validates :exchange_rate, numericality: { greater_than: 0 }
+  validates :cc_exchange_rate, numericality: { greater_than: 0 }, allow_nil: true
   validates :validated_window, numericality: { greater_than: 0 }
 
   def self.for(organization)

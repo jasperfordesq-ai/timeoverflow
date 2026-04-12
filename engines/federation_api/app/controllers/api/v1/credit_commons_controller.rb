@@ -4,6 +4,7 @@ module Api
       # Most CC endpoints need auth but use the standard API key mechanism
       skip_before_action :authenticate_api_key!, only: [:about, :forms]
       skip_before_action :enforce_rate_limit!, only: [:about, :forms]
+      before_action :require_json_content_type!, only: [:create_transaction, :transition_transaction]
 
       def about
         org = current_organization || (params[:organization_id].present? ? Organization.find_by(id: params[:organization_id]) : nil)
@@ -25,6 +26,12 @@ module Api
         discoverable_ids = Federation::AccessControl.discoverable_member_ids(current_organization)
         members = members.where(id: discoverable_ids)
 
+        # Paginate to prevent unbounded result sets.
+        page_size = [[(params[:limit]&.to_i || 100), 1].max, 500].min
+        offset = [(params[:offset]&.to_i || 0), 0].max
+        total = members.count
+        members = members.offset(offset).limit(page_size)
+
         accounts = members.map do |m|
           {
             id: "#{config.node_slug}/#{m.member_uid || m.id}",
@@ -33,7 +40,7 @@ module Api
           }
         end
 
-        respond_with_data(accounts, meta: { number_of_results: accounts.size })
+        respond_with_data(accounts, meta: { number_of_results: accounts.size, total: total })
       end
 
       def account

@@ -24,9 +24,10 @@ module Federation
 
     # --- Member-level checks ---
 
-    def self.member_opted_in?(member)
+    def self.member_opted_in?(member, prefs: nil)
       return false unless org_enabled?(member.organization)
-      FederationMemberPreference.for(member).opted_in?
+      prefs ||= FederationMemberPreference.for(member)
+      prefs.opted_in?
     end
 
     def self.member_discoverable?(member, settings: nil, prefs: nil)

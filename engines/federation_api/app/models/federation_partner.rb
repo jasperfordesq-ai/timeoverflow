@@ -20,16 +20,17 @@ class FederationPartner < ActiveRecord::Base
   PLATFORM_TYPES = %w[nexus timeoverflow custom komunitin].freeze
   PROTOCOL_TYPES = %w[rest json_api credit_commons].freeze
   PARTNERSHIP_LEVELS = (1..4).freeze
+  FAILURE_THRESHOLD = 5
 
   validates :name, presence: true
   validates :platform_type, presence: true, inclusion: { in: PLATFORM_TYPES }
   validates :protocol_type, presence: true, inclusion: { in: PROTOCOL_TYPES }
   validates :api_endpoint, presence: true, format: { with: /\Ahttps?:\/\//i, message: :invalid_url }
-  validates :webhook_secret, presence: true  # Required: empty secret allows HMAC forgery with key=""
+  validates :webhook_secret, presence: true, length: { minimum: 32 }  # Required: empty/short secret allows HMAC forgery
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :partnership_level, inclusion: { in: PARTNERSHIP_LEVELS }
   validates :feature_gates, presence: true   # nil feature_gates crashes can_transact? et al.
-  validates :api_key_hash, presence: true, on: :update
+  validates :api_key_hash, presence: true
   validate :feature_gates_must_be_hash
   validate :metadata_size_limit
   validate :valid_status_transition, if: :status_changed?
@@ -38,7 +39,7 @@ class FederationPartner < ActiveRecord::Base
   # Resolve the protocol adapter for this partner.
   # Mirrors Nexus's resolveAdapter() pattern.
   def adapter
-    @adapter ||= Federation::Adapters.resolve(self)
+    Federation::Adapters.resolve(self)
   end
 
   # Valid status transitions. Terminated partners cannot be reactivated.
@@ -86,7 +87,7 @@ class FederationPartner < ActiveRecord::Base
     # Fully atomic: increment + conditional suspension in a single SQL statement
     # to eliminate race windows under concurrent webhook deliveries.
     self.class.where(id: id).update_all([
-      "consecutive_failures = consecutive_failures + 1, status = CASE WHEN consecutive_failures + 1 >= 5 THEN 'suspended' ELSE status END, updated_at = ?",
+      "consecutive_failures = consecutive_failures + 1, status = CASE WHEN consecutive_failures + 1 >= #{FAILURE_THRESHOLD} THEN 'suspended' ELSE status END, updated_at = ?",
       Time.current
     ])
     reload

@@ -9,6 +9,10 @@ module Api
       # Skip standard API key auth for webhooks — use HMAC signature instead
       skip_before_action :authenticate_api_key!
       skip_before_action :enforce_rate_limit!
+      # Skip the 10KB param guard — webhooks have their own 1MB body size
+      # check in verify_webhook_signature! and legitimate payloads can exceed 10KB.
+      skip_before_action :reject_oversized_params!
+      before_action :require_json_content_type!
       before_action :enforce_webhook_rate_limit!
       before_action :verify_webhook_signature!
 
@@ -286,7 +290,7 @@ module Api
               target: partner,
               changes_made: { status: [old_status, "active"], via: "webhook", event: event_type },
               ip_address: request.remote_ip
-            ) rescue nil
+            ) rescue => e; Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
           end
         when "partnership.suspended", "partnership.rejected"
           old_status = partner.status
@@ -297,7 +301,7 @@ module Api
             target: partner,
             changes_made: { status: [old_status, "suspended"], via: "webhook", event: event_type },
             ip_address: request.remote_ip
-          ) rescue nil
+          ) rescue => e; Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
         when "partnership.terminated"
           old_status = partner.status
           partner.update!(status: "terminated")
@@ -307,7 +311,7 @@ module Api
             target: partner,
             changes_made: { status: [old_status, "terminated"], via: "webhook", event: event_type },
             ip_address: request.remote_ip
-          ) rescue nil
+          ) rescue => e; Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
         when "partnership.level_changed"
           level = payload["level"].to_i
           # Fix #11: Only allow level decreases via webhook (downgrades).
@@ -326,7 +330,7 @@ module Api
                 target: partner,
                 changes_made: { partnership_level: [old_level, level], via: "webhook", event: event_type },
                 ip_address: request.remote_ip
-              ) rescue nil
+              ) rescue => e; Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
             else
               Rails.logger.warn("[Federation] Rejected level upgrade attempt for partner #{partner.id}: #{partner.partnership_level} → #{level} (requires admin approval)")
             end

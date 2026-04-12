@@ -71,6 +71,13 @@
           <h2 class="h5 mb-0"><%= t("federation_hub.transfers.send_to", org: @selected_name) %></h2>
         </div>
         <div class="card-body">
+          <% if flash[:alert].present? %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <%= flash[:alert] %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="<%= t('federation_hub.common.close', default: 'Close') %>"></button>
+            </div>
+          <% end %>
+
           <%= form_tag(federation_hub_transfers_path, method: :post) do %>
             <input type="hidden" name="org_id" value="<%= @selected_id %>">
             <input type="hidden" name="source_type" value="<%= @selected_type %>">

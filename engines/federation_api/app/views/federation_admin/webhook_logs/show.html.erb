@@ -18,7 +18,7 @@
 <div class="sm:flex sm:items-center sm:justify-between mb-8">
   <div>
     <h1 class="text-2xl font-bold text-gray-900"><%= t('federation_admin.webhook_logs.show.title', id: @log.id) %></h1>
-    <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.webhook_logs.show.created_at') %> <%= @log.created_at.then { |t| format_date(t) } %></p>
+    <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.webhook_logs.show.created_at') %> <%= @log.created_at&.then { |t| format_date(t) } || "—" %></p>
   </div>
   <div class="mt-4 sm:mt-0">
     <span class="inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold <%= status_badge_class(@log.status) %>">
@@ -89,7 +89,7 @@
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.payload') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <% if @log.payload.present? %>
-          <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono"><%= h(@log.payload.is_a?(String) ? @log.payload : JSON.pretty_generate(@log.payload)) %></pre>
+          <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono" style="max-width: 100%; word-break: break-word;"><%= h(@log.payload.is_a?(String) ? @log.payload : JSON.pretty_generate(@log.payload)) %></pre>
         <% else %>
           <span class="text-gray-400"><%= t('federation_admin.webhook_logs.show.no_payload') %></span>
         <% end %>
@@ -100,7 +100,7 @@
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.response_body') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <% if @log.response_body.present? %>
-          <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono"><%= h(begin; JSON.pretty_generate(JSON.parse(@log.response_body)); rescue; @log.response_body; end) %></pre>
+          <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono" style="max-width: 100%; word-break: break-word;"><%= h(begin; JSON.pretty_generate(JSON.parse(@log.response_body)); rescue => e; @log.response_body; end) %></pre>
         <% else %>
           <span class="text-gray-400"><%= t('federation_admin.webhook_logs.show.no_response_body') %></span>
         <% end %>
@@ -109,12 +109,12 @@
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.created_at') %></dt>
-      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @log.created_at.then { |t| format_date(t) } %></dd>
+      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @log.created_at&.then { |t| format_date(t) } || "—" %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.updated_at') %></dt>
-      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @log.updated_at.then { |t| format_date(t) } %></dd>
+      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @log.updated_at&.then { |t| format_date(t) } || "—" %></dd>
     </div>
   </dl>
 </div>

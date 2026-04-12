@@ -73,11 +73,12 @@ class FederationApiKey < ActiveRecord::Base
 
   validate :validate_permissions_schema
   validate :validate_permitted_organization_ids
+  validate :validate_expires_at_not_in_past, on: :create
 
   private
 
   def validate_permissions_schema
-    if permissions.blank? && new_record?
+    if permissions.blank?
       errors.add(:permissions, "must specify at least one permission (profiles, listings, transactions)")
       return
     end
@@ -97,5 +98,12 @@ class FederationApiKey < ActiveRecord::Base
     return unless permitted_organization_ids.is_a?(Array)
     invalid = permitted_organization_ids.reject { |id| id.is_a?(Integer) && id > 0 }
     errors.add(:permitted_organization_ids, "must contain only positive integers") if invalid.any?
+  end
+
+  def validate_expires_at_not_in_past
+    return if expires_at.blank?
+    if expires_at < Time.current
+      errors.add(:expires_at, "cannot be in the past")
+    end
   end
 end

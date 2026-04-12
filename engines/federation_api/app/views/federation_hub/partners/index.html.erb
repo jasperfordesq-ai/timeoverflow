@@ -41,7 +41,7 @@
                 </tbody>
               </table>
             </div>
-            <div class="card-footer bg-transparent d-flex gap-2">
+            <div class="card-footer bg-transparent d-flex flex-wrap gap-2">
               <a href="<%= federation_hub_members_path(partner_id: org.id, source_type: 'internal') %>" class="btn btn-info btn-sm"><%= t("federation_hub.nav.members") %></a>
               <a href="<%= federation_hub_listings_path(partner_id: org.id, source_type: 'internal') %>" class="btn btn-info btn-sm"><%= t("federation_hub.nav.listings") %></a>
               <a href="<%= new_federation_hub_transfer_path(org_id: org.id) %>" class="btn btn-success btn-sm"><%= t("federation_hub.nav.transfers") %></a>

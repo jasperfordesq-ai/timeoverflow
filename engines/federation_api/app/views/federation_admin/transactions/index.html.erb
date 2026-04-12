@@ -19,6 +19,7 @@
     <div>
       <label for="search" class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.transactions.index.search_placeholder') %></label>
       <input type="text" name="search" id="search" value="<%= params[:search] %>" placeholder="<%= t('federation_admin.transactions.index.search_placeholder') %>"
+             aria-label="<%= t('federation_admin.transactions.index.search_placeholder') %>"
              class="rounded-lg border border-gray-300 text-sm px-3 py-2 w-48 focus:ring-federation-500 focus:border-federation-500">
     </div>
 
@@ -121,7 +122,7 @@
                 </span>
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap font-medium">
-                <%= (txn.amount.to_f / 3600).round(2) %>h
+                <%= format_federation_hours(txn.amount) %>h
               </td>
               <td class="px-4 py-3 text-sm whitespace-nowrap">
                 <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= status_badge_class(txn.status) %>">

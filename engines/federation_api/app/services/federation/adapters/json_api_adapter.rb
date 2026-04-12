@@ -167,6 +167,11 @@ module Federation
         flat = JsonApiSerializer.deserialize(wrap_if_raw(data))
         return data unless flat.is_a?(Hash)
 
+        amount = flat["amount"]
+        if amount.blank? || amount.to_i <= 0
+          raise ArgumentError, "Inbound transfer amount must be present and positive (got: #{amount.inspect})"
+        end
+
         {
           "id"                     => flat["id"],
           "amount"                 => minor_units_to_seconds(flat["amount"].to_i),

@@ -40,6 +40,9 @@ module Federation
       external_transaction_id = payload["external_transaction_id"]
 
       handler = new(partner: partner)
+      reason = payload["reason"]
+      reason = reason.to_s[0, 500] if reason.present?
+
       handler.process_inbound(
         external_transaction_id: external_transaction_id,
         local_member_email: payload["local_member_email"],
@@ -47,7 +50,7 @@ module Federation
         local_organization_id: payload["local_organization_id"],
         remote_user_identifier: payload["remote_user_identifier"],
         amount: amount,
-        reason: payload["reason"]
+        reason: reason
       )
     end
 
@@ -132,7 +135,7 @@ module Federation
           external_transaction_id: external_transaction_id
         )
         return existing if existing
-        raise # unexpected — no matching record despite uniqueness violation
+        raise ActiveRecord::RecordNotUnique, "Duplicate federation transaction for partner #{@partner.id} with external_transaction_id=#{external_transaction_id}, but no matching record found"
       end
 
       # Notify the local member about the received transfer.

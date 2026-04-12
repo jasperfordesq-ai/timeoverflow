@@ -116,6 +116,11 @@ module Federation
           debit_movement  = movements.detect { |m| m.amount.negative? }
           credit_movement = movements.detect { |m| m.amount.positive? }
 
+          unless debit_movement && credit_movement
+            Rails.logger.error("[Federation::CreditCommonsAdapter] Missing movements for transaction #{txn.id}: debit=#{debit_movement.present?}, credit=#{credit_movement.present?}")
+            return []
+          end
+
           if debit_movement && credit_movement
             payer_account = debit_movement.account
             payee_account = credit_movement.account
@@ -205,6 +210,10 @@ module Federation
         entries = data[:entries] || data["entries"] || []
         first_entry = entries.first || {}
         state = data[:state] || data["state"] || "P"
+
+        unless STATES.key?(state)
+          Rails.logger.warn("[Federation::CreditCommonsAdapter] Unknown CC state '#{state}' in inbound transfer #{data[:uuid] || data["uuid"]} — falling back to 'pending'")
+        end
 
         {
           external_transaction_id: data[:uuid] || data["uuid"],
@@ -369,6 +378,7 @@ module Federation
             "#{node_slug}/#{member.member_uid || member.id}"
           else
             # Could be the remote side — use the remote identifier
+            Rails.logger.warn("[Federation::CreditCommonsAdapter] No member found for account #{account.id} in transaction #{txn.id} — falling back to remote_user_identifier")
             txn.remote_user_identifier.to_s
           end
         else

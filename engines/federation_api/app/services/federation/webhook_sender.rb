@@ -143,7 +143,7 @@ module Federation
       uri = URI.parse(url)
       raise ArgumentError, "Webhook URL has no host" unless uri.host
 
-      addresses = Resolv.getaddresses(uri.host)
+      addresses = Timeout.timeout(3, nil, "DNS resolution timed out for #{uri.host}") { Resolv.getaddresses(uri.host) }
       raise ArgumentError, "Cannot resolve webhook host: #{uri.host}" if addresses.empty?
 
       addresses.each do |addr|
@@ -159,6 +159,8 @@ module Federation
     def log_safe_payload
       payload_json = @payload.to_json
       return @payload if payload_json.bytesize <= MAX_LOG_PAYLOAD_SIZE
+
+      Rails.logger.info("[Federation::WebhookSender] Payload truncated for logging: #{payload_json.bytesize} bytes exceeds #{MAX_LOG_PAYLOAD_SIZE} byte limit (partner=#{@partner.id}, event=#{@event})")
 
       {
         _truncated: true,

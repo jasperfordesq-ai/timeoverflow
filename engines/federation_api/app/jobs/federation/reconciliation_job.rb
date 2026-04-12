@@ -34,7 +34,7 @@ module Federation
           begin
             txn.update!(
               status: "disputed",
-              metadata: (txn.metadata || {}).merge(
+              metadata: (txn.metadata || {}).deep_merge(
                 "dispute_reason" => "Completed with no local transfer — data integrity error",
                 "disputed_at"    => Time.current.iso8601
               )
@@ -162,7 +162,7 @@ module Federation
                 reversal.save!
 
                 # Link reversal to the federation transaction metadata for audit trail
-                txn.update!(metadata: (txn.metadata || {}).merge("reversal_transfer_id" => reversal.id))
+                txn.update!(metadata: (txn.metadata || {}).deep_merge("reversal_transfer_id" => reversal.id))
                 Rails.logger.warn("[Federation::Reconciliation] Reversed transfer #{original.id} via reversal #{reversal.id} for stale #{txn.direction} fed_txn #{txn.id}")
               elsif txn.outbound?
                 # H8: Outbound txn has no Transfer — the debit was never committed,
@@ -170,7 +170,7 @@ module Federation
                 # rather than silently cancelling without reversing.
                 txn.update!(
                   status: "disputed",
-                  metadata: (txn.metadata || {}).merge(
+                  metadata: (txn.metadata || {}).deep_merge(
                     "dispute_reason" => "Stale outbound pending with no linked transfer — cannot auto-reverse",
                     "disputed_at"    => Time.current.iso8601
                   )
@@ -220,6 +220,18 @@ module Federation
 
         movements = transfer.movements.to_a
         if movements.size != 2
+          begin
+            fed_txn.update!(
+              status: "disputed",
+              metadata: (fed_txn.metadata || {}).deep_merge(
+                "dispute_reason" => "Movement count mismatch: #{movements.size} instead of 2",
+                "disputed_at"    => Time.current.iso8601
+              )
+            )
+          rescue => e
+            Rails.logger.error("[Federation::Reconciliation] Failed to dispute fed_txn #{fed_txn.id} for movement count mismatch: #{e.class}: #{e.message}")
+          end
+
           issues << {
             type: "movement_count_mismatch",
             severity: "critical",
@@ -238,10 +250,13 @@ module Federation
           # so admin dashboards can surface these immediately.
           begin
             fed_txn.update!(
-              metadata: (fed_txn.metadata || {}).merge(
+              status: "disputed",
+              metadata: (fed_txn.metadata || {}).deep_merge(
                 "corrupted" => true,
                 "corruption_reason" => "Movement imbalance: sum=#{movement_sum}, count=#{movements.size}",
-                "corruption_detected_at" => Time.current.iso8601
+                "corruption_detected_at" => Time.current.iso8601,
+                "dispute_reason" => "Movement imbalance: sum=#{movement_sum}",
+                "disputed_at" => Time.current.iso8601
               )
             )
           rescue => e
@@ -282,6 +297,12 @@ module Federation
       stale_nonces = FederationWebhookLog.where.not(request_nonce: nil)
                                           .where("created_at < ?", nonce_cutoff)
       purged_count = stale_nonces.update_all(request_nonce: nil)
+      issues << {
+        type: "nonce_purge",
+        severity: "info",
+        count: purged_count,
+        message: "Purged #{purged_count} stale webhook nonce(s) older than #{nonce_cutoff}"
+      }
       if purged_count > 0
         Rails.logger.info("[Federation::Reconciliation] Cleared #{purged_count} stale webhook nonces older than #{nonce_cutoff}")
       end

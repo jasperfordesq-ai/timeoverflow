@@ -45,7 +45,7 @@ module FederationAdmin
       csv_data = CSV.generate do |csv|
         csv << ["ID", "External ID", "Partner", "Direction", "Amount (seconds)", "Amount (hours)", "Status", "Org ID", "Remote User", "Reason", "Created At", "Completed At"]
         transactions.each do |txn|
-          csv << [txn.id, csv_safe(txn.external_transaction_id), csv_safe(txn.federation_partner&.name), txn.direction, txn.amount, (txn.amount.to_f / 3600).round(2), txn.status, txn.organization_id, csv_safe(txn.remote_user_identifier), csv_safe(txn.reason), txn.created_at&.iso8601, txn.completed_at&.iso8601]
+          csv << [txn.id, csv_safe(txn.external_transaction_id), csv_safe(txn.federation_partner&.name), csv_safe(txn.direction), txn.amount, (txn.amount.to_f / 3600).round(2), csv_safe(txn.status), txn.organization_id, csv_safe(txn.remote_user_identifier), csv_safe(txn.reason), txn.created_at&.iso8601, txn.completed_at&.iso8601]
         end
       end
 

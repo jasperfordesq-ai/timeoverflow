@@ -26,15 +26,15 @@
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
         <% @organizations.each do |org| %>
-          <% settings = @settings_map[org.id] %>
+          <% settings = @settings_map.fetch(org.id, nil) %>
           <% fed_enabled = settings&.federation_enabled || false %>
           <% discoverable = settings&.discoverable_by_partners || false %>
           <% allow_in = settings&.allow_inbound_transfers || false %>
           <% allow_out = settings&.allow_outbound_transfers || false %>
           <% share_list = settings&.share_listings || false %>
           <% internal_fed = settings&.enable_internal_federation || false %>
-          <% opted = @opted_in_counts[org.id] || 0 %>
-          <% total = @total_member_counts[org.id] || 0 %>
+          <% opted = @opted_in_counts.fetch(org.id, 0) %>
+          <% total = @total_member_counts.fetch(org.id, 0) %>
           <tr class="hover:bg-gray-50">
             <td class="px-4 py-3 text-sm font-medium text-gray-900"><%= org.name %></td>
             <td class="px-4 py-3 text-center">

@@ -14,6 +14,10 @@ class FederationReconciliationRun < ActiveRecord::Base
     finished_at - started_at
   end
 
+  # Warnings are expected during normal operation (e.g. stale pending transactions
+  # that haven't yet hit the reversal timeout) and do not indicate an unhealthy state.
+  # Only critical issues (data integrity failures, orphaned transactions) make a run
+  # unhealthy.
   def healthy?
     critical_count == 0
   end

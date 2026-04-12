@@ -20,6 +20,11 @@ module Api
         organizations = scoped_organizations
         organizations, meta = paginate(organizations)
 
+        # Batch-load active member counts to avoid N+1 queries in serialize_organization.
+        org_ids = organizations.map(&:id)
+        @active_member_counts = Member.where(organization_id: org_ids, active: true)
+                                      .group(:organization_id).count
+
         respond_with_data(
           organizations.map { |org| serialize_organization(org) },
           meta: meta
@@ -65,7 +70,7 @@ module Api
           neighborhood: org.neighborhood,
           web: org.web,
           created_at: org.created_at.iso8601,
-          member_count: org.members.active.count
+          member_count: @active_member_counts&.fetch(org.id, 0) || org.members.active.count
         }
 
         if detailed

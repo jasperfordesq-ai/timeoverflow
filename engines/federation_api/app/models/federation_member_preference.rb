@@ -11,6 +11,7 @@ class FederationMemberPreference < ActiveRecord::Base
 
   validates :member_id, presence: true, uniqueness: true
   validates :organization_id, presence: true
+  validates :discoverable, inclusion: { in: [true, false] }
 
   scope :opted_in, -> { where(opted_in: true) }
   scope :discoverable, -> { where(opted_in: true, discoverable: true) }
@@ -57,11 +58,13 @@ class FederationMemberPreference < ActiveRecord::Base
 
   # Opt in with timestamp tracking
   def opt_in!
+    return self if opted_in?
     update!(opted_in: true, opted_in_at: Time.current, opted_out_at: nil)
   end
 
   # Opt out with timestamp tracking
   def opt_out!
+    return self unless opted_in?
     update!(opted_in: false, opted_out_at: Time.current)
   end
 end

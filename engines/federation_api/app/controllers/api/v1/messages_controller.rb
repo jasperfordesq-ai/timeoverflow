@@ -10,6 +10,7 @@ module Api
   module V1
     class MessagesController < BaseController
       before_action -> { require_permission!(:profiles) }
+      before_action :require_json_content_type!, only: [:create]
       before_action :validate_message_params!, only: [:create]
 
       # GET /api/v1/messages/:id

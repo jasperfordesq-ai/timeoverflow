@@ -20,8 +20,12 @@ class FederationTransaction < ActiveRecord::Base
     less_than_or_equal_to: ->(record) {
       begin
         v = Rails.application.config.federation.max_transfer_amount
-        v.to_i > 0 ? v.to_i : 360_000
+        v.to_i > 0 ? v.to_i : begin
+          Rails.logger.warn("[FederationTransaction] federation.max_transfer_amount config not set or invalid, falling back to default 360_000")
+          360_000
+        end
       rescue NoMethodError, StandardError
+        Rails.logger.warn("[FederationTransaction] federation config not available, falling back to default max_transfer_amount 360_000")
         360_000
       end
     }

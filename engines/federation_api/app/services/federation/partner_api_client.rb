@@ -212,6 +212,10 @@ module Federation
           @partner.record_failure!
           return { "success" => false, "error" => "Response too large (#{response.body.bytesize} bytes)" }
         end
+        if response.body && response.body.bytesize > 1_000_000
+          Rails.logger.warn("[Federation::PartnerApiClient] Large response body from #{@partner.name}: #{response.body.bytesize} bytes (>1MB) — skipping JSON parse")
+          return { "success" => false, "error" => "Response body too large to parse (#{response.body.bytesize} bytes)" }
+        end
         @partner.record_success!
         JSON.parse(response.body)
       else
@@ -239,7 +243,11 @@ module Federation
       uri = URI.parse(url)
       raise ArgumentError, "URL has no host" unless uri.host
 
-      addresses = Resolv.getaddresses(uri.host)
+      begin
+        addresses = Resolv.getaddresses(uri.host)
+      rescue Resolv::ResolvError, Resolv::ResolvTimeout => e
+        raise ArgumentError, "DNS resolution failed for host #{uri.host}: #{e.class}: #{e.message}"
+      end
       raise ArgumentError, "Cannot resolve host: #{uri.host}" if addresses.empty?
 
       addresses.each do |addr|

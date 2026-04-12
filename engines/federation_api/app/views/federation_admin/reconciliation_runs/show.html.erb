@@ -46,14 +46,21 @@
                   when 'critical' then 'bg-red-100 text-red-800'
                   when 'warning' then 'bg-yellow-100 text-yellow-800'
                   else 'bg-blue-100 text-blue-800'
-                  end %>">
+                  end %>"
+              role="img"
+              aria-label="<%= t("federation_admin.reconciliation_runs.show.severity_label.#{severity}", default: "Severity: #{severity}") %>">
+              <% case severity
+                 when 'critical' %><span aria-hidden="true">!!</span>
+              <% when 'warning' %><span aria-hidden="true">!</span>
+              <% else %><span aria-hidden="true">i</span>
+              <% end %>
               <%= t("federation_admin.reconciliation_runs.show.severity.#{severity}", default: severity) %>
             </span>
             <span class="text-sm font-medium text-gray-900"><%= issue["type"] || issue[:type] %></span>
           </div>
           <p class="text-sm text-gray-600"><%= issue["message"] || issue[:message] %></p>
           <% if issue["ids"] || issue[:ids] %>
-            <p class="text-xs text-gray-400 mt-1"><%= t('federation_admin.reconciliation_runs.show.affected_ids') %>: <%= (issue["ids"] || issue[:ids]).join(", ") %></p>
+            <p class="text-xs text-gray-400 mt-1"><%= t('federation_admin.reconciliation_runs.show.affected_ids') %>: <%= (issue["ids"] || issue[:ids] || []).join(", ") %></p>
           <% end %>
         </div>
       <% end %>

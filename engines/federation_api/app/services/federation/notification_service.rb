@@ -19,7 +19,10 @@ module Federation
 
     def self.notify_message_received(member, data)
       user = member.user
-      return unless user&.email.present?
+      unless user&.email.present?
+        Rails.logger.info("[Federation::NotificationService] Skipping message_received notification for member #{member.id}: #{user ? 'email is blank' : 'no associated user'}")
+        return
+      end
 
       # Send email notification.
       # Sender name falls back to I18n default if not provided by the partner.
@@ -37,9 +40,17 @@ module Federation
 
     def self.notify_transfer_received(member, data)
       user = member.user
-      return unless user&.email.present?
+      unless user&.email.present?
+        Rails.logger.info("[Federation::NotificationService] Skipping transfer_received notification for member #{member.id}: #{user ? 'email is blank' : 'no associated user'}")
+        return
+      end
 
-      hours = (data[:amount].to_i / 3600.0).round(1)
+      raw_amount = data[:amount]
+      unless raw_amount.is_a?(Numeric) || raw_amount.to_s.match?(/\A-?\d+(\.\d+)?\z/)
+        Rails.logger.warn("[Federation::NotificationService] Invalid or missing amount (#{raw_amount.inspect}) for transfer_received notification — defaulting to 0")
+        raw_amount = 0
+      end
+      hours = (raw_amount.to_i / 3600.0).round(1)
       sender = data[:remote_user_identifier] || I18n.t("federation_mailer.common.default_name")
 
       Federation::NotificationMailer.transfer_received(
@@ -54,9 +65,17 @@ module Federation
 
     def self.notify_transfer_sent(member, data)
       user = member.user
-      return unless user&.email.present?
+      unless user&.email.present?
+        Rails.logger.info("[Federation::NotificationService] Skipping transfer_sent notification for member #{member.id}: #{user ? 'email is blank' : 'no associated user'}")
+        return
+      end
 
-      hours = (data[:amount].to_i / 3600.0).round(1)
+      raw_amount = data[:amount]
+      unless raw_amount.is_a?(Numeric) || raw_amount.to_s.match?(/\A-?\d+(\.\d+)?\z/)
+        Rails.logger.warn("[Federation::NotificationService] Invalid or missing amount (#{raw_amount.inspect}) for transfer_sent notification — defaulting to 0")
+        raw_amount = 0
+      end
+      hours = (raw_amount.to_i / 3600.0).round(1)
       recipient = data[:remote_user_identifier] || I18n.t("federation_mailer.common.default_name")
 
       Federation::NotificationMailer.transfer_sent(

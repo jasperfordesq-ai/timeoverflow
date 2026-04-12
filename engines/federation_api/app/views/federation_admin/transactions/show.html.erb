@@ -67,7 +67,7 @@
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.amount') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-        <span class="font-semibold text-lg"><%= (@transaction.amount.to_f / 3600).round(2) %> <%= t('federation_admin.transactions.show.hours') %></span>
+        <span class="font-semibold text-lg"><%= format_federation_hours(@transaction.amount) %> <%= t('federation_admin.transactions.show.hours') %></span>
         <span class="text-gray-500 ml-2">(<%= @transaction.amount %> <%= t('federation_admin.transactions.show.seconds') %>)</span>
       </dd>
     </div>

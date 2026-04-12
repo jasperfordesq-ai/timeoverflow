@@ -24,7 +24,7 @@
       <label for="msg_status" class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.status') %></label>
       <select name="status" id="msg_status" data-auto-submit class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-federation-500 focus:border-federation-500">
         <option value=""><%= t('federation_admin.messages.index.all') %></option>
-        <% %w[pending delivered read failed].each do |s| %>
+        <% FederationMessage::STATUSES.each do |s| %>
           <option value="<%= s %>" <%= 'selected' if params[:status] == s %>><%= t("federation_admin.messages.index.#{s}") %></option>
         <% end %>
       </select>

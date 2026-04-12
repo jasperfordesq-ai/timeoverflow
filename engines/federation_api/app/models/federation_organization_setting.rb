@@ -17,6 +17,10 @@ class FederationOrganizationSetting < ActiveRecord::Base
     find_by!(organization_id: org_id)
   end
 
+  # Semantic query aliases for boolean attributes. These provide more expressive
+  # method names (e.g. `allows_inbound?` vs `allow_inbound_transfers?`) and
+  # exist for readability at call sites. Rails already generates `?` methods
+  # for boolean columns, but these aliases use domain-appropriate naming.
   def federation_enabled?
     federation_enabled
   end
@@ -50,7 +54,7 @@ class FederationOrganizationSetting < ActiveRecord::Base
     valid_ids = FederationPartner.where(id: blocked_partner_ids).pluck(:id)
     orphaned = blocked_partner_ids - valid_ids
     if orphaned.any?
-      Rails.logger.warn("[FederationOrganizationSetting] Stripping orphaned partner IDs #{orphaned} from org setting #{id || '(new)'}")
+      Rails.logger.warn("[FederationOrganizationSetting] Removed #{orphaned.count} orphaned blocked_partner_ids #{orphaned.inspect} from org setting #{id || '(new)'} (org #{organization_id})")
       self.blocked_partner_ids = valid_ids
     end
   end

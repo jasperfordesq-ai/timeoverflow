@@ -1,5 +1,8 @@
 es:
   federation_hub:
+    layout:
+      alpha_notice: "ALPHA — Centro de Federación — Vista previa de desarrollo, no para uso en producción"
+      powered_by: "Centro de Federación — Desarrollado por"
     errors:
       no_active_membership: "Necesitas una membresía activa para acceder al Centro de Federación."
       not_found: "El recurso solicitado no se encontró."
@@ -137,6 +140,10 @@ es:
       cancel: "Cancelar"
       time_ago: "hace %{time}"
       send_failed: "Error al enviar mensaje: %{error}"
+      compose_to: "Mensaje a %{partner}"
+      no_recipients: "No hay miembros disponibles para enviar mensajes en %{partner}."
+      choose_partner_prompt: "Selecciona una comunidad arriba para redactar un mensaje."
+      select_recipient: "Elige un miembro..."
       you: "Tú"
       reply_button: "Responder"
       reply_placeholder: "Escribe tu respuesta..."

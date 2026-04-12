@@ -50,7 +50,8 @@
           <option value="offer" <%= 'selected' if params[:type] == 'offer' %>><%= t("federation_hub.listings.offers") %></option>
           <option value="inquiry" <%= 'selected' if params[:type] == 'inquiry' %>><%= t("federation_hub.listings.inquiries") %></option>
         </select>
-        <input type="text" name="q" value="<%= params[:q] %>" placeholder="<%= t("federation_hub.listings.search_placeholder") %>" class="form-control">
+        <label for="listings_search" class="visually-hidden"><%= t("federation_hub.listings.search") %></label>
+        <input type="text" id="listings_search" name="q" value="<%= params[:q] %>" placeholder="<%= t("federation_hub.listings.search_placeholder") %>" class="form-control">
         <button type="submit" class="btn btn-info"><%= t("federation_hub.listings.search") %></button>
       <% end %>
     </form>

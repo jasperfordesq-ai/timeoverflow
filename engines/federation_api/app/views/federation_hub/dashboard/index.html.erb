@@ -113,7 +113,7 @@
               <li class="list-group-item d-flex justify-content-between align-items-center">
                 <div>
                   <span class="fw-bold"><%= org.name %></span>
-                  <span class="badge bg-primary ms-1">TimeOverflow</span>
+                  <span class="badge bg-primary ms-1"><%= t("federation_hub.common.platform_label") %></span>
                 </div>
                 <div>
                   <a href="<%= federation_hub_members_path(partner_id: org.id, source_type: 'internal') %>" class="btn btn-sm btn-outline-info"><%= t("federation_hub.nav.members") %></a>

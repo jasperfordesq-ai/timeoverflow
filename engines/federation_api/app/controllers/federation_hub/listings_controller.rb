@@ -29,7 +29,7 @@ module FederationHub
             "type" => post.class.name.downcase,
             "category" => post.respond_to?(:category) ? post.category&.name : nil,
             "user" => post.user&.username,
-            "tags" => post.respond_to?(:tag_list) ? post.tag_list.to_a.join(", ") : ""
+            "tags" => post.respond_to?(:tag_list) ? Array(post.tag_list).join(", ") : ""
           }
         end
       end

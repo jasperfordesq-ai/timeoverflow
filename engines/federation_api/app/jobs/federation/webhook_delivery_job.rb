@@ -39,10 +39,11 @@ module Federation
       begin
         FederationAuditLog.create!(
           action: "webhook_delivery_exhausted",
-          actor: "system",
+          actor_email: "system",
+          actor_id: nil,
           target_type: "FederationPartner",
           target_id: partner_id,
-          details: { event: event, fed_txn_id: fed_txn_id, error: "#{error.class}: #{error.message}" }
+          changes_made: { event: event, fed_txn_id: fed_txn_id, error: "#{error.class}: #{error.message}" }
         )
       rescue => log_err
         Rails.logger.warn("[Federation::WebhookDelivery] Could not create audit log: #{log_err.message}")

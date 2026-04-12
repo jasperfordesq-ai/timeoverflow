@@ -20,7 +20,7 @@ module Api
       # GET /api/v1/transfers/:id (or /api/v1/transactions/:id via alias)
       # Returns the status of a federation transaction.
       def show
-        fed_txn = FederationTransaction.find(params[:id])
+        fed_txn = find_scoped_transaction!(params[:id])
         respond_with_data(serialize_transaction(fed_txn, fed_txn.transfer))
       end
 
@@ -106,19 +106,19 @@ module Api
         if existing
           respond_with_data(serialize_transaction(existing), status: :ok)
         else
-          respond_with_error("Duplicate transaction", status: :conflict)
+          respond_with_error(I18n.t("federation_api.errors.duplicate_transaction", default: "Duplicate transaction"), status: :conflict)
         end
       rescue ActiveRecord::RecordInvalid => e
         Rails.logger.warn("[Federation::Transfer] Validation failed: #{e.message}")
-        respond_with_error("Transfer validation failed", status: :unprocessable_entity,
+        respond_with_error(I18n.t("federation_api.errors.transfer_validation_failed", default: "Transfer validation failed"), status: :unprocessable_entity,
                            errors: e.record.errors.full_messages)
       rescue ActiveRecord::RecordNotFound => e
-        respond_with_error("Resource not found", status: :not_found)
+        respond_with_error(I18n.t("federation_api.errors.resource_not_found", default: "Resource not found"), status: :not_found)
       rescue ArgumentError => e
         respond_with_error(e.message, status: :unprocessable_entity)
       rescue => e
         Rails.logger.error("[Federation::Transfer] Unexpected error: #{e.class}: #{e.message}")
-        respond_with_error("Transfer failed", status: :internal_server_error)
+        respond_with_error(I18n.t("federation_api.errors.transfer_failed", default: "Transfer failed"), status: :internal_server_error)
       end
 
       private
@@ -240,6 +240,19 @@ module Api
           end
 
           account
+        end
+      end
+
+      # Scope transaction lookup by API key's organization access.
+      def find_scoped_transaction!(id)
+        if @current_api_key.organization
+          FederationTransaction.where(organization_id: @current_api_key.organization_id).find(id)
+        else
+          txn = FederationTransaction.find(id)
+          if txn.organization_id && !@current_api_key.can_access_organization?(txn.organization_id)
+            raise ActiveRecord::RecordNotFound, "Transaction not found"
+          end
+          txn
         end
       end
 

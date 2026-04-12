@@ -10,6 +10,16 @@
     <input type="hidden" name="_method" value="patch">
     <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
 
+    <% if @partner.errors.any? %>
+      <div class="rounded-md bg-red-50 p-4 mb-4">
+        <ul class="list-disc pl-5 text-sm text-red-700">
+          <% @partner.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
     <div class="space-y-6">
       <!-- Name -->
       <div>

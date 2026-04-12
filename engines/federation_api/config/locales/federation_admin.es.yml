@@ -41,13 +41,17 @@ es:
       stats:
         organizations: "Organizaciones"
         active_partners: "Socios Activos"
+        no_active_partners: "Sin socios activos"
         active_api_keys: "Claves API Activas"
         transactions: "Transacciones"
         time_flow: "Flujo de Tiempo"
         in: "Entrada"
         out: "Salida"
         net: "Neto"
+        vs_prev_7d: "vs 7d anteriores"
         failed_webhooks_24h: "Webhooks Fallidos 24h"
+        n_failures: "%{count} fallos"
+        all_healthy: "Todo correcto"
         orgs_federation_enabled: "Orgs. con Federación Habilitada"
         members_opted_in: "Miembros Participantes"
         federation_messages: "Mensajes de Federación"
@@ -67,6 +71,7 @@ es:
         consecutive_failures: "Fallos consecutivos"
         level: "Nivel"
         last_check: "Última comprobación:"
+        time_ago: "hace %{time}"
         no_activity: "Sin actividad aún"
       table:
         id: "ID"
@@ -152,6 +157,7 @@ es:
         submit: "Actualizar Socio"
         cancel: "Cancelar"
       show:
+        page_title: "Socio: %{name}"
         back: "Volver a Socios"
         edit: "Editar Socio"
         test_webhook: "Probar Webhook"
@@ -488,6 +494,7 @@ es:
       index:
         title: "Preferencias de Federación de Miembros"
         opted_in: "participan en la federación"
+        active_members: "miembros activos"
         opt_in_all: "Inscribir a Todos"
         opt_in_all_confirm: "¿Inscribir a TODOS los miembros en la federación? Se podrán desinscribir individualmente después."
         organization: "Organización"
@@ -548,8 +555,13 @@ es:
     activity:
       title: "Cronología de Actividad"
       subtitle: "Registro de auditoría unificado de eventos recientes de federación"
+      events: "eventos"
       empty: "Sin actividad aún"
       empty_detail: "Los eventos de federación aparecerán aquí a medida que se procesen transacciones, mensajes y webhooks."
+      event_types:
+        transaction: "Transacción"
+        message: "Mensaje"
+        webhook: "Webhook"
 
     audit_logs:
       title: "Registros de Auditoría"
@@ -590,6 +602,23 @@ es:
         total: "Total"
         duration: "Duración"
         run_at: "Ejecutado el"
+      show:
+        title: "Ejecución de Conciliación #%{id}"
+        run_at: "Ejecutada el"
+        duration: "Duración"
+        status: "Estado"
+        critical_issues: "Problemas Críticos"
+        warnings: "Advertencias"
+        findings: "Hallazgos (%{count})"
+        affected_ids: "IDs afectados"
+        no_issues: "No se encontraron problemas en esta ejecución."
+        statuses:
+          healthy: "Saludable"
+          unhealthy: "Con problemas"
+        severity:
+          critical: "crítico"
+          warning: "advertencia"
+          info: "información"
 
     errors:
       not_found: "El recurso solicitado no se encontró."
@@ -624,6 +653,9 @@ es:
       bulk_opt_in_failed: "Inscripción masiva fallida: %{error}. No se realizaron cambios."
       webhook_retry_queued: "Reintento de webhook programado para registro #%{id}."
       webhook_retry_failed: "No se puede reintentar: socio inactivo o webhook no en estado fallido."
+      validation_failed: "Error de validación: %{errors}"
+      partner_create_failed: "Error al crear el socio. Consulte los registros del servidor para más detalles."
+      partner_update_failed: "Error al actualizar el socio. Consulte los registros del servidor para más detalles."
 
     common:
       inbound: "Entrante"
@@ -635,10 +667,19 @@ es:
       active: "Activo"
       suspended: "Suspendido"
       terminated: "Terminado"
+      healthy: "Saludable"
+      success: "Exitoso"
+      failed: "Fallido"
       profiles: "Perfiles"
       listings: "Listados"
       transactions: "Transacciones"
       messaging: "Mensajería"
+      partnership_levels:
+        discovery: "Descubrimiento"
+        social: "Social"
+        economic: "Económico"
+        integrated: "Integrado"
+      none: "Ninguno"
       platform_types:
         nexus: "Nexus"
         timeoverflow: "TimeOverflow"

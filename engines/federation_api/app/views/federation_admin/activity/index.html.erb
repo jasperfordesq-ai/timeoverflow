@@ -3,7 +3,7 @@
 <div class="sm:flex sm:items-center sm:justify-between mb-8">
   <div>
     <h1 class="text-2xl font-bold text-gray-900"><%= t('federation_admin.activity.title') %></h1>
-    <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.activity.subtitle') %> (<%= @events.size %> events)</p>
+    <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.activity.subtitle') %> (<%= @events.size %> <%= t('federation_admin.activity.events') %>)</p>
   </div>
 </div>
 
@@ -66,7 +66,7 @@
               <div class="flex items-center gap-3 flex-shrink-0">
                 <!-- Status badge -->
                 <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= status_badge_class(event[:status]) %>">
-                  <%= event[:status] %>
+                  <%= t("federation_admin.common.#{event[:status]}", default: event[:status]) %>
                 </span>
 
                 <!-- Type badge -->
@@ -77,7 +77,7 @@
                       when 'webhook' then 'bg-amber-100 text-amber-800'
                       else 'bg-gray-100 text-gray-600'
                       end %>">
-                  <%= event[:type].capitalize %>
+                  <%= t("federation_admin.activity.event_types.#{event[:type]}", default: event[:type].capitalize) %>
                 </span>
               </div>
             </div>

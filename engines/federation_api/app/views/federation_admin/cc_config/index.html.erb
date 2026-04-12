@@ -17,33 +17,33 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.node_slug') %></label>
-          <input type="text" name="node_slug" value="<%= config.node_slug %>" required
+          <label for="node_slug_<%= org.id %>" class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.node_slug') %></label>
+          <input type="text" name="node_slug" id="node_slug_<%= org.id %>" value="<%= config.node_slug %>" required
                  pattern="[0-9a-z\-]{3,15}"
                  class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.currency_format') %></label>
-          <input type="text" name="currency_format" value="<%= config.currency_format %>"
+          <label for="currency_format_<%= org.id %>" class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.currency_format') %></label>
+          <input type="text" name="currency_format" id="currency_format_<%= org.id %>" value="<%= config.currency_format %>"
                  class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.exchange_rate') %></label>
-          <input type="number" name="exchange_rate" value="<%= config.exchange_rate %>" step="0.0001" min="0.01"
+          <label for="exchange_rate_<%= org.id %>" class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.exchange_rate') %></label>
+          <input type="number" name="exchange_rate" id="exchange_rate_<%= org.id %>" value="<%= config.exchange_rate %>" step="0.0001" min="0.01"
                  class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.validated_window') %></label>
-          <input type="number" name="validated_window" value="<%= config.validated_window %>" min="30" max="86400"
+          <label for="validated_window_<%= org.id %>" class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.validated_window') %></label>
+          <input type="number" name="validated_window" id="validated_window_<%= org.id %>" value="<%= config.validated_window %>" min="30" max="86400"
                  class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
         </div>
 
         <div class="sm:col-span-2">
-          <label class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.parent_node_url') %></label>
-          <input type="url" name="parent_node_url" value="<%= config.parent_node_url %>"
+          <label for="parent_node_url_<%= org.id %>" class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.parent_node_url') %></label>
+          <input type="url" name="parent_node_url" id="parent_node_url_<%= org.id %>" value="<%= config.parent_node_url %>"
                  placeholder="<%= t('federation_admin.cc_config.parent_placeholder') %>"
                  class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
         </div>

@@ -32,8 +32,13 @@ module Api
           # Org-scoped key: only their org
           Organization.where(id: @current_api_key.organization_id)
         else
-          # Global key: filter by partner's permitted orgs if a partner_id is given
-          orgs = Organization.all
+          # Global key: respect permitted_organization_ids on the key itself.
+          orgs = if @current_api_key.permitted_organization_ids.present? && @current_api_key.permitted_organization_ids.any?
+                   Organization.where(id: @current_api_key.permitted_organization_ids)
+                 else
+                   Organization.all
+                 end
+          # Further filter by partner's permitted orgs if a partner_id is given
           if params[:partner_id].present?
             partner = FederationPartner.find_by(id: params[:partner_id])
             if partner && partner.permitted_organization_ids.present?

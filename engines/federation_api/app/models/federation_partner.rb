@@ -87,7 +87,8 @@ class FederationPartner < ActiveRecord::Base
   end
 
   def level_name
-    { 1 => "Discovery", 2 => "Social", 3 => "Economic", 4 => "Integrated" }[partnership_level]
+    key = { 1 => "discovery", 2 => "social", 3 => "economic", 4 => "integrated" }[partnership_level]
+    key ? I18n.t("federation_admin.common.partnership_levels.#{key}") : nil
   end
 
   # Returns all currently valid webhook secrets (supports zero-downtime rotation).

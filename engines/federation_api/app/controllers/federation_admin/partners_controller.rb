@@ -48,13 +48,13 @@ module FederationAdmin
       flash[:notice] = t("federation_admin.flash.partner_created", name: @partner.name, default: "Partner '%{name}' created successfully. The webhook secret is shown on the partner detail page.")
       redirect_to federation_admin_partner_path(@partner)
     rescue ActiveRecord::RecordInvalid => e
-      flash.now[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
+      flash.now[:alert] = t("federation_admin.flash.validation_failed", errors: e.record.errors.full_messages.join(', '), default: "Validation failed: %{errors}")
       @organizations = Organization.order(:name)
       @partner = e.record
       render :new
     rescue => e
       Rails.logger.error("[FederationAdmin] Partner create failed: #{e.class}: #{e.message}")
-      flash.now[:alert] = "Failed to create partner. Check the server logs for details."
+      flash.now[:alert] = t("federation_admin.flash.partner_create_failed", default: "Failed to create partner. Check the server logs for details.")
       @organizations = Organization.order(:name)
       render :new
     end
@@ -93,13 +93,13 @@ module FederationAdmin
       flash[:notice] = t("federation_admin.flash.partner_updated", name: @partner.name, default: "Partner '%{name}' updated.")
       redirect_to federation_admin_partner_path(@partner)
     rescue ActiveRecord::RecordInvalid => e
-      flash.now[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
+      flash.now[:alert] = t("federation_admin.flash.validation_failed", errors: e.record.errors.full_messages.join(', '), default: "Validation failed: %{errors}")
       @organizations = Organization.order(:name)
       @partner = e.record
       render :edit
     rescue => e
       Rails.logger.error("[FederationAdmin] Partner update failed: #{e.class}: #{e.message}")
-      flash.now[:alert] = "Failed to update partner. Check the server logs for details."
+      flash.now[:alert] = t("federation_admin.flash.partner_update_failed", default: "Failed to update partner. Check the server logs for details.")
       @organizations = Organization.order(:name)
       render :edit
     end

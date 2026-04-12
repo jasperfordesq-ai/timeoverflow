@@ -18,7 +18,7 @@ module Api
 
         # Enforce org-level federation setting.
         if account.organization && !Federation::AccessControl.org_enabled?(account.organization)
-          return respond_with_error("Federation is not enabled for this organization", status: :forbidden)
+          return respond_with_error(I18n.t("federation_api.errors.federation_disabled", default: "Federation is not enabled for this organization"), status: :forbidden)
         end
 
         # H2: Paginate movements rather than using an unbounded limit param.
@@ -67,6 +67,9 @@ module Api
           account = Account.find(params[:id])
           unless account.organization.present?
             raise ActiveRecord::RecordNotFound, "Account #{params[:id]} has no associated organization"
+          end
+          unless @current_api_key.can_access_organization?(account.organization)
+            raise ActiveRecord::RecordNotFound, "API key does not have access to this organization"
           end
           account
         end

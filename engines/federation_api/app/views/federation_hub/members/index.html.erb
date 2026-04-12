@@ -12,7 +12,8 @@
   <div class="col-md-6">
     <form method="get" action="<%= federation_hub_members_path %>">
       <div class="input-group">
-        <select name="partner_id" class="form-control" onchange="
+        <label for="partner_select" class="visually-hidden"><%= t("federation_hub.members.select_partner") %></label>
+        <select name="partner_id" id="partner_select" class="form-control" aria-label="<%= t("federation_hub.members.select_partner") %>" onchange="
           var opt = this.options[this.selectedIndex];
           document.getElementById('source_type_field').value = opt.dataset.type || '';
           this.form.submit();

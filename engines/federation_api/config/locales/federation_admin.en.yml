@@ -41,13 +41,17 @@ en:
       stats:
         organizations: "Organizations"
         active_partners: "Active Partners"
+        no_active_partners: "No active partners"
         active_api_keys: "Active API Keys"
         transactions: "Transactions"
         time_flow: "Time Flow"
         in: "In"
         out: "Out"
         net: "Net"
+        vs_prev_7d: "vs prev 7d"
         failed_webhooks_24h: "Failed Webhooks 24h"
+        n_failures: "%{count} failures"
+        all_healthy: "All healthy"
         orgs_federation_enabled: "Orgs Federation-Enabled"
         members_opted_in: "Members Opted In"
         federation_messages: "Federation Messages"
@@ -67,6 +71,7 @@ en:
         consecutive_failures: "Consecutive failures"
         level: "Level"
         last_check: "Last check:"
+        time_ago: "%{time} ago"
         no_activity: "No activity yet"
       table:
         id: "ID"
@@ -152,6 +157,7 @@ en:
         submit: "Update Partner"
         cancel: "Cancel"
       show:
+        page_title: "Partner: %{name}"
         back: "Back to Partners"
         edit: "Edit Partner"
         test_webhook: "Test Webhook"
@@ -488,6 +494,7 @@ en:
       index:
         title: "Member Federation Preferences"
         opted_in: "opted in to federation"
+        active_members: "active members"
         opt_in_all: "Opt In All"
         opt_in_all_confirm: "Opt in ALL members to federation? They can be individually opted out later."
         organization: "Organization"
@@ -548,8 +555,13 @@ en:
     activity:
       title: "Activity Timeline"
       subtitle: "Unified audit log of recent federation events"
+      events: "events"
       empty: "No activity yet"
       empty_detail: "Federation events will appear here as transactions, messages, and webhooks are processed."
+      event_types:
+        transaction: "Transaction"
+        message: "Message"
+        webhook: "Webhook"
 
     audit_logs:
       title: "Audit Logs"
@@ -590,6 +602,23 @@ en:
         total: "Total"
         duration: "Duration"
         run_at: "Run At"
+      show:
+        title: "Reconciliation Run #%{id}"
+        run_at: "Run at"
+        duration: "Duration"
+        status: "Status"
+        critical_issues: "Critical Issues"
+        warnings: "Warnings"
+        findings: "Findings (%{count})"
+        affected_ids: "Affected IDs"
+        no_issues: "No issues found in this run."
+        statuses:
+          healthy: "Healthy"
+          unhealthy: "Unhealthy"
+        severity:
+          critical: "critical"
+          warning: "warning"
+          info: "info"
 
     errors:
       not_found: "The requested resource could not be found."
@@ -624,6 +653,9 @@ en:
       bulk_opt_in_failed: "Bulk opt-in failed: %{error}. No changes were made."
       webhook_retry_queued: "Webhook retry queued for log #%{id}."
       webhook_retry_failed: "Cannot retry: partner inactive or webhook not in failed state."
+      validation_failed: "Validation failed: %{errors}"
+      partner_create_failed: "Failed to create partner. Check the server logs for details."
+      partner_update_failed: "Failed to update partner. Check the server logs for details."
 
     common:
       inbound: "Inbound"
@@ -635,10 +667,19 @@ en:
       active: "Active"
       suspended: "Suspended"
       terminated: "Terminated"
+      healthy: "Healthy"
+      success: "Success"
+      failed: "Failed"
       profiles: "Profiles"
       listings: "Listings"
       transactions: "Transactions"
       messaging: "Messaging"
+      partnership_levels:
+        discovery: "Discovery"
+        social: "Social"
+        economic: "Economic"
+        integrated: "Integrated"
+      none: "None"
       platform_types:
         nexus: "Nexus"
         timeoverflow: "TimeOverflow"

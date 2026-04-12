@@ -4,7 +4,7 @@
   <div>
     <h1 class="text-2xl font-bold text-gray-900"><%= t('federation_admin.member_preferences.index.title') %></h1>
     <p class="mt-1 text-sm text-gray-500">
-      <%= @opted_in_count %> of <%= @total_member_count %> active members <%= t('federation_admin.member_preferences.index.opted_in') %>
+      <%= @opted_in_count %> <%= t('federation_admin.member_preferences.index.of') %> <%= @total_member_count %> <%= t('federation_admin.member_preferences.index.active_members') %> <%= t('federation_admin.member_preferences.index.opted_in') %>
     </p>
   </div>
   <div class="mt-4 sm:mt-0">

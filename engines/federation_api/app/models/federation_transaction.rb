@@ -15,7 +15,17 @@ class FederationTransaction < ActiveRecord::Base
   DIRECTIONS = %w[inbound outbound].freeze
 
   validates :direction, presence: true, inclusion: { in: DIRECTIONS }
-  validates :amount, presence: true, numericality: { greater_than: 0, less_than_or_equal_to: 360_000 }
+  validates :amount, presence: true, numericality: {
+    greater_than: 0,
+    less_than_or_equal_to: ->(record) {
+      begin
+        v = Rails.application.config.federation.max_transfer_amount
+        v.to_i > 0 ? v.to_i : 360_000
+      rescue
+        360_000
+      end
+    }
+  }
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :remote_user_identifier, presence: true, length: { maximum: 255 }
   validates :external_transaction_id, uniqueness: { scope: :federation_partner_id },

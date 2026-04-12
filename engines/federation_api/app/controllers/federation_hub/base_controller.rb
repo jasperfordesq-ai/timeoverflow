@@ -11,6 +11,7 @@
 #
 module FederationHub
   class BaseController < ActionController::Base
+    protect_from_forgery with: :exception
     before_action :set_locale
     before_action :authenticate_member!
     layout "federation_hub"
@@ -29,7 +30,7 @@ module FederationHub
     helper FederationHub::ApplicationHelper
 
     helper_method :current_user, :current_organization, :current_member,
-                  :federation_preferences, :federation_org_settings
+                  :federation_preferences, :federation_org_settings, :unread_message_count
 
     private
 
@@ -64,6 +65,19 @@ module FederationHub
 
     def federation_org_settings
       @federation_org_settings ||= current_organization ? FederationOrganizationSetting.for(current_organization) : nil
+    end
+
+    def unread_message_count
+      @unread_message_count ||= begin
+        return 0 unless current_member && current_organization
+        FederationMessage.where(
+          organization_id: current_organization.id,
+          local_member_id: current_member.id,
+          direction: "inbound"
+        ).where(read_at: nil).count
+      rescue
+        0
+      end
     end
 
     def set_locale

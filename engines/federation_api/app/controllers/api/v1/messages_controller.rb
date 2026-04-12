@@ -14,7 +14,7 @@ module Api
 
       # GET /api/v1/messages/:id
       def show
-        message = FederationMessage.find(params[:id])
+        message = find_scoped_message!(params[:id])
         respond_with_data(serialize_message(message))
       end
 
@@ -54,7 +54,7 @@ module Api
       #                   subject, body, external_message_id }
       def create
         partner = resolve_partner
-        return respond_with_error("Unknown or inactive partner", status: :not_found) unless partner&.active?
+        return respond_with_error(I18n.t("federation_api.errors.unknown_inactive_partner", default: "Unknown or inactive partner"), status: :not_found) unless partner&.active?
 
         # Idempotency: check for duplicate
         if params[:external_message_id].present?
@@ -77,18 +77,23 @@ module Api
         end
 
         member = resolve_local_member(partner, org)
-        return respond_with_error("Could not resolve local recipient", status: :unprocessable_entity) unless member
+        return respond_with_error(I18n.t("federation_api.errors.recipient_not_resolved", default: "Could not resolve local recipient"), status: :unprocessable_entity) unless member
 
         org ||= member.organization
 
+        # Verify the partner is authorized for this organization.
+        unless partner.can_access_organization?(org)
+          return respond_with_error(I18n.t("federation_api.errors.partner_not_authorized", default: "Partner is not authorized for this organization"), status: :forbidden)
+        end
+
         # Enforce org-level federation setting.
         unless Federation::AccessControl.org_enabled?(org)
-          return respond_with_error("Federation is not enabled for this organization", status: :forbidden)
+          return respond_with_error(I18n.t("federation_api.errors.federation_disabled", default: "Federation is not enabled for this organization"), status: :forbidden)
         end
 
         # Check member-level federation consent — always enforced.
         unless Federation::AccessControl.member_can_receive_messages?(member, partner: partner)
-          return respond_with_error("Recipient has not opted in to federation messaging", status: :forbidden)
+          return respond_with_error(I18n.t("federation_api.errors.recipient_not_opted_in", default: "Recipient has not opted in to federation messaging"), status: :forbidden)
         end
 
         # Create the message
@@ -126,10 +131,10 @@ module Api
         if existing
           respond_with_data(serialize_message(existing))
         else
-          respond_with_error("Duplicate message", status: :conflict)
+          respond_with_error(I18n.t("federation_api.errors.duplicate_message", default: "Duplicate message"), status: :conflict)
         end
       rescue ActiveRecord::RecordInvalid => e
-        respond_with_error("Message validation failed", status: :unprocessable_entity,
+        respond_with_error(I18n.t("federation_api.errors.message_validation_failed", default: "Message validation failed"), status: :unprocessable_entity,
                            errors: e.record.errors.full_messages)
       end
 
@@ -175,14 +180,27 @@ module Api
       def validate_message_params!
         sender = params[:sender_id] || params[:remote_user_identifier]
         if sender.blank?
-          return respond_with_error("Missing sender_id or remote_user_identifier", status: :bad_request)
+          return respond_with_error(I18n.t("federation_api.errors.missing_sender", default: "Missing sender_id or remote_user_identifier"), status: :bad_request)
         end
         if params[:body].blank?
-          return respond_with_error("Missing required field: body", status: :bad_request)
+          return respond_with_error(I18n.t("federation_api.errors.missing_body", default: "Missing required field: body"), status: :bad_request)
         end
         recipient = params[:recipient_id] || params[:local_member_id] || params[:local_member_uid] || params[:local_member_email]
         if recipient.blank?
-          return respond_with_error("Missing recipient identifier (recipient_id, local_member_id, local_member_uid, or local_member_email)", status: :bad_request)
+          return respond_with_error(I18n.t("federation_api.errors.missing_recipient", default: "Missing recipient identifier (recipient_id, local_member_id, local_member_uid, or local_member_email)"), status: :bad_request)
+        end
+      end
+
+      # Scope message lookup by API key's organization access.
+      def find_scoped_message!(id)
+        if @current_api_key.organization
+          FederationMessage.where(organization_id: @current_api_key.organization_id).find(id)
+        else
+          msg = FederationMessage.find(id)
+          unless @current_api_key.can_access_organization?(msg.organization_id)
+            raise ActiveRecord::RecordNotFound, "Message not found"
+          end
+          msg
         end
       end
 

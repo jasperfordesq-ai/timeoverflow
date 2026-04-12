@@ -2,6 +2,7 @@ es:
   federation_hub:
     layout:
       alpha_notice: "ALPHA — Centro de Federación — Vista previa de desarrollo, no para uso en producción"
+      noscript_warning: "Se requiere JavaScript para algunas funciones del Centro de Federación (transferencias, filtrado en vivo)."
       powered_by: "Centro de Federación — Desarrollado por"
     errors:
       no_active_membership: "Necesitas una membresía activa para acceder al Centro de Federación."

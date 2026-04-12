@@ -84,12 +84,12 @@
               <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap font-mono"><%= log.event_type %></td>
               <td class="px-4 py-3 text-sm whitespace-nowrap">
                 <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= direction_badge_class(log.direction) %>">
-                  <%= log.direction %>
+                  <%= t("federation_admin.common.#{log.direction}", default: log.direction) %>
                 </span>
               </td>
               <td class="px-4 py-3 text-sm whitespace-nowrap">
                 <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= status_badge_class(log.status) %>">
-                  <%= log.status %>
+                  <%= t("federation_admin.common.#{log.status}", default: log.status) %>
                 </span>
               </td>
               <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap font-mono"><%= log.response_code || "-" %></td>

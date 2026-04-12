@@ -99,7 +99,7 @@
       </div>
       <div>
         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.blocked_partners') %></dt>
-        <dd class="mt-1 text-sm text-gray-900 font-mono"><%= (@preference.blocked_partner_ids || []).join(", ").presence || "None" %></dd>
+        <dd class="mt-1 text-sm text-gray-900 font-mono"><%= (@preference.blocked_partner_ids || []).join(", ").presence || t("federation_admin.common.none") %></dd>
       </div>
       <div>
         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.opted_in_at') %></dt>

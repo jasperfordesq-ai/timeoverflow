@@ -18,7 +18,7 @@ class FederationApiKey < ActiveRecord::Base
     key = create!(
       name: name,
       key_hash: Digest::SHA256.hexdigest(raw_key),
-      key_prefix: raw_key[0..15],
+      key_prefix: raw_key[0..7],
       organization: organization,
       permissions: permissions,
       expires_at: expires_at

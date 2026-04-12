@@ -118,7 +118,7 @@ module Federation
       # L1: Explicit blank? guard — .to_s on nil produces an empty key, allowing
       # HMAC forgery by anyone who knows the request format. Fail loudly instead.
       if @partner.webhook_secret.blank?
-        raise "webhook_secret is blank for partner #{@partner.id} — cannot sign webhook"
+        raise ArgumentError, "webhook_secret is blank for partner #{@partner.id} — cannot sign webhook"
       end
       OpenSSL::HMAC.hexdigest("SHA256", @partner.webhook_secret, body)
     end

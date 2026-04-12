@@ -38,7 +38,7 @@
         <svg class="h-5 w-5 <%= @stats[:active_partners] > 0 ? 'text-green-600' : 'text-gray-400' %>" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
         </svg>
-        <span class="sr-only"><%= @stats[:active_partners] > 0 ? "Healthy" : "No active partners" %></span>
+        <span class="sr-only"><%= @stats[:active_partners] > 0 ? t("federation_admin.common.healthy") : t("federation_admin.dashboard.stats.no_active_partners") %></span>
       </div>
       <span class="text-sm font-medium text-gray-500"><%= t("federation_admin.dashboard.stats.active_partners") %></span>
     </div>
@@ -78,7 +78,7 @@
     <% txn_diff = @trends[:transactions_7d] - @trends[:transactions_prev_7d] %>
     <% if txn_diff != 0 %>
       <span class="mt-1 inline-flex items-center text-xs font-medium <%= txn_diff > 0 ? 'text-green-600' : 'text-red-500' %>">
-        <%= txn_diff > 0 ? "+" : "" %><%= txn_diff %> <span class="text-gray-400 ml-0.5">vs prev 7d</span>
+        <%= txn_diff > 0 ? "+" : "" %><%= txn_diff %> <span class="text-gray-400 ml-0.5"><%= t("federation_admin.dashboard.stats.vs_prev_7d") %></span>
       </span>
     <% end %>
     <% if @stats[:pending_transactions] > 0 %>
@@ -133,7 +133,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
           <% end %>
         </svg>
-        <span class="sr-only"><%= @stats[:failed_webhooks_24h] > 0 ? "#{@stats[:failed_webhooks_24h]} failures" : "All healthy" %></span>
+        <span class="sr-only"><%= @stats[:failed_webhooks_24h] > 0 ? t("federation_admin.dashboard.stats.n_failures", count: @stats[:failed_webhooks_24h]) : t("federation_admin.dashboard.stats.all_healthy") %></span>
       </div>
       <span class="text-sm font-medium text-gray-500"><%= t("federation_admin.dashboard.stats.failed_webhooks_24h") %></span>
     </div>
@@ -159,7 +159,7 @@
     <% msg_diff = @trends[:messages_7d] - @trends[:messages_prev_7d] %>
     <% if msg_diff != 0 %>
       <span class="inline-flex items-center text-xs font-medium <%= msg_diff > 0 ? 'text-green-600' : 'text-red-500' %>">
-        <%= msg_diff > 0 ? "+" : "" %><%= msg_diff %> <span class="text-gray-400 ml-0.5">vs prev 7d</span>
+        <%= msg_diff > 0 ? "+" : "" %><%= msg_diff %> <span class="text-gray-400 ml-0.5"><%= t("federation_admin.dashboard.stats.vs_prev_7d") %></span>
       </span>
     <% end %>
   </div>
@@ -299,7 +299,7 @@
               </div>
               <div class="mt-2 text-xs text-gray-400">
                 <% if partner.last_health_check_at.present? %>
-                  <%= t("federation_admin.dashboard.partner_health.last_check") %> <%= time_ago_in_words(partner.last_health_check_at) %> ago
+                  <%= t("federation_admin.dashboard.partner_health.last_check") %> <%= t("federation_admin.dashboard.partner_health.time_ago", time: time_ago_in_words(partner.last_health_check_at)) %>
                 <% else %>
                   <%= t("federation_admin.dashboard.partner_health.no_activity") %>
                 <% end %>

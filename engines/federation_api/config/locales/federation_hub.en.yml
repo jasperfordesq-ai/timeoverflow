@@ -2,6 +2,7 @@ en:
   federation_hub:
     layout:
       alpha_notice: "ALPHA — Federation Hub — Development preview, not for production use"
+      noscript_warning: "JavaScript is required for some Federation Hub features (transfers, live filtering)."
       powered_by: "Federation Hub — Powered by"
     errors:
       no_active_membership: "You need an active membership to access the Federation Hub."

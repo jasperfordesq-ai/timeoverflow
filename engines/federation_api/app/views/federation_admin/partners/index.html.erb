@@ -43,7 +43,7 @@
             <td class="px-6 py-4 whitespace-nowrap">
               <% status_colors = { "active" => "bg-green-100 text-green-800", "pending" => "bg-yellow-100 text-yellow-800", "suspended" => "bg-red-100 text-red-800", "terminated" => "bg-gray-100 text-gray-600" } %>
               <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= status_colors[partner.status] || 'bg-gray-100 text-gray-600' %>">
-                <%= partner.status.capitalize %>
+                <%= t("federation_admin.common.#{partner.status}", default: partner.status.capitalize) %>
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
@@ -64,7 +64,7 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <% if partner.consecutive_failures == 0 %>
-                <span class="inline-block h-3 w-3 rounded-full bg-green-500" role="img" aria-label="<%= t('federation_admin.common.active') %>" title="Healthy"></span>
+                <span class="inline-block h-3 w-3 rounded-full bg-green-500" role="img" aria-label="<%= t('federation_admin.common.active') %>" title="<%= t('federation_admin.common.healthy') %>"></span>
               <% elsif partner.consecutive_failures < 5 %>
                 <span class="inline-block h-3 w-3 rounded-full bg-yellow-500" role="img" aria-label="<%= partner.consecutive_failures %> failures" title="<%= partner.consecutive_failures %> failures"></span>
               <% else %>

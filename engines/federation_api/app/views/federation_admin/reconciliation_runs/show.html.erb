@@ -1,39 +1,39 @@
-<% content_for(:title, "Reconciliation Run ##{@run.id}") %>
+<% content_for(:title, t('federation_admin.reconciliation_runs.show.title', id: @run.id)) %>
 <% content_for(:breadcrumbs) do %>
   <li class="text-gray-400">/</li>
-  <li><a href="<%= federation_admin_reconciliation_runs_path %>" class="hover:text-federation-600">Reconciliation</a></li>
+  <li><a href="<%= federation_admin_reconciliation_runs_path %>" class="hover:text-federation-600"><%= t("federation_admin.layout.nav.reconciliation") %></a></li>
   <li class="text-gray-400">/</li>
   <li class="text-gray-900 font-medium">#<%= @run.id %></li>
 <% end %>
 
 <div class="mb-8">
-  <h1 class="text-2xl font-bold text-gray-900">Reconciliation Run #<%= @run.id %></h1>
+  <h1 class="text-2xl font-bold text-gray-900"><%= t('federation_admin.reconciliation_runs.show.title', id: @run.id) %></h1>
   <p class="mt-1 text-sm text-gray-500">
-    Run at <%= format_date(@run.created_at) %>
+    <%= t('federation_admin.reconciliation_runs.show.run_at') %> <%= format_date(@run.created_at) %>
     <% if @run.duration %>
-      &middot; Duration: <%= @run.duration.round(1) %>s
+      &middot; <%= t('federation_admin.reconciliation_runs.show.duration') %>: <%= @run.duration.round(1) %>s
     <% end %>
   </p>
 </div>
 
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
   <div class="bg-white rounded-lg shadow-sm border p-4">
-    <p class="text-sm text-gray-500">Status</p>
-    <p class="text-xl font-bold <%= @run.healthy? ? 'text-green-600' : 'text-red-600' %>"><%= @run.status.capitalize %></p>
+    <p class="text-sm text-gray-500"><%= t('federation_admin.reconciliation_runs.show.status') %></p>
+    <p class="text-xl font-bold <%= @run.healthy? ? 'text-green-600' : 'text-red-600' %>"><%= t("federation_admin.reconciliation_runs.show.statuses.#{@run.status}", default: @run.status.capitalize) %></p>
   </div>
   <div class="bg-white rounded-lg shadow-sm border p-4">
-    <p class="text-sm text-gray-500">Critical Issues</p>
+    <p class="text-sm text-gray-500"><%= t('federation_admin.reconciliation_runs.show.critical_issues') %></p>
     <p class="text-xl font-bold <%= @run.critical_count > 0 ? 'text-red-600' : 'text-gray-900' %>"><%= @run.critical_count %></p>
   </div>
   <div class="bg-white rounded-lg shadow-sm border p-4">
-    <p class="text-sm text-gray-500">Warnings</p>
+    <p class="text-sm text-gray-500"><%= t('federation_admin.reconciliation_runs.show.warnings') %></p>
     <p class="text-xl font-bold <%= @run.warning_count > 0 ? 'text-yellow-600' : 'text-gray-900' %>"><%= @run.warning_count %></p>
   </div>
 </div>
 
 <div class="bg-white shadow rounded-lg overflow-hidden">
   <div class="px-6 py-4 border-b border-gray-200">
-    <h2 class="text-base font-semibold text-gray-900">Findings (<%= @run.total_findings %>)</h2>
+    <h2 class="text-base font-semibold text-gray-900"><%= t('federation_admin.reconciliation_runs.show.findings', count: @run.total_findings) %></h2>
   </div>
   <% if @run.issues.any? %>
     <div class="divide-y divide-gray-200">
@@ -47,20 +47,20 @@
                   when 'warning' then 'bg-yellow-100 text-yellow-800'
                   else 'bg-blue-100 text-blue-800'
                   end %>">
-              <%= severity %>
+              <%= t("federation_admin.reconciliation_runs.show.severity.#{severity}", default: severity) %>
             </span>
             <span class="text-sm font-medium text-gray-900"><%= issue["type"] || issue[:type] %></span>
           </div>
           <p class="text-sm text-gray-600"><%= issue["message"] || issue[:message] %></p>
           <% if issue["ids"] || issue[:ids] %>
-            <p class="text-xs text-gray-400 mt-1">Affected IDs: <%= (issue["ids"] || issue[:ids]).join(", ") %></p>
+            <p class="text-xs text-gray-400 mt-1"><%= t('federation_admin.reconciliation_runs.show.affected_ids') %>: <%= (issue["ids"] || issue[:ids]).join(", ") %></p>
           <% end %>
         </div>
       <% end %>
     </div>
   <% else %>
     <div class="text-center py-12">
-      <p class="text-sm text-gray-500">No issues found in this run.</p>
+      <p class="text-sm text-gray-500"><%= t('federation_admin.reconciliation_runs.show.no_issues') %></p>
     </div>
   <% end %>
 </div>

@@ -22,7 +22,7 @@
   </div>
   <div class="mt-4 sm:mt-0">
     <span class="inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold <%= status_badge_class(@log.status) %>">
-      <%= @log.status %>
+      <%= t("federation_admin.common.#{@log.status}", default: @log.status) %>
     </span>
   </div>
 </div>
@@ -61,7 +61,7 @@
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.direction') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= direction_badge_class(@log.direction) %>">
-          <%= @log.direction %>
+          <%= t("federation_admin.common.#{@log.direction}", default: @log.direction) %>
         </span>
       </dd>
     </div>
@@ -70,7 +70,7 @@
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.status') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold <%= status_badge_class(@log.status) %>">
-          <%= @log.status %>
+          <%= t("federation_admin.common.#{@log.status}", default: @log.status) %>
         </span>
       </dd>
     </div>

@@ -81,25 +81,25 @@ module Api
       def enforce_webhook_rate_limit!
         ip = request.remote_ip
         limit = ENV.fetch("FEDERATION_WEBHOOK_IP_RATE_LIMIT", "200").to_i
-        estimated = sliding_window_count("federation_webhook_rate:#{ip}")
+        estimated = sliding_window_read("federation_webhook_rate:#{ip}")
 
         if estimated > limit
-          respond_with_error("Rate limit exceeded", status: :too_many_requests)
+          respond_with_error(I18n.t("federation_api.errors.webhook_rate_limit_exceeded", default: "Rate limit exceeded"), status: :too_many_requests)
         end
       end
 
       def verify_webhook_signature!
         # Accept either Nexus-style (X-Federation-Signature) or simple (X-Webhook-Signature)
         signature = request.headers["X-Federation-Signature"] || request.headers["X-Webhook-Signature"]
-        return respond_with_error("Missing signature", status: :unauthorized) if signature.blank?
+        return respond_with_error(I18n.t("federation_api.errors.missing_signature", default: "Missing signature"), status: :unauthorized) if signature.blank?
 
         body = request.raw_post
-        return respond_with_error("Empty request body", status: :bad_request) if body.blank?
+        return respond_with_error(I18n.t("federation_api.errors.empty_request_body", default: "Empty request body"), status: :bad_request) if body.blank?
 
         # Reject oversized payloads to prevent memory exhaustion (max 1 MB).
         max_body_size = ENV.fetch("FEDERATION_WEBHOOK_MAX_BODY_SIZE", "1048576").to_i
         if body.bytesize > max_body_size
-          return respond_with_error("Request body too large", status: :payload_too_large)
+          return respond_with_error(I18n.t("federation_api.errors.request_body_too_large", default: "Request body too large"), status: :payload_too_large)
         end
 
         # H5: Limit JSON nesting depth to prevent stack exhaustion attacks.
@@ -109,13 +109,13 @@ module Api
 
         # Use generic error message for both unknown partner and invalid signature
         # to prevent partner-ID enumeration via differential error responses.
-        return respond_with_error("Invalid signature", status: :unauthorized) unless partner
+        return respond_with_error(I18n.t("federation_api.errors.invalid_signature", default: "Invalid signature"), status: :unauthorized) unless partner
 
         # Fix #2: Reject partners with no webhook_secret — HMAC with empty key
         # can be forged by anyone who knows the request body format.
         if partner.webhook_secret.blank?
           Rails.logger.error("[Federation::Webhook] Partner #{partner.id} has no webhook_secret configured")
-          return respond_with_error("Partner webhook not configured", status: :unauthorized)
+          return respond_with_error(I18n.t("federation_api.errors.partner_webhook_not_configured", default: "Partner webhook not configured"), status: :unauthorized)
         end
 
         # Collect all valid secrets (supports zero-downtime rotation).
@@ -140,23 +140,27 @@ module Api
           if matched
             # Check timestamp freshness (5 minute window)
             if (Time.current.to_i - timestamp.to_i).abs > 300
-              respond_with_error("Webhook timestamp expired", status: :unauthorized)
+              respond_with_error(I18n.t("federation_api.errors.webhook_timestamp_expired", default: "Webhook timestamp expired"), status: :unauthorized)
               return
             end
             @verified_partner = partner
             return # signature valid, timestamp fresh
           end
           # Nexus format signature didn't match — don't fall through, reject immediately
-          respond_with_error("Invalid signature", status: :unauthorized)
+          respond_with_error(I18n.t("federation_api.errors.invalid_signature", default: "Invalid signature"), status: :unauthorized)
           return
         end
 
         # Fallback: simple body-only signature (TO native webhooks).
-        # M3: Check timestamp freshness on this path too if a timestamp header
-        # was provided, preventing replay attacks against the simpler format.
+        # Require a timestamp header on this path too — without it there is
+        # no replay protection, so reject the request outright.
         simple_ts = request.headers["X-Webhook-Timestamp"]
-        if simple_ts.present? && (Time.current.to_i - simple_ts.to_i).abs > 300
-          respond_with_error("Webhook timestamp expired", status: :unauthorized)
+        if simple_ts.blank?
+          respond_with_error(I18n.t("federation_api.errors.missing_timestamp", default: "Missing timestamp"), status: :unauthorized)
+          return
+        end
+        if (Time.current.to_i - simple_ts.to_i).abs > 300
+          respond_with_error(I18n.t("federation_api.errors.webhook_timestamp_expired", default: "Webhook timestamp expired"), status: :unauthorized)
           return
         end
 
@@ -166,11 +170,14 @@ module Api
         end
 
         unless matched_simple
-          respond_with_error("Invalid signature", status: :unauthorized)
+          respond_with_error(I18n.t("federation_api.errors.invalid_signature", default: "Invalid signature"), status: :unauthorized)
           return
         end
 
         @verified_partner = partner
+        # Increment IP rate counter only after successful authentication
+        # to prevent unauthenticated requests from exhausting the budget.
+        sliding_window_increment("federation_webhook_rate:#{request.remote_ip}")
       end
 
       # Derive a deterministic nonce for replay prevention.
@@ -194,17 +201,16 @@ module Api
       # partner from flooding the webhook endpoint across multiple source IPs.
       def enforce_partner_rate_limit!(partner)
         limit = ENV.fetch("FEDERATION_WEBHOOK_PARTNER_RATE_LIMIT", "100").to_i
-        estimated = sliding_window_count("federation_webhook_partner:#{partner.id}")
+        sliding_window_increment("federation_webhook_partner:#{partner.id}")
+        estimated = sliding_window_read("federation_webhook_partner:#{partner.id}")
 
         if estimated > limit
-          respond_with_error("Partner rate limit exceeded", status: :too_many_requests)
+          respond_with_error(I18n.t("federation_api.errors.partner_rate_limit_exceeded", default: "Partner rate limit exceeded"), status: :too_many_requests)
         end
       end
 
-      # Sliding-window counter shared by all webhook rate limiters.
-      # Weights the previous minute's count by how much of it is still
-      # within the 60-second sliding window, preventing 2x burst at boundaries.
-      def sliding_window_count(prefix)
+      # Read-only sliding-window estimate (does not increment the counter).
+      def sliding_window_read(prefix)
         now = Time.current.to_i
         current_window = now / 60
         previous_window = current_window - 1
@@ -213,10 +219,18 @@ module Api
         current_key  = "#{prefix}:#{current_window}"
         previous_key = "#{prefix}:#{previous_window}"
 
-        current_count = Rails.cache.increment(current_key, 1, expires_in: 2.minutes) || 1
+        current_count = Rails.cache.read(current_key).to_i
         previous_count = Rails.cache.read(previous_key).to_i
 
         (previous_count * (1 - elapsed_fraction)) + current_count
+      end
+
+      # Increment-and-read sliding-window counter.
+      def sliding_window_increment(prefix)
+        now = Time.current.to_i
+        current_window = now / 60
+        current_key = "#{prefix}:#{current_window}"
+        Rails.cache.increment(current_key, 1, expires_in: 2.minutes)
       end
 
       def handle_event(event_type, payload, partner)

@@ -5,7 +5,7 @@ module Api
       # They complement the existing REST endpoints — both coexist.
 
       before_action :require_organization!, except: [:currencies]
-      before_action -> { require_permission!(:listings) }, only: [:accounts, :account]
+      before_action -> { require_permission!(:transactions) }, only: [:accounts, :account]
       before_action -> { require_permission!(:transactions) }, only: [:transfers, :transfer, :create_transfer]
 
       # GET /api/v1/komunitin/currencies
@@ -116,11 +116,10 @@ module Api
         payer_id = rels.dig("payer", "data", "id")
         payee_id = rels.dig("payee", "data", "id")
 
-        respond_with_data({
-          status: "accepted",
-          message: "Komunitin transfer processing is in development",
-          amount_converted: amount_seconds
-        }, status: :accepted, resource_type: "transfers")
+        respond_with_error(
+          "Komunitin transfer processing is not yet implemented",
+          status: :not_implemented
+        )
       end
 
       private

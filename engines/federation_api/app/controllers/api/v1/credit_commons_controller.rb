@@ -6,7 +6,7 @@ module Api
       skip_before_action :enforce_rate_limit!, only: [:about, :forms]
 
       def about
-        org = current_organization || Organization.first
+        org = current_organization || (params[:organization_id].present? ? Organization.find_by(id: params[:organization_id]) : nil)
         unless org
           return respond_with_error("No organizations configured", status: :service_unavailable)
         end
@@ -90,7 +90,7 @@ module Api
           .where(organization_id: current_organization.id)
           .includes(transfer: :movements)
           .order(created_at: :desc)
-          .limit(params[:limit]&.to_i || 25)
+          .limit([[(params[:limit]&.to_i || 25), 1].max, 100].min)
 
         adapter = Federation::Adapters::CreditCommonsAdapter.new(partner: nil)
         entries = transactions.flat_map { |txn| adapter.generate_entries(txn) }
@@ -99,7 +99,8 @@ module Api
       end
 
       def transaction_entries
-        txn = FederationTransaction.find_by(external_transaction_id: params[:uuid])
+        scope = current_organization ? FederationTransaction.where(organization_id: current_organization.id) : FederationTransaction
+        txn = scope.find_by(external_transaction_id: params[:uuid])
         return respond_with_error("Transaction not found", status: :not_found) unless txn
 
         adapter = Federation::Adapters::CreditCommonsAdapter.new(partner: txn.federation_partner)

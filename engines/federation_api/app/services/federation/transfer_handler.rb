@@ -228,7 +228,7 @@ module Federation
     private
 
     def validate_partner_can_transact!
-      raise "Partner cannot transact" unless @partner.can_transact?
+      raise ArgumentError, "Partner cannot transact" unless @partner.can_transact?
     end
 
     def find_local_member(org, email: nil, member_uid: nil)
@@ -238,15 +238,15 @@ module Federation
                  user = User.find_by!(email: email)
                  org.members.active.find_by!(user: user)
                else
-                 raise "Must provide local_member_email or local_member_uid"
+                 raise ArgumentError, "Must provide local_member_email or local_member_uid"
                end
 
-      raise "Member account not found" unless member.account
+      raise ArgumentError, "Member account not found" unless member.account
 
       # Fix #12: verify account ownership — prevents cross-org balance moves
       # if a user somehow has accounts spanning multiple organizations.
       unless member.account.organization_id == org.id
-        raise "Member account does not belong to organization #{org.id}"
+        raise ArgumentError, "Member account does not belong to organization #{org.id}"
       end
 
       # Federation consent check: member must have opted in to receive transfers.

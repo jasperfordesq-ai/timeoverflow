@@ -6,12 +6,14 @@ module FederationHub
       @effective_status = current_member ? Federation::AccessControl.effective_status(current_member) : {}
 
       if @prefs&.opted_in?
-        @partners = FederationPartner.active.order(name: :asc).limit(5)
-        @recent_transactions = FederationTransaction
-          .where(organization_id: current_organization.id)
-          .order(created_at: :desc).limit(5)
+        @external_partners = FederationPartner.active.order(name: :asc).limit(5)
+        @internal_orgs = Federation::InternalBrowser.browsable_organizations(current_organization)
+
+        internal_count = @internal_orgs.count
+        external_count = FederationPartner.active.count
+
         @stats = {
-          partners_count: FederationPartner.active.count,
+          partners_count: external_count + internal_count,
           transactions_completed: FederationTransaction.where(organization_id: current_organization.id).completed.count,
           time_given: FederationTransaction.where(organization_id: current_organization.id).completed.outbound.sum(:amount),
           time_received: FederationTransaction.where(organization_id: current_organization.id).completed.inbound.sum(:amount),

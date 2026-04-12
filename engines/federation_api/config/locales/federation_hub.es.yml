@@ -77,7 +77,8 @@ es:
       last_check: "Last check: %{time} ago"
       view_details: "View Details"
       back_to_list: "Back to Partners"
-      none_available: "No partner communities are currently available. Your administrator can configure federation partnerships."
+      internal_desc: "Una comunidad TimeOverflow en esta plataforma. Explora miembros, anuncios y envía tiempo directamente."
+      none_available: "No hay comunidades asociadas disponibles. Tu administrador puede configurar asociaciones de federación."
     members:
       title: "Federation Members"
       subtitle: "Browse members who have opted in to federation across all connected communities."

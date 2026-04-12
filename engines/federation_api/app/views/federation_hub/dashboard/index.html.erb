@@ -81,32 +81,48 @@
           </div>
           <div class="card-body">
             <div class="d-flex flex-wrap gap-2">
-              <%= link_to federation_hub_partners_path, class: "btn btn-outline-info" do %>
-                <%= t("federation_hub.nav.partners") %>
+              <%= link_to federation_hub_members_path, class: "btn btn-outline-info" do %>
+                <%= t("federation_hub.nav.members") %>
+              <% end %>
+              <%= link_to federation_hub_listings_path, class: "btn btn-outline-info" do %>
+                <%= t("federation_hub.nav.listings") %>
+              <% end %>
+              <%= link_to new_federation_hub_transfer_path, class: "btn btn-outline-success" do %>
+                <%= t("federation_hub.nav.transfers") %>
+              <% end %>
+              <%= link_to federation_hub_messages_path, class: "btn btn-outline-info" do %>
+                <%= t("federation_hub.nav.messages") %>
               <% end %>
               <%= link_to federation_hub_settings_path, class: "btn btn-outline-info" do %>
                 <%= t("federation_hub.nav.settings") %>
               <% end %>
-              <button disabled class="btn btn-outline-secondary">
-                <%= t("federation_hub.dashboard.messages_coming_soon") %>
-              </button>
             </div>
           </div>
         </div>
 
-        <%# Partner preview list %>
+        <%# Connected communities %>
         <div class="card card-info border-info">
           <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
             <strong><%= t("federation_hub.dashboard.partner_preview") %></strong>
             <%= link_to t("federation_hub.dashboard.view_all"), federation_hub_partners_path, class: "btn btn-sm btn-light" %>
           </div>
           <ul class="list-group list-group-flush">
-            <% @partners.each do |partner| %>
+            <% @internal_orgs.each do |org| %>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <span class="fw-bold"><%= org.name %></span>
+                  <span class="badge bg-primary ms-1">TimeOverflow</span>
+                </div>
+                <div>
+                  <a href="<%= federation_hub_members_path(partner_id: org.id, source_type: 'internal') %>" class="btn btn-sm btn-outline-info"><%= t("federation_hub.nav.members") %></a>
+                </div>
+              </li>
+            <% end %>
+            <% @external_partners.each do |partner| %>
               <li class="list-group-item d-flex justify-content-between align-items-center">
                 <div>
                   <%= link_to partner.name, federation_hub_partner_path(partner), class: "text-decoration-none fw-bold" %>
                   <%= federation_status_badge(partner.status) %>
-                  <%= partnership_level_badge(partner.partnership_level, partner.level_name) %>
                 </div>
                 <div>
                   <%= federation_feature_icon(partner.can_share_profiles?) %>

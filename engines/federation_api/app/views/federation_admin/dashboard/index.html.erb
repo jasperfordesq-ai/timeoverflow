@@ -87,7 +87,7 @@
   </div>
 
   <!-- Time Flow -->
-  <% net_seconds = @stats[:total_inbound] - @stats[:total_outbound] %>
+  <% net_seconds = (@stats[:total_inbound] || 0) - (@stats[:total_outbound] || 0) %>
   <div class="bg-white overflow-hidden rounded-xl shadow-sm border border-gray-200 px-5 py-5">
     <div class="flex items-center gap-3 mb-3">
       <div class="flex-shrink-0 rounded-lg bg-cyan-50 p-2.5">

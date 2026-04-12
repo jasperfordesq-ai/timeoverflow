@@ -75,16 +75,17 @@ module Federation
         .pluck(:user_id)
 
       posts = []
+      sanitized_search = search.present? ? "%#{sanitize_sql_like(search)}%" : nil
 
       if type.blank? || type == "offer"
         offers = target_organization.offers.active.where(user_id: user_ids)
-        offers = offers.where("title ILIKE ? OR description ILIKE ?", "%#{search}%", "%#{search}%") if search.present?
+        offers = offers.where("title ILIKE ? OR description ILIKE ?", sanitized_search, sanitized_search) if sanitized_search
         posts.concat(offers.to_a)
       end
 
       if type.blank? || type == "inquiry"
         inquiries = target_organization.inquiries.active.where(user_id: user_ids)
-        inquiries = inquiries.where("title ILIKE ? OR description ILIKE ?", "%#{search}%", "%#{search}%") if search.present?
+        inquiries = inquiries.where("title ILIKE ? OR description ILIKE ?", sanitized_search, sanitized_search) if sanitized_search
         posts.concat(inquiries.to_a)
       end
 
@@ -112,6 +113,11 @@ module Federation
     def self.org_allows_internal?(organization)
       settings = FederationOrganizationSetting.for(organization)
       settings.federation_enabled? && settings.internal_federation_enabled?
+    end
+
+    # Escape SQL LIKE/ILIKE wildcards (%, _) in user-provided search terms.
+    def self.sanitize_sql_like(string)
+      ActiveRecord::Base.sanitize_sql_like(string)
     end
   end
 end

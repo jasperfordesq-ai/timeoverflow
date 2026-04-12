@@ -27,6 +27,11 @@ module Api
         unless partner
           return respond_with_error("Unknown partner", status: :not_found)
         end
+
+        # Per-partner rate limit (in addition to per-IP limit in before_action)
+        enforce_partner_rate_limit!(partner)
+        return if performed?
+
         # Allow partnership status-change events from non-active partners (e.g., a
         # suspended partner sending "partnership.activated" to reactivate itself).
         # All other events require an active partner.
@@ -35,12 +40,22 @@ module Api
           return respond_with_error("Inactive partner", status: :forbidden)
         end
 
+        # Replay attack prevention: derive a deterministic nonce from the request.
+        # If a partner sends X-Federation-Nonce we use that; otherwise we derive
+        # one from SHA256(body + timestamp) so the same replayed request always
+        # produces the same nonce and is rejected idempotently.
+        nonce = derive_request_nonce
+        if nonce.present? && FederationWebhookLog.exists?(federation_partner: partner, request_nonce: nonce)
+          return respond_with_data({ received: true, event: event_type, duplicate: true })
+        end
+
         # Log the incoming webhook
         log = FederationWebhookLog.create!(
           federation_partner: partner,
           event_type: event_type,
           direction: "inbound",
           status: "pending",
+          request_nonce: nonce,
           payload: { event: event_type, partner_id: partner_id, data: payload }
         )
 
@@ -97,6 +112,10 @@ module Api
           return respond_with_error("Partner webhook not configured", status: :unauthorized)
         end
 
+        # Collect all valid secrets (supports zero-downtime rotation).
+        # During a rotation window both the current and next secret are accepted.
+        valid_secrets = partner.valid_webhook_secrets
+
         # Try Nexus HMAC format first: METHOD\nPATH\nTIMESTAMP\nBODY
         timestamp = request.headers["X-Federation-Timestamp"]
         if timestamp.present?
@@ -106,9 +125,13 @@ module Api
             timestamp,
             body
           ].join("\n")
-          expected = OpenSSL::HMAC.hexdigest("SHA256", partner.webhook_secret.to_s, string_to_sign)
 
-          if ActiveSupport::SecurityUtils.secure_compare(signature, expected)
+          matched = valid_secrets.any? do |secret|
+            expected = OpenSSL::HMAC.hexdigest("SHA256", secret, string_to_sign)
+            ActiveSupport::SecurityUtils.secure_compare(signature, expected)
+          end
+
+          if matched
             # Check timestamp freshness (5 minute window)
             if (Time.current.to_i - timestamp.to_i).abs > 300
               respond_with_error("Webhook timestamp expired", status: :unauthorized)
@@ -131,12 +154,42 @@ module Api
           return
         end
 
-        expected_simple = OpenSSL::HMAC.hexdigest("SHA256", partner.webhook_secret.to_s, body)
-        unless ActiveSupport::SecurityUtils.secure_compare(signature, expected_simple)
+        matched_simple = valid_secrets.any? do |secret|
+          expected_simple = OpenSSL::HMAC.hexdigest("SHA256", secret, body)
+          ActiveSupport::SecurityUtils.secure_compare(signature, expected_simple)
+        end
+
+        unless matched_simple
           respond_with_error("Invalid signature", status: :unauthorized)
+          return
         end
 
         @verified_partner = partner
+      end
+
+      # Derive a deterministic nonce for replay prevention.
+      # Uses the explicit header if provided, otherwise SHA256(body + timestamp)
+      # so identical replayed requests always produce the same nonce.
+      def derive_request_nonce
+        explicit = request.headers["X-Federation-Nonce"] || request.headers["X-Webhook-Nonce"]
+        return explicit if explicit.present?
+
+        timestamp = request.headers["X-Federation-Timestamp"] || request.headers["X-Webhook-Timestamp"]
+        body = request.raw_post
+        return nil if body.blank? && timestamp.blank?
+
+        Digest::SHA256.hexdigest("#{body}:#{timestamp}")
+      end
+
+      # Per-partner rate limit — supplements the per-IP limit. Prevents a single
+      # partner from flooding the webhook endpoint across multiple source IPs.
+      def enforce_partner_rate_limit!(partner)
+        cache_key = "federation_webhook_partner:#{partner.id}:#{Time.current.to_i / 60}"
+        count = Rails.cache.increment(cache_key, 1, expires_in: 2.minutes) || 1
+
+        if count > 100
+          render json: { success: false, error: "Partner rate limit exceeded" }, status: :too_many_requests
+        end
       end
 
       def handle_event(event_type, payload, partner)

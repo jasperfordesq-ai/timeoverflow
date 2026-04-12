@@ -97,6 +97,9 @@ module FederationApi
           root to: "dashboard#index"
           post "reconcile", to: "dashboard#reconcile"
           resources :api_keys, only: [:index, :new, :create, :show, :destroy] do
+            member do
+              post :rotate
+            end
             collection do
               post :bulk_revoke
             end
@@ -105,6 +108,7 @@ module FederationApi
             member do
               post :test_webhook
               post :regenerate_secret
+              post :complete_rotation
               post :health_check
             end
           end

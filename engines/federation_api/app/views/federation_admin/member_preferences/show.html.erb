@@ -1,18 +1,18 @@
-<% content_for(:title, "Member: #{@member&.user&.username || "Member ##{@member.id}"}") %>
+<% content_for(:title, "#{@member&.user&.username || t('federation_admin.member_preferences.show.title', id: @member.id)}") %>
 
 <div class="mb-6">
   <a href="<%= federation_admin_member_preferences_path %>" class="text-sm text-federation-600 hover:text-federation-800">
-    &larr; Back to All Members
+    &larr; <%= t('federation_admin.member_preferences.show.back') %>
   </a>
 </div>
 
 <div class="sm:flex sm:items-center sm:justify-between mb-8">
   <div>
-    <h1 class="text-2xl font-bold text-gray-900"><%= @member.user&.username || "Member ##{@member.id}" %></h1>
+    <h1 class="text-2xl font-bold text-gray-900"><%= @member.user&.username || t('federation_admin.member_preferences.show.title', id: @member.id) %></h1>
     <p class="mt-1 text-sm text-gray-500">
-      Member #<%= @member.id %> &middot; <%= @member.organization&.name %>
+      <%= t('federation_admin.member_preferences.show.title', id: @member.id) %> &middot; <%= @member.organization&.name %>
       <% if @preference.new_record? %>
-        <span class="ml-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">No preference set yet</span>
+        <span class="ml-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800"><%= t('federation_admin.member_preferences.show.no_preference') %></span>
       <% end %>
     </p>
   </div>
@@ -21,101 +21,101 @@
 <!-- Detail Card -->
 <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
   <div class="px-6 py-5 border-b border-gray-200">
-    <h2 class="text-lg font-semibold text-gray-900">Current Settings</h2>
+    <h2 class="text-lg font-semibold text-gray-900"><%= t('federation_admin.member_preferences.show.current_settings') %></h2>
   </div>
   <div class="px-6 py-5">
     <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Member ID</dt>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.member_id') %></dt>
         <dd class="mt-1 text-sm text-gray-900 font-mono"><%= @preference.member_id %></dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Organization ID</dt>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.organization_id') %></dt>
         <dd class="mt-1 text-sm text-gray-900"><%= @preference.organization_id %></dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Username</dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @member&.user&.username rescue "—" %></dd>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.username') %></dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @member&.user&.username rescue t('federation_admin.member_preferences.show.dash') %></dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Opted In</dt>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.opted_in') %></dt>
         <dd class="mt-1">
           <% if @preference.opted_in? %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Yes</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.member_preferences.index.yes') %></span>
           <% else %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800">No</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800"><%= t('federation_admin.member_preferences.index.no') %></span>
           <% end %>
         </dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Discoverable</dt>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.discoverable') %></dt>
         <dd class="mt-1">
           <% if @preference.discoverable? %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Yes</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.member_preferences.index.yes') %></span>
           <% else %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">No</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600"><%= t('federation_admin.member_preferences.index.no') %></span>
           <% end %>
         </dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Share Profile</dt>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.share_profile') %></dt>
         <dd class="mt-1">
           <% if @preference.share_profile %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Yes</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.member_preferences.index.yes') %></span>
           <% else %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">No</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600"><%= t('federation_admin.member_preferences.index.no') %></span>
           <% end %>
         </dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Share Listings</dt>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.share_listings') %></dt>
         <dd class="mt-1">
           <% if @preference.share_listings %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Yes</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.member_preferences.index.yes') %></span>
           <% else %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">No</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600"><%= t('federation_admin.member_preferences.index.no') %></span>
           <% end %>
         </dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Allow Inbound Transfers</dt>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.allow_inbound') %></dt>
         <dd class="mt-1">
           <% if @preference.allow_inbound_transfers %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Yes</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.member_preferences.index.yes') %></span>
           <% else %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">No</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600"><%= t('federation_admin.member_preferences.index.no') %></span>
           <% end %>
         </dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Allow Outbound Transfers</dt>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.allow_outbound') %></dt>
         <dd class="mt-1">
           <% if @preference.allow_outbound_transfers %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Yes</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.member_preferences.index.yes') %></span>
           <% else %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">No</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600"><%= t('federation_admin.member_preferences.index.no') %></span>
           <% end %>
         </dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Blocked Partner IDs</dt>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.blocked_partners') %></dt>
         <dd class="mt-1 text-sm text-gray-900 font-mono"><%= (@preference.blocked_partner_ids || []).join(", ").presence || "None" %></dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Opted In At</dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @preference.opted_in_at&.strftime("%Y-%m-%d %H:%M UTC") || "—" %></dd>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.opted_in_at') %></dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @preference.opted_in_at&.strftime("%Y-%m-%d %H:%M UTC") || t('federation_admin.member_preferences.show.dash') %></dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Opted Out At</dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @preference.opted_out_at&.strftime("%Y-%m-%d %H:%M UTC") || "—" %></dd>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.opted_out_at') %></dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @preference.opted_out_at&.strftime("%Y-%m-%d %H:%M UTC") || t('federation_admin.member_preferences.show.dash') %></dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @preference.created_at&.strftime("%Y-%m-%d %H:%M UTC") || "—" %></dd>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.created_at') %></dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @preference.created_at&.strftime("%Y-%m-%d %H:%M UTC") || t('federation_admin.member_preferences.show.dash') %></dd>
       </div>
       <div>
-        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Updated At</dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @preference.updated_at&.strftime("%Y-%m-%d %H:%M UTC") || "—" %></dd>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.member_preferences.show.updated_at') %></dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @preference.updated_at&.strftime("%Y-%m-%d %H:%M UTC") || t('federation_admin.member_preferences.show.dash') %></dd>
       </div>
     </dl>
   </div>
@@ -124,8 +124,8 @@
 <!-- Edit Form -->
 <div class="bg-white shadow rounded-lg overflow-hidden">
   <div class="px-6 py-5 border-b border-gray-200">
-    <h2 class="text-lg font-semibold text-gray-900">Edit Preferences</h2>
-    <p class="mt-1 text-sm text-gray-500">Update this member's federation preferences. Changes take effect immediately.</p>
+    <h2 class="text-lg font-semibold text-gray-900"><%= t('federation_admin.member_preferences.show.edit_title') %></h2>
+    <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.member_preferences.show.edit_subtitle') %></p>
   </div>
   <div class="px-6 py-5">
     <form action="<%= federation_admin_member_preference_path(@member) %>" method="post">
@@ -137,49 +137,49 @@
           <input type="hidden" name="opted_in" value="0">
           <input type="checkbox" name="opted_in" value="1" <%= @preference.opted_in? ? 'checked' : '' %>
                  class="h-4 w-4 rounded border-gray-300 text-federation-600 focus:ring-federation-500">
-          <span class="text-sm font-medium text-gray-700">Opted In</span>
+          <span class="text-sm font-medium text-gray-700"><%= t('federation_admin.member_preferences.show.opted_in') %></span>
         </label>
 
         <label class="flex items-center gap-3 cursor-pointer">
           <input type="hidden" name="discoverable" value="0">
           <input type="checkbox" name="discoverable" value="1" <%= @preference.discoverable ? 'checked' : '' %>
                  class="h-4 w-4 rounded border-gray-300 text-federation-600 focus:ring-federation-500">
-          <span class="text-sm font-medium text-gray-700">Discoverable</span>
+          <span class="text-sm font-medium text-gray-700"><%= t('federation_admin.member_preferences.show.discoverable') %></span>
         </label>
 
         <label class="flex items-center gap-3 cursor-pointer">
           <input type="hidden" name="share_profile" value="0">
           <input type="checkbox" name="share_profile" value="1" <%= @preference.share_profile ? 'checked' : '' %>
                  class="h-4 w-4 rounded border-gray-300 text-federation-600 focus:ring-federation-500">
-          <span class="text-sm font-medium text-gray-700">Share Profile</span>
+          <span class="text-sm font-medium text-gray-700"><%= t('federation_admin.member_preferences.show.share_profile') %></span>
         </label>
 
         <label class="flex items-center gap-3 cursor-pointer">
           <input type="hidden" name="share_listings" value="0">
           <input type="checkbox" name="share_listings" value="1" <%= @preference.share_listings ? 'checked' : '' %>
                  class="h-4 w-4 rounded border-gray-300 text-federation-600 focus:ring-federation-500">
-          <span class="text-sm font-medium text-gray-700">Share Listings</span>
+          <span class="text-sm font-medium text-gray-700"><%= t('federation_admin.member_preferences.show.share_listings') %></span>
         </label>
 
         <label class="flex items-center gap-3 cursor-pointer">
           <input type="hidden" name="allow_inbound_transfers" value="0">
           <input type="checkbox" name="allow_inbound_transfers" value="1" <%= @preference.allow_inbound_transfers ? 'checked' : '' %>
                  class="h-4 w-4 rounded border-gray-300 text-federation-600 focus:ring-federation-500">
-          <span class="text-sm font-medium text-gray-700">Allow Inbound Transfers</span>
+          <span class="text-sm font-medium text-gray-700"><%= t('federation_admin.member_preferences.show.allow_inbound') %></span>
         </label>
 
         <label class="flex items-center gap-3 cursor-pointer">
           <input type="hidden" name="allow_outbound_transfers" value="0">
           <input type="checkbox" name="allow_outbound_transfers" value="1" <%= @preference.allow_outbound_transfers ? 'checked' : '' %>
                  class="h-4 w-4 rounded border-gray-300 text-federation-600 focus:ring-federation-500">
-          <span class="text-sm font-medium text-gray-700">Allow Outbound Transfers</span>
+          <span class="text-sm font-medium text-gray-700"><%= t('federation_admin.member_preferences.show.allow_outbound') %></span>
         </label>
       </div>
 
       <div class="mt-6 flex justify-end">
         <button type="submit"
                 class="inline-flex items-center rounded-md bg-federation-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-federation-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-federation-600 transition-colors">
-          Save Changes
+          <%= t('federation_admin.member_preferences.show.submit') %>
         </button>
       </div>
     </form>

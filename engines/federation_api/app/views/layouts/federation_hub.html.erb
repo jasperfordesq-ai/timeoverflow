@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css?family=Work+Sans:400,500,600,700" rel="stylesheet">
     <%= javascript_include_tag 'libs' %>
     <%= javascript_include_tag 'application' %>
+    <script><%= raw File.read(FederationApi::Engine.root.join("app/assets/javascripts/federation_form_helpers.js")) rescue "" %></script>
   </head>
   <body>
     <%# ALPHA development notice %>

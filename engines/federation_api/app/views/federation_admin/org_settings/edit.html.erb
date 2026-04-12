@@ -1,4 +1,4 @@
-<% content_for(:title) { "Edit Federation Settings — #{@org.name}" } %>
+<% content_for(:title) { "#{t('federation_admin.org_settings.edit.title')} — #{@org.name}" } %>
 
 <!-- Page header -->
 <div class="mb-8">
@@ -6,10 +6,10 @@
     <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
     </svg>
-    Back to Organization Settings
+    <%= t('federation_admin.org_settings.edit.back') %>
   </a>
-  <h1 class="text-2xl font-bold text-gray-900">Federation Settings</h1>
-  <p class="mt-1 text-sm text-gray-500">Configure federation for <strong><%= @org.name %></strong></p>
+  <h1 class="text-2xl font-bold text-gray-900"><%= t('federation_admin.org_settings.edit.title') %></h1>
+  <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.org_settings.edit.configure_for') %> <strong><%= @org.name %></strong></p>
 </div>
 
 <form action="<%= federation_admin_org_setting_path(@org) %>" method="post">
@@ -18,21 +18,21 @@
 
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
     <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
-      <h2 class="text-lg font-semibold text-gray-900">General Settings</h2>
+      <h2 class="text-lg font-semibold text-gray-900"><%= t('federation_admin.org_settings.edit.general') %></h2>
     </div>
 
     <div class="px-6 py-5 space-y-5">
       <%
         toggles = [
-          { key: "federation_enabled",         label: "Federation Enabled",         desc: "Enable federation features for this organization" },
-          { key: "discoverable_by_partners",   label: "Discoverable by Partners",   desc: "Allow external partners to discover this organization" },
-          { key: "allow_inbound_transfers",    label: "Allow Inbound Transfers",    desc: "Accept incoming time transfers from federation partners" },
-          { key: "allow_outbound_transfers",   label: "Allow Outbound Transfers",   desc: "Allow members to send time to federation partners" },
-          { key: "share_member_count",         label: "Share Member Count",         desc: "Share the number of active members with partners" },
-          { key: "share_listings",             label: "Share Listings",             desc: "Make service offers and inquiries visible to partners" },
-          { key: "share_member_profiles",      label: "Share Member Profiles",      desc: "Allow partners to view member profile details" },
-          { key: "auto_approve_partnerships",  label: "Auto-approve Partnerships",  desc: "Automatically approve incoming partnership requests" },
-          { key: "enable_internal_federation", label: "Internal Federation (Cross-Org)", desc: "Allow members of other TimeOverflow time banks to browse this org's opted-in members and listings via the Federation Hub — no external API needed" },
+          { key: "federation_enabled",         label: t('federation_admin.org_settings.edit.federation_enabled'),   desc: t('federation_admin.org_settings.edit.federation_enabled_help') },
+          { key: "discoverable_by_partners",   label: t('federation_admin.org_settings.edit.discoverable'),        desc: t('federation_admin.org_settings.edit.discoverable_help') },
+          { key: "allow_inbound_transfers",    label: t('federation_admin.org_settings.edit.allow_inbound'),       desc: t('federation_admin.org_settings.edit.allow_inbound_help') },
+          { key: "allow_outbound_transfers",   label: t('federation_admin.org_settings.edit.allow_outbound'),      desc: t('federation_admin.org_settings.edit.allow_outbound_help') },
+          { key: "share_member_count",         label: t('federation_admin.org_settings.edit.share_member_count'),  desc: t('federation_admin.org_settings.edit.share_member_count_help') },
+          { key: "share_listings",             label: t('federation_admin.org_settings.edit.share_listings'),      desc: t('federation_admin.org_settings.edit.share_listings_help') },
+          { key: "share_member_profiles",      label: t('federation_admin.org_settings.edit.share_profiles'),      desc: t('federation_admin.org_settings.edit.share_profiles_help') },
+          { key: "auto_approve_partnerships",  label: t('federation_admin.org_settings.edit.auto_approve'),        desc: t('federation_admin.org_settings.edit.auto_approve_help') },
+          { key: "enable_internal_federation", label: t('federation_admin.org_settings.edit.internal_federation'), desc: t('federation_admin.org_settings.edit.internal_federation_help') },
         ]
       %>
       <% toggles.each do |toggle| %>
@@ -59,8 +59,8 @@
   <% if @partners.any? %>
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
       <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
-        <h2 class="text-lg font-semibold text-gray-900">Blocked Partners</h2>
-        <p class="mt-1 text-xs text-gray-500">Select partners to block from interacting with this organization.</p>
+        <h2 class="text-lg font-semibold text-gray-900"><%= t('federation_admin.org_settings.edit.blocked_partners') %></h2>
+        <p class="mt-1 text-xs text-gray-500"><%= t('federation_admin.org_settings.edit.blocked_partners_help') %></p>
       </div>
 
       <div class="px-6 py-5 space-y-3">
@@ -84,11 +84,11 @@
   <div class="flex items-center gap-3">
     <button type="submit"
             class="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-federation-600 hover:bg-federation-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-federation-500">
-      Save Settings
+      <%= t('federation_admin.org_settings.edit.submit') %>
     </button>
     <a href="<%= federation_admin_org_settings_path %>"
        class="inline-flex items-center px-5 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 shadow-sm">
-      Cancel
+      <%= t('federation_admin.org_settings.edit.cancel') %>
     </a>
   </div>
 </form>

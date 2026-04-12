@@ -1,15 +1,15 @@
-<% content_for(:title, "Webhook Log ##{@log.id}") %>
+<% content_for(:title, t('federation_admin.webhook_logs.show.title', id: @log.id)) %>
 
 <div class="mb-6">
   <a href="<%= federation_admin_webhook_logs_path %>"
      class="inline-flex items-center text-sm font-medium text-federation-600 hover:text-federation-800">
-    &larr; Back to Webhook Logs
+    &larr; <%= t('federation_admin.webhook_logs.show.back') %>
   </a>
   <% if @log.status == "failed" %>
     <form method="post" action="<%= retry_delivery_federation_admin_webhook_log_path(@log) %>" class="inline ml-4">
       <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
       <button type="submit" class="inline-flex items-center gap-1.5 rounded-md bg-federation-600 hover:bg-federation-700 text-white font-medium py-1.5 px-3 text-sm transition-colors">
-        🔄 Retry Delivery
+        <%= t('federation_admin.webhook_logs.show.retry') %>
       </button>
     </form>
   <% end %>
@@ -17,8 +17,8 @@
 
 <div class="sm:flex sm:items-center sm:justify-between mb-8">
   <div>
-    <h1 class="text-2xl font-bold text-gray-900">Webhook Log #<%= @log.id %></h1>
-    <p class="mt-1 text-sm text-gray-500">Created <%= @log.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></p>
+    <h1 class="text-2xl font-bold text-gray-900"><%= t('federation_admin.webhook_logs.show.title', id: @log.id) %></h1>
+    <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.webhook_logs.show.created_at') %> <%= @log.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></p>
   </div>
   <div class="mt-4 sm:mt-0">
     <span class="inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold <%= status_badge_class(@log.status) %>">
@@ -29,17 +29,17 @@
 
 <div class="bg-white shadow rounded-lg overflow-hidden">
   <div class="px-6 py-5 border-b border-gray-200">
-    <h2 class="text-lg font-medium text-gray-900">Log Details</h2>
+    <h2 class="text-lg font-medium text-gray-900"><%= t('federation_admin.webhook_logs.show.details_title') %></h2>
   </div>
 
   <dl class="divide-y divide-gray-200">
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">ID</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.id') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 font-mono"><%= @log.id %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Partner</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.partner') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
         <% if @log.federation_partner %>
           <a href="<%= federation_admin_partner_path(@log.federation_partner) %>"
@@ -53,12 +53,12 @@
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Event Type</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.event_type') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 font-mono"><%= @log.event_type %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Direction</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.direction') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= direction_badge_class(@log.direction) %>">
           <%= @log.direction %>
@@ -67,7 +67,7 @@
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Status</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.status') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold <%= status_badge_class(@log.status) %>">
           <%= @log.status %>
@@ -76,44 +76,44 @@
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Response Code</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.response_code') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 font-mono"><%= @log.response_code || "-" %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Attempt Number</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.attempt_number') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @log.attempt_number || "-" %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Payload</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.payload') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <% if @log.payload.present? %>
           <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono"><%= @log.payload.is_a?(String) ? @log.payload : JSON.pretty_generate(@log.payload) %></pre>
         <% else %>
-          <span class="text-gray-400">No payload</span>
+          <span class="text-gray-400"><%= t('federation_admin.webhook_logs.show.no_payload') %></span>
         <% end %>
       </dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Response Body</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.response_body') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <% if @log.response_body.present? %>
           <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono"><%= begin; JSON.pretty_generate(JSON.parse(@log.response_body)); rescue; @log.response_body; end %></pre>
         <% else %>
-          <span class="text-gray-400">No response body</span>
+          <span class="text-gray-400"><%= t('federation_admin.webhook_logs.show.no_response_body') %></span>
         <% end %>
       </dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Created At</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.created_at') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @log.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Updated At</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.updated_at') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @log.updated_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></dd>
     </div>
   </dl>

@@ -118,18 +118,25 @@ module FederationAdmin
     end
 
     # POST /federation-admin/partners/:id/regenerate_secret
+    # Starts a zero-downtime rotation: the new secret is stored as
+    # next_webhook_secret and both secrets are accepted until the
+    # rotation is completed. This avoids dropping in-flight webhooks.
     def regenerate_secret
       @partner = FederationPartner.find(params[:id])
-      old_secret = @partner.webhook_secret
-      new_secret = SecureRandom.hex(32)
-      @partner.update!(
-        webhook_secret: new_secret,
-        metadata: (@partner.metadata || {}).merge(
-          "previous_webhook_secret" => old_secret,
-          "secret_rotated_at" => Time.current.iso8601
-        )
-      )
-      flash[:notice] = "Webhook secret regenerated for #{@partner.name}. The partner must update their configuration immediately."
+      @partner.rotate_webhook_secret!
+      flash[:notice] = "Secret rotation started for #{@partner.name}. Both old and new secrets are now accepted. Complete the rotation after the partner has updated their configuration."
+      redirect_to federation_admin_partner_path(@partner)
+    end
+
+    # POST /federation-admin/partners/:id/complete_rotation
+    # Promotes next_webhook_secret to webhook_secret and clears rotation state.
+    def complete_rotation
+      @partner = FederationPartner.find(params[:id])
+      @partner.complete_secret_rotation!
+      flash[:notice] = "Secret rotation completed for #{@partner.name}. Only the new secret is accepted from now on."
+      redirect_to federation_admin_partner_path(@partner)
+    rescue RuntimeError => e
+      flash[:alert] = e.message
       redirect_to federation_admin_partner_path(@partner)
     end
 

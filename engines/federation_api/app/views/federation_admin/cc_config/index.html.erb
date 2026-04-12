@@ -1,8 +1,8 @@
-<% content_for(:title, "Credit Commons Node Configuration") %>
+<% content_for(:title, t('federation_admin.cc_config.title')) %>
 
 <div class="mb-8">
-  <h1 class="text-2xl font-bold text-gray-900">Credit Commons Node Configuration</h1>
-  <p class="mt-1 text-sm text-gray-500">Configure each organization as a Credit Commons network node.</p>
+  <h1 class="text-2xl font-bold text-gray-900"><%= t('federation_admin.cc_config.title') %></h1>
+  <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.cc_config.subtitle') %></p>
 </div>
 
 <% @organizations.each do |org| %>
@@ -17,34 +17,34 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-xs font-medium text-gray-500 uppercase">Node Slug</label>
+          <label class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.node_slug') %></label>
           <input type="text" name="node_slug" value="<%= config.node_slug %>" required
                  pattern="[0-9a-z\-]{3,15}"
                  class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-gray-500 uppercase">Currency Format</label>
+          <label class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.currency_format') %></label>
           <input type="text" name="currency_format" value="<%= config.currency_format %>"
                  class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-gray-500 uppercase">Exchange Rate</label>
+          <label class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.exchange_rate') %></label>
           <input type="number" name="exchange_rate" value="<%= config.exchange_rate %>" step="0.0001" min="0.01"
                  class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-gray-500 uppercase">Validated Window (secs)</label>
+          <label class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.validated_window') %></label>
           <input type="number" name="validated_window" value="<%= config.validated_window %>" min="30" max="86400"
                  class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
         </div>
 
         <div class="sm:col-span-2">
-          <label class="block text-xs font-medium text-gray-500 uppercase">Parent Node URL</label>
+          <label class="block text-xs font-medium text-gray-500 uppercase"><%= t('federation_admin.cc_config.parent_node_url') %></label>
           <input type="url" name="parent_node_url" value="<%= config.parent_node_url %>"
-                 placeholder="https://parent-node.example.com"
+                 placeholder="<%= t('federation_admin.cc_config.parent_placeholder') %>"
                  class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm">
         </div>
       </div>
@@ -53,12 +53,12 @@
         <div class="text-xs text-gray-400">
           <% if config.persisted? %>
             Node: <span class="font-mono"><%= config.node_slug %></span> &middot;
-            <%= config.root_node? ? "Root node" : "Child node" %> &middot;
-            CC endpoints: <span class="font-mono">/api/v1/cc/about</span>
+            <%= config.root_node? ? t('federation_admin.cc_config.root_node') : t('federation_admin.cc_config.child_node') %> &middot;
+            <%= t('federation_admin.cc_config.cc_endpoints') %> <span class="font-mono">/api/v1/cc/about</span>
           <% end %>
         </div>
         <button type="submit" class="inline-flex items-center rounded-md bg-federation-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-federation-500">
-          Save
+          <%= t('federation_admin.cc_config.save') %>
         </button>
       </div>
     </form>

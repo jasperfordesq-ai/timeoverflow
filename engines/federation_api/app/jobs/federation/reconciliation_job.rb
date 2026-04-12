@@ -122,43 +122,47 @@ module Federation
               # transaction was created (member was debited). If the webhook delivery
               # failed and we're now cancelling, we must reverse that debit so the
               # member's balance is restored.
-              if txn.outbound?
-                if txn.transfer.present?
-                  original = txn.transfer
-                  # Transfer#source and #destination are attr_accessors (not DB columns)
-                  # and are nil when loaded from the database. Use movements instead.
-                  debit_movement  = original.movements.find_by("amount < 0") # source
-                  credit_movement = original.movements.find_by("amount > 0") # destination
-                  unless debit_movement && credit_movement
-                    raise "Cannot reverse transfer #{original.id}: missing movements"
-                  end
-                  reversal = Transfer.new
-                  reversal.source      = credit_movement.account_id  # was destination → now source
-                  reversal.destination = debit_movement.account_id   # was source → now destination
-                  reversal.amount      = txn.amount
-                  reversal.reason      = "[Federation Reversal] #{txn.reason} — webhook delivery failed"
-                  reversal.save!
-
-                  # Link reversal to the federation transaction metadata for audit trail
-                  txn.update!(metadata: (txn.metadata || {}).merge("reversal_transfer_id" => reversal.id))
-                  Rails.logger.warn("[Federation::Reconciliation] Reversed transfer #{original.id} via reversal #{reversal.id} for stale outbound fed_txn #{txn.id}")
-                else
-                  # H8: Outbound txn has no Transfer — the debit was never committed,
-                  # or the link was lost. Move to disputed so a human can investigate
-                  # rather than silently cancelling without reversing.
-                  txn.update!(
-                    status: "disputed",
-                    metadata: (txn.metadata || {}).merge(
-                      "dispute_reason" => "Stale outbound pending with no linked transfer — cannot auto-reverse",
-                      "disputed_at"    => Time.current.iso8601
-                    )
-                  )
-                  msg = "Stale outbound fed_txn #{txn.id} has no Transfer — moved to disputed, requires manual review"
-                  Rails.logger.error("[Federation::Reconciliation] #{msg}")
-                  trigger_alert!(msg)
-                  next # skip cancel! — already moved to disputed
+              # Reverse the local Transfer for stale pending transactions.
+              # Outbound: member was debited when the transaction was created;
+              #   reversal re-credits the member since the remote partner never acknowledged.
+              # Inbound: member was credited when the transaction was created;
+              #   reversal re-debits the member since the transaction was never confirmed.
+              if txn.transfer.present?
+                original = txn.transfer
+                # Transfer#source and #destination are attr_accessors (not DB columns)
+                # and are nil when loaded from the database. Use movements instead.
+                debit_movement  = original.movements.find_by("amount < 0") # source
+                credit_movement = original.movements.find_by("amount > 0") # destination
+                unless debit_movement && credit_movement
+                  raise "Cannot reverse transfer #{original.id}: missing movements"
                 end
+                reversal = Transfer.new
+                reversal.source      = credit_movement.account_id  # was destination → now source
+                reversal.destination = debit_movement.account_id   # was source → now destination
+                reversal.amount      = txn.amount
+                reversal.reason      = "[Federation Reversal] #{txn.reason} — stale #{txn.direction} transaction auto-cancelled"
+                reversal.save!
+
+                # Link reversal to the federation transaction metadata for audit trail
+                txn.update!(metadata: (txn.metadata || {}).merge("reversal_transfer_id" => reversal.id))
+                Rails.logger.warn("[Federation::Reconciliation] Reversed transfer #{original.id} via reversal #{reversal.id} for stale #{txn.direction} fed_txn #{txn.id}")
+              elsif txn.outbound?
+                # H8: Outbound txn has no Transfer — the debit was never committed,
+                # or the link was lost. Move to disputed so a human can investigate
+                # rather than silently cancelling without reversing.
+                txn.update!(
+                  status: "disputed",
+                  metadata: (txn.metadata || {}).merge(
+                    "dispute_reason" => "Stale outbound pending with no linked transfer — cannot auto-reverse",
+                    "disputed_at"    => Time.current.iso8601
+                  )
+                )
+                msg = "Stale outbound fed_txn #{txn.id} has no Transfer — moved to disputed, requires manual review"
+                Rails.logger.error("[Federation::Reconciliation] #{msg}")
+                trigger_alert!(msg)
+                next # skip cancel! — already moved to disputed
               end
+              # Inbound with no transfer: no local balance was moved, safe to just cancel.
 
               txn.cancel!(reason: "Auto-cancelled: pending for over #{REVERSAL_TIMEOUT.inspect}")
             end
@@ -212,6 +216,23 @@ module Federation
             sum: movement_sum,
             message: "Transfer #{transfer.id} movements sum to #{movement_sum} (should be 0)"
           }
+        end
+
+        # Check 4b: Account ownership — verify at least one movement's account
+        # belongs to the federation transaction's organization.
+        if fed_txn.organization_id.present? && movements.count == 2
+          org_account_ids = Account.where(organization_id: fed_txn.organization_id).pluck(:id)
+          movement_account_ids = movements.pluck(:account_id)
+          unless (movement_account_ids & org_account_ids).any?
+            issues << {
+              type: "account_ownership_mismatch",
+              severity: "critical",
+              federation_transaction_id: fed_txn.id,
+              transfer_id: transfer.id,
+              organization_id: fed_txn.organization_id,
+              message: "Transfer #{transfer.id} has no movement accounts belonging to organization #{fed_txn.organization_id}"
+            }
+          end
         end
       end
 

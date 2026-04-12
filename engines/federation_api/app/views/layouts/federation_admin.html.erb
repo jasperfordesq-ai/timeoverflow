@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= content_for?(:title) ? "#{yield(:title)} — " : "" %>Federation Admin</title>
+  <title><%= content_for?(:title) ? "#{yield(:title)} — " : "" %><%= t("federation_admin.layout.title") %></title>
   <%# Production-ready: compiled Tailwind CSS + Rails UJS bundled inline.
       No external CDN dependencies. To regenerate CSS after view changes:
       cd engines/federation_api && npx tailwindcss -i ./app/assets/stylesheets/federation_admin_input.css -o ./app/assets/stylesheets/federation_admin.css --minify %>
   <style><%= File.read(FederationApi::Engine.root.join("app/assets/stylesheets/federation_admin.css")) rescue "/* CSS not found — run: cd engines/federation_api && npx tailwindcss ... */" %></style>
   <script><%= raw File.read(FederationApi::Engine.root.join("app/assets/javascripts/rails-ujs.min.js")) rescue "" %></script>
   <script>if (typeof Rails !== 'undefined' && !window._rails_loaded) Rails.start();</script>
+  <script><%= raw File.read(FederationApi::Engine.root.join("app/assets/javascripts/federation_form_helpers.js")) rescue "" %></script>
   <style>
     [data-flash] { animation: fadeOut 8s ease-in-out forwards; }
     @keyframes fadeOut { 0%,85% { opacity: 1; } 100% { opacity: 0; display: none; } }
@@ -21,7 +22,7 @@
     <!-- Alpha development notice -->
     <div class="bg-amber-500 text-amber-950">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-2 text-center text-sm font-semibold">
-        ALPHA &mdash; Federation Development Admin Panel &mdash; Not for production use
+        <%= t("federation_admin.layout.alpha_notice") %>
       </div>
     </div>
     <!-- Top navigation bar -->
@@ -31,10 +32,10 @@
         <div class="flex h-12 items-center justify-between">
           <a href="<%= federation_admin_root_path %>" class="flex items-center gap-2 text-white font-bold tracking-tight">
             <span class="text-xl">🔗</span>
-            Federation Admin
+            <%= t("federation_admin.layout.brand") %>
           </a>
           <a href="<%= main_app.root_path rescue '/' %>" class="text-federation-300 hover:text-white text-sm">
-            &larr; TimeOverflow
+            &larr; <%= t("federation_admin.layout.back_to_timeoverflow") %>
           </a>
         </div>
       </div>
@@ -43,16 +44,16 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div class="flex items-center gap-1 py-1 overflow-x-auto">
             <% nav_items = [
-              [federation_admin_root_path, "Dashboard"],
-              [federation_admin_partners_path, "Partners"],
-              [federation_admin_api_keys_path, "API Keys"],
-              [federation_admin_transactions_path, "Transactions"],
-              [federation_admin_messages_path, "Messages"],
-              [federation_admin_webhook_logs_path, "Webhooks"],
-              [federation_admin_org_settings_path, "Orgs"],
-              [federation_admin_member_preferences_path, "Members"],
-              [federation_admin_activity_index_path, "Activity"],
-              [federation_admin_cc_config_index_path, "CC Config"]
+              [federation_admin_root_path, t("federation_admin.layout.nav.dashboard")],
+              [federation_admin_partners_path, t("federation_admin.layout.nav.partners")],
+              [federation_admin_api_keys_path, t("federation_admin.layout.nav.api_keys")],
+              [federation_admin_transactions_path, t("federation_admin.layout.nav.transactions")],
+              [federation_admin_messages_path, t("federation_admin.layout.nav.messages")],
+              [federation_admin_webhook_logs_path, t("federation_admin.layout.nav.webhooks")],
+              [federation_admin_org_settings_path, t("federation_admin.layout.nav.orgs")],
+              [federation_admin_member_preferences_path, t("federation_admin.layout.nav.members")],
+              [federation_admin_activity_index_path, t("federation_admin.layout.nav.activity")],
+              [federation_admin_cc_config_index_path, t("federation_admin.layout.nav.cc_config")]
             ] %>
             <% nav_items.each do |path, label| %>
               <% is_active = (path == federation_admin_root_path) ? (request.path == path) : request.path.start_with?(path) %>
@@ -63,7 +64,7 @@
             <% end %>
             <% if federation_stats[:transactions_pending] > 0 %>
               <span class="ml-auto inline-flex items-center rounded-full bg-yellow-400 px-2.5 py-0.5 text-xs font-semibold text-yellow-900 whitespace-nowrap">
-                <%= federation_stats[:transactions_pending] %> pending
+                <%= t("federation_admin.layout.pending_count", count: federation_stats[:transactions_pending]) %>
               </span>
             <% end %>
           </div>
@@ -95,7 +96,7 @@
     <!-- Footer -->
     <footer class="border-t border-gray-200 mt-12">
       <div class="mx-auto max-w-7xl px-4 py-6 text-center text-xs text-gray-400">
-        Federation Engine v<%= FederationApi::VERSION %> · Self-contained module · Does not modify TimeOverflow core
+        <%= t("federation_admin.layout.footer", version: FederationApi::VERSION) %>
       </div>
     </footer>
   </div>

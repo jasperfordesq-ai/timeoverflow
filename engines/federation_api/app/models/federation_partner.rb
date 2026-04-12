@@ -90,6 +90,38 @@ class FederationPartner < ActiveRecord::Base
     { 1 => "Discovery", 2 => "Social", 3 => "Economic", 4 => "Integrated" }[partnership_level]
   end
 
+  # Returns all currently valid webhook secrets (supports zero-downtime rotation).
+  # During a rotation window both the current and next secret are accepted.
+  def valid_webhook_secrets
+    [webhook_secret, next_webhook_secret].compact.reject(&:blank?)
+  end
+
+  # Start a secret rotation: generate a new secret and store it as next_webhook_secret.
+  # Both secrets are accepted until complete_secret_rotation! is called.
+  def rotate_webhook_secret!
+    new_secret = SecureRandom.hex(32)
+    update!(
+      next_webhook_secret: new_secret,
+      secret_rotation_started_at: Time.current
+    )
+    new_secret
+  end
+
+  # Complete a rotation: promote next_webhook_secret to webhook_secret
+  # and clear the rotation fields.
+  def complete_secret_rotation!
+    raise "No rotation in progress" if next_webhook_secret.blank?
+    update!(
+      webhook_secret: next_webhook_secret,
+      next_webhook_secret: nil,
+      secret_rotation_started_at: nil
+    )
+  end
+
+  def rotation_in_progress?
+    next_webhook_secret.present?
+  end
+
   private
 
   def valid_status_transition

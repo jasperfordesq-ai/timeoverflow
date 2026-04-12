@@ -1,9 +1,9 @@
-<% content_for(:title) { "Organization Federation Settings" } %>
+<% content_for(:title) { t('federation_admin.org_settings.index.title') } %>
 
 <!-- Page header -->
 <div class="mb-8">
-  <h1 class="text-2xl font-bold text-gray-900">Organization Federation Settings</h1>
-  <p class="mt-1 text-sm text-gray-500">Configure federation participation for each organization.</p>
+  <h1 class="text-2xl font-bold text-gray-900"><%= t('federation_admin.org_settings.index.title') %></h1>
+  <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.org_settings.index.subtitle') %></p>
 </div>
 
 <!-- Settings table -->
@@ -12,15 +12,15 @@
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
-          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
-          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Federation Enabled</th>
-          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Discoverable</th>
-          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Allow Inbound</th>
-          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Allow Outbound</th>
-          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Share Listings</th>
-          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Internal (Cross-Org)</th>
-          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Opted-in Members</th>
-          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.org_settings.index.table.organization') %></th>
+          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.org_settings.index.table.federation_enabled') %></th>
+          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.org_settings.index.table.discoverable') %></th>
+          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.org_settings.index.table.allow_inbound') %></th>
+          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.org_settings.index.table.allow_outbound') %></th>
+          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.org_settings.index.table.share_listings') %></th>
+          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.org_settings.index.table.internal_federation') %></th>
+          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.org_settings.index.table.opted_in_members') %></th>
+          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.org_settings.index.table.actions') %></th>
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
@@ -38,44 +38,44 @@
             <td class="px-4 py-3 text-sm font-medium text-gray-900"><%= org.name %></td>
             <td class="px-4 py-3 text-center">
               <% if fed_enabled %>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Enabled</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.org_settings.index.enabled') %></span>
               <% else %>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Disabled</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><%= t('federation_admin.org_settings.index.disabled') %></span>
               <% end %>
             </td>
             <td class="px-4 py-3 text-center">
               <% if discoverable %>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.org_settings.index.yes') %></span>
               <% else %>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">No</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"><%= t('federation_admin.org_settings.index.no') %></span>
               <% end %>
             </td>
             <td class="px-4 py-3 text-center">
               <% if allow_in %>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.org_settings.index.yes') %></span>
               <% else %>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">No</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"><%= t('federation_admin.org_settings.index.no') %></span>
               <% end %>
             </td>
             <td class="px-4 py-3 text-center">
               <% if allow_out %>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.org_settings.index.yes') %></span>
               <% else %>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">No</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"><%= t('federation_admin.org_settings.index.no') %></span>
               <% end %>
             </td>
             <td class="px-4 py-3 text-center">
               <% if share_list %>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.org_settings.index.yes') %></span>
               <% else %>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">No</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"><%= t('federation_admin.org_settings.index.no') %></span>
               <% end %>
             </td>
             <td class="px-4 py-3 text-center">
               <% if internal_fed %>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Enabled</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><%= t('federation_admin.org_settings.index.enabled') %></span>
               <% else %>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">No</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"><%= t('federation_admin.org_settings.index.no') %></span>
               <% end %>
             </td>
             <td class="px-4 py-3 text-sm text-center text-gray-700">
@@ -84,7 +84,7 @@
             <td class="px-4 py-3 text-center">
               <a href="<%= edit_federation_admin_org_setting_path(org) %>"
                  class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 shadow-sm">
-                Edit
+                <%= t('federation_admin.org_settings.index.edit') %>
               </a>
             </td>
           </tr>

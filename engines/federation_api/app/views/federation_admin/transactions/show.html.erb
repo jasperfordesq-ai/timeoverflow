@@ -1,16 +1,16 @@
-<% content_for(:title, "Transaction ##{@transaction.id}") %>
+<% content_for(:title, t('federation_admin.transactions.show.title', id: @transaction.id)) %>
 
 <div class="mb-6">
   <a href="<%= federation_admin_transactions_path %>"
      class="inline-flex items-center text-sm font-medium text-federation-600 hover:text-federation-800">
-    &larr; Back to Transactions
+    &larr; <%= t('federation_admin.transactions.show.back') %>
   </a>
 </div>
 
 <div class="sm:flex sm:items-center sm:justify-between mb-8">
   <div>
-    <h1 class="text-2xl font-bold text-gray-900">Transaction #<%= @transaction.id %></h1>
-    <p class="mt-1 text-sm text-gray-500">Created <%= @transaction.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></p>
+    <h1 class="text-2xl font-bold text-gray-900"><%= t('federation_admin.transactions.show.title', id: @transaction.id) %></h1>
+    <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.transactions.show.created') %> <%= @transaction.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></p>
   </div>
   <div class="mt-4 sm:mt-0">
     <span class="inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold <%= status_badge_class(@transaction.status) %>">
@@ -21,22 +21,22 @@
 
 <div class="bg-white shadow rounded-lg overflow-hidden">
   <div class="px-6 py-5 border-b border-gray-200">
-    <h2 class="text-lg font-medium text-gray-900">Transaction Details</h2>
+    <h2 class="text-lg font-medium text-gray-900"><%= t('federation_admin.transactions.show.details_title') %></h2>
   </div>
 
   <dl class="divide-y divide-gray-200">
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">ID</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.id') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 font-mono"><%= @transaction.id %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">External Transaction ID</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.external_id') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 font-mono"><%= @transaction.external_transaction_id %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Partner</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.partner') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
         <% if @transaction.federation_partner %>
           <a href="<%= federation_admin_partner_path(@transaction.federation_partner) %>"
@@ -50,7 +50,7 @@
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Direction</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.direction') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= direction_badge_class(@transaction.direction) %>">
           <%= @transaction.direction %>
@@ -59,15 +59,15 @@
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Amount</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.amount') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-        <span class="font-semibold text-lg"><%= (@transaction.amount.to_f / 3600).round(2) %> hours</span>
-        <span class="text-gray-500 ml-2">(<%= @transaction.amount %> seconds)</span>
+        <span class="font-semibold text-lg"><%= (@transaction.amount.to_f / 3600).round(2) %> <%= t('federation_admin.transactions.show.hours') %></span>
+        <span class="text-gray-500 ml-2">(<%= @transaction.amount %> <%= t('federation_admin.transactions.show.seconds') %>)</span>
       </dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Status</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.status') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold <%= status_badge_class(@transaction.status) %>">
           <%= @transaction.status %>
@@ -76,58 +76,58 @@
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Local Account ID</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.local_account_id') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 font-mono"><%= @transaction.local_account_id || "-" %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Organization ID</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.organization_id') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 font-mono"><%= @transaction.organization_id || "-" %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Remote User Identifier</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.remote_user') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 font-mono"><%= @transaction.remote_user_identifier || "-" %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Reason</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.reason') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.reason.present? ? @transaction.reason : "-" %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Transfer ID</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.transfer_id') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 font-mono"><%= @transaction.transfer_id || "-" %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Metadata</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.metadata') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <% if @transaction.metadata.present? %>
           <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono"><%= JSON.pretty_generate(@transaction.metadata) %></pre>
         <% else %>
-          <span class="text-gray-400">No metadata</span>
+          <span class="text-gray-400"><%= t('federation_admin.transactions.show.no_metadata') %></span>
         <% end %>
       </dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Completed At</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.completed_at') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.completed_at&.strftime("%Y-%m-%d %H:%M:%S UTC") || "-" %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Cancelled At</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.cancelled_at') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.cancelled_at&.strftime("%Y-%m-%d %H:%M:%S UTC") || "-" %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Created At</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.created_at') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></dd>
     </div>
 
     <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Updated At</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.updated_at') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @transaction.updated_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></dd>
     </div>
   </dl>

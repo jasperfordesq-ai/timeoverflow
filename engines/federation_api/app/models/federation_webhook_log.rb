@@ -9,6 +9,7 @@ class FederationWebhookLog < ActiveRecord::Base
   validates :event_type, presence: true
   validates :direction, presence: true, inclusion: { in: DIRECTIONS }
   validates :status, presence: true, inclusion: { in: STATUSES }
+  validates :request_nonce, uniqueness: { scope: :federation_partner_id }, allow_nil: true
 
   scope :recent, -> { order(created_at: :desc).limit(100) }
   scope :failed, -> { where(status: "failed") }

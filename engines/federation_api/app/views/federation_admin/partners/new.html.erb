@@ -1,9 +1,9 @@
-<% content_for(:title, "Register New Partner") %>
+<% content_for(:title, t("federation_admin.partners.new.title")) %>
 
 <div class="mb-8">
-  <a href="<%= federation_admin_partners_path %>" class="text-sm text-federation-600 hover:text-federation-800">&larr; Back to Partners</a>
-  <h1 class="mt-2 text-2xl font-bold text-gray-900">Register New Partner</h1>
-  <p class="mt-1 text-sm text-gray-500">Connect a new external timebanking platform for federation.</p>
+  <a href="<%= federation_admin_partners_path %>" class="text-sm text-federation-600 hover:text-federation-800">&larr; <%= t("federation_admin.partners.new.back") %></a>
+  <h1 class="mt-2 text-2xl font-bold text-gray-900"><%= t("federation_admin.partners.new.title") %></h1>
+  <p class="mt-1 text-sm text-gray-500"><%= t("federation_admin.partners.new.subtitle") %></p>
 </div>
 
 <div class="bg-white shadow rounded-lg p-6 max-w-2xl">
@@ -13,114 +13,114 @@
     <div class="space-y-6">
       <!-- Name -->
       <div>
-        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+        <label for="name" class="block text-sm font-medium text-gray-700"><%= t("federation_admin.partners.new.name") %></label>
         <input type="text" name="name" id="name" required
                value="<%= @partner&.name %>"
-               placeholder="e.g., Project Nexus Ireland"
+               placeholder="<%= t("federation_admin.partners.new.name_placeholder") %>"
                class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-federation-500 focus:ring-federation-500 sm:text-sm px-3 py-2">
       </div>
 
       <!-- Platform Type -->
       <div>
-        <label for="platform_type" class="block text-sm font-medium text-gray-700">Platform Type</label>
+        <label for="platform_type" class="block text-sm font-medium text-gray-700"><%= t("federation_admin.partners.new.platform_type") %></label>
         <select name="platform_type" id="platform_type" required
                 class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-federation-500 focus:ring-federation-500 sm:text-sm px-3 py-2">
-          <option value="nexus">Nexus</option>
-          <option value="timeoverflow">TimeOverflow</option>
-          <option value="komunitin">Komunitin</option>
-          <option value="custom">Custom</option>
+          <option value="nexus"><%= t("federation_admin.common.platform_types.nexus") %></option>
+          <option value="timeoverflow"><%= t("federation_admin.common.platform_types.timeoverflow") %></option>
+          <option value="komunitin"><%= t("federation_admin.common.platform_types.komunitin") %></option>
+          <option value="custom"><%= t("federation_admin.common.platform_types.custom") %></option>
         </select>
       </div>
 
       <!-- Protocol Type -->
       <div>
-        <label for="protocol_type" class="block text-sm font-medium text-gray-700">Protocol Type</label>
+        <label for="protocol_type" class="block text-sm font-medium text-gray-700"><%= t("federation_admin.partners.new.protocol_type") %></label>
         <select name="protocol_type" id="protocol_type" required
                 class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-federation-500 focus:ring-federation-500 sm:text-sm px-3 py-2">
           <% Federation::Adapters.protocol_labels.each do |value, label| %>
             <option value="<%= value %>"><%= label %></option>
           <% end %>
         </select>
-        <p class="mt-1 text-xs text-gray-400">Determines the wire format and data transformation used for communication.</p>
+        <p class="mt-1 text-xs text-gray-400"><%= t("federation_admin.partners.new.protocol_help") %></p>
       </div>
 
       <!-- API Endpoint -->
       <div>
-        <label for="api_endpoint" class="block text-sm font-medium text-gray-700">API Endpoint</label>
+        <label for="api_endpoint" class="block text-sm font-medium text-gray-700"><%= t("federation_admin.partners.new.api_endpoint") %></label>
         <input type="url" name="api_endpoint" id="api_endpoint" required
                value="<%= @partner&.api_endpoint %>"
-               placeholder="https://partner.example.com/api/v1"
+               placeholder="<%= t("federation_admin.partners.new.api_endpoint_placeholder") %>"
                class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-federation-500 focus:ring-federation-500 sm:text-sm px-3 py-2">
-        <p class="mt-1 text-xs text-gray-400">The base URL for webhook delivery and message sending.</p>
+        <p class="mt-1 text-xs text-gray-400"><%= t("federation_admin.partners.new.api_endpoint_help") %></p>
       </div>
 
       <!-- Browse Base URL -->
       <div>
-        <label for="browse_base_url" class="block text-sm font-medium text-gray-700">Browse API URL (optional)</label>
+        <label for="browse_base_url" class="block text-sm font-medium text-gray-700"><%= t("federation_admin.partners.new.browse_base_url") %></label>
         <input type="url" name="browse_base_url" id="browse_base_url"
                value="<%= @partner&.browse_base_url %>"
-               placeholder="https://partner.example.com/api/v2/federation"
+               placeholder="<%= t("federation_admin.partners.new.browse_base_url_placeholder") %>"
                class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-federation-500 focus:ring-federation-500 sm:text-sm px-3 py-2">
-        <p class="mt-1 text-xs text-gray-400">The base URL for browsing members and listings. If blank, the API Endpoint is used for both.</p>
+        <p class="mt-1 text-xs text-gray-400"><%= t("federation_admin.partners.new.browse_base_url_help") %></p>
       </div>
 
       <!-- Webhook URL -->
       <div>
-        <label for="webhook_url" class="block text-sm font-medium text-gray-700">Webhook URL (optional)</label>
+        <label for="webhook_url" class="block text-sm font-medium text-gray-700"><%= t("federation_admin.partners.new.webhook_url") %></label>
         <input type="url" name="webhook_url" id="webhook_url"
                value="<%= @partner&.webhook_url %>"
-               placeholder="https://partner.example.com/webhooks/receive"
+               placeholder="<%= t("federation_admin.partners.new.webhook_url_placeholder") %>"
                class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-federation-500 focus:ring-federation-500 sm:text-sm px-3 py-2">
-        <p class="mt-1 text-xs text-gray-400">URL to send webhook event notifications to. A webhook secret will be auto-generated.</p>
+        <p class="mt-1 text-xs text-gray-400"><%= t("federation_admin.partners.new.webhook_url_help") %></p>
       </div>
 
       <!-- Partnership Level -->
       <div>
-        <label for="partnership_level" class="block text-sm font-medium text-gray-700">Partnership Level</label>
+        <label for="partnership_level" class="block text-sm font-medium text-gray-700"><%= t("federation_admin.partners.new.partnership_level") %></label>
         <select name="partnership_level" id="partnership_level" required
                 class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-federation-500 focus:ring-federation-500 sm:text-sm px-3 py-2">
-          <option value="1">Level 1 - Discovery (public metadata only)</option>
-          <option value="2">Level 2 - Social (profiles and messaging)</option>
-          <option value="3">Level 3 - Economic (cross-platform transfers)</option>
-          <option value="4">Level 4 - Integrated (full feature access)</option>
+          <option value="1"><%= t("federation_admin.partners.new.levels.discovery") %></option>
+          <option value="2"><%= t("federation_admin.partners.new.levels.social") %></option>
+          <option value="3"><%= t("federation_admin.partners.new.levels.economic") %></option>
+          <option value="4"><%= t("federation_admin.partners.new.levels.integrated") %></option>
         </select>
       </div>
 
       <!-- Feature Gates -->
       <fieldset>
-        <legend class="block text-sm font-medium text-gray-700 mb-2">Feature Gates</legend>
+        <legend class="block text-sm font-medium text-gray-700 mb-2"><%= t("federation_admin.partners.new.feature_gates") %></legend>
         <div class="space-y-2">
           <label class="flex items-center">
             <input type="checkbox" name="profiles_enabled" value="1" checked
                    class="rounded border-gray-300 text-federation-600 focus:ring-federation-500 h-4 w-4">
-            <span class="ml-2 text-sm text-gray-700">Profiles Enabled</span>
-            <span class="ml-2 text-xs text-gray-400">Share member profiles across platforms</span>
+            <span class="ml-2 text-sm text-gray-700"><%= t("federation_admin.partners.new.profiles_enabled") %></span>
+            <span class="ml-2 text-xs text-gray-400"><%= t("federation_admin.partners.new.profiles_help") %></span>
           </label>
           <label class="flex items-center">
             <input type="checkbox" name="listings_enabled" value="1" checked
                    class="rounded border-gray-300 text-federation-600 focus:ring-federation-500 h-4 w-4">
-            <span class="ml-2 text-sm text-gray-700">Listings Enabled</span>
-            <span class="ml-2 text-xs text-gray-400">Share offers and inquiries</span>
+            <span class="ml-2 text-sm text-gray-700"><%= t("federation_admin.partners.new.listings_enabled") %></span>
+            <span class="ml-2 text-xs text-gray-400"><%= t("federation_admin.partners.new.listings_help") %></span>
           </label>
           <label class="flex items-center">
             <input type="checkbox" name="transactions_enabled" value="1"
                    class="rounded border-gray-300 text-federation-600 focus:ring-federation-500 h-4 w-4">
-            <span class="ml-2 text-sm text-gray-700">Transactions Enabled</span>
-            <span class="ml-2 text-xs text-gray-400">Allow cross-platform time transfers</span>
+            <span class="ml-2 text-sm text-gray-700"><%= t("federation_admin.partners.new.transactions_enabled") %></span>
+            <span class="ml-2 text-xs text-gray-400"><%= t("federation_admin.partners.new.transactions_help") %></span>
           </label>
           <label class="flex items-center">
             <input type="checkbox" name="messaging_enabled" value="1"
                    class="rounded border-gray-300 text-federation-600 focus:ring-federation-500 h-4 w-4">
-            <span class="ml-2 text-sm text-gray-700">Messaging Enabled</span>
-            <span class="ml-2 text-xs text-gray-400">Cross-platform member messaging</span>
+            <span class="ml-2 text-sm text-gray-700"><%= t("federation_admin.partners.new.messaging_enabled") %></span>
+            <span class="ml-2 text-xs text-gray-400"><%= t("federation_admin.partners.new.messaging_help") %></span>
           </label>
         </div>
       </fieldset>
 
       <!-- Permitted Organizations -->
       <fieldset>
-        <legend class="block text-sm font-medium text-gray-700 mb-1">Permitted Organizations</legend>
-        <p class="text-xs text-gray-400 mb-3">Select which organizations this partner can access. Leave all unchecked to allow access to all organizations.</p>
+        <legend class="block text-sm font-medium text-gray-700 mb-1"><%= t("federation_admin.partners.new.permitted_orgs") %></legend>
+        <p class="text-xs text-gray-400 mb-3"><%= t("federation_admin.partners.new.permitted_orgs_help") %></p>
         <div class="max-h-48 overflow-y-auto border border-gray-200 rounded-md p-3 space-y-2">
           <% @organizations.each do |org| %>
             <label class="flex items-center">
@@ -130,7 +130,7 @@
             </label>
           <% end %>
           <% if @organizations.empty? %>
-            <p class="text-sm text-gray-400">No organizations found.</p>
+            <p class="text-sm text-gray-400"><%= t("federation_admin.partners.new.no_orgs") %></p>
           <% end %>
         </div>
       </fieldset>
@@ -140,11 +140,11 @@
     <div class="mt-8 flex items-center gap-3">
       <button type="submit"
               class="bg-federation-600 hover:bg-federation-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
-        Register Partner
+        <%= t("federation_admin.partners.new.submit") %>
       </button>
       <a href="<%= federation_admin_partners_path %>"
          class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-medium py-2 px-4 rounded-md transition-colors">
-        Cancel
+        <%= t("federation_admin.partners.new.cancel") %>
       </a>
     </div>
   </form>

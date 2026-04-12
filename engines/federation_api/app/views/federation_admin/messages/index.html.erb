@@ -1,9 +1,9 @@
-<% content_for(:title) { "Federation Messages" } %>
+<% content_for(:title) { t('federation_admin.messages.index.title') } %>
 
 <!-- Page header -->
 <div class="mb-8">
-  <h1 class="text-2xl font-bold text-gray-900">Federation Messages</h1>
-  <p class="mt-1 text-sm text-gray-500"><%= @total_count %> message<%= @total_count == 1 ? '' : 's' %> total</p>
+  <h1 class="text-2xl font-bold text-gray-900"><%= t('federation_admin.messages.index.title') %></h1>
+  <p class="mt-1 text-sm text-gray-500"><%= @total_count %> <%= t('federation_admin.messages.index.total') %></p>
 </div>
 
 <!-- Filter bar -->
@@ -11,30 +11,30 @@
   <form method="get" class="flex flex-wrap items-end gap-4">
     <!-- Direction -->
     <div>
-      <label class="block text-xs font-medium text-gray-500 mb-1">Direction</label>
+      <label class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.direction') %></label>
       <select name="direction" class="rounded-lg border-gray-300 text-sm focus:ring-federation-500 focus:border-federation-500">
-        <option value="">All</option>
-        <option value="inbound" <%= 'selected' if params[:direction] == 'inbound' %>>Inbound</option>
-        <option value="outbound" <%= 'selected' if params[:direction] == 'outbound' %>>Outbound</option>
+        <option value=""><%= t('federation_admin.messages.index.all') %></option>
+        <option value="inbound" <%= 'selected' if params[:direction] == 'inbound' %>><%= t('federation_admin.messages.index.inbound') %></option>
+        <option value="outbound" <%= 'selected' if params[:direction] == 'outbound' %>><%= t('federation_admin.messages.index.outbound') %></option>
       </select>
     </div>
 
     <!-- Status -->
     <div>
-      <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+      <label class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.status') %></label>
       <select name="status" class="rounded-lg border-gray-300 text-sm focus:ring-federation-500 focus:border-federation-500">
-        <option value="">All</option>
+        <option value=""><%= t('federation_admin.messages.index.all') %></option>
         <% %w[pending delivered read failed].each do |s| %>
-          <option value="<%= s %>" <%= 'selected' if params[:status] == s %>><%= s.capitalize %></option>
+          <option value="<%= s %>" <%= 'selected' if params[:status] == s %>><%= t("federation_admin.messages.index.#{s}") %></option>
         <% end %>
       </select>
     </div>
 
     <!-- Partner -->
     <div>
-      <label class="block text-xs font-medium text-gray-500 mb-1">Partner</label>
+      <label class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.partner') %></label>
       <select name="partner_id" class="rounded-lg border-gray-300 text-sm focus:ring-federation-500 focus:border-federation-500">
-        <option value="">All Partners</option>
+        <option value=""><%= t('federation_admin.messages.index.all_partners') %></option>
         <% @partners.each do |p| %>
           <option value="<%= p.id %>" <%= 'selected' if params[:partner_id].to_s == p.id.to_s %>><%= p.name %></option>
         <% end %>
@@ -43,9 +43,9 @@
 
     <!-- Organization -->
     <div>
-      <label class="block text-xs font-medium text-gray-500 mb-1">Organization</label>
+      <label class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.messages.index.organization') %></label>
       <select name="organization_id" class="rounded-lg border-gray-300 text-sm focus:ring-federation-500 focus:border-federation-500">
-        <option value="">All Organizations</option>
+        <option value=""><%= t('federation_admin.messages.index.all_organizations') %></option>
         <% @organizations.each do |o| %>
           <option value="<%= o.id %>" <%= 'selected' if params[:organization_id].to_s == o.id.to_s %>><%= o.name %></option>
         <% end %>
@@ -54,10 +54,10 @@
 
     <div>
       <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-federation-600 hover:bg-federation-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-federation-500">
-        Filter
+        <%= t('federation_admin.messages.index.filter') %>
       </button>
       <a href="<%= federation_admin_messages_path %>" class="ml-2 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50">
-        Clear
+        <%= t('federation_admin.messages.index.clear') %>
       </a>
     </div>
   </form>
@@ -70,14 +70,14 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Partner</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Direction</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remote User</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Org ID</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.messages.index.table.id') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.messages.index.table.partner') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.messages.index.table.direction') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.messages.index.table.remote_user') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.messages.index.table.subject') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.messages.index.table.status') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.messages.index.table.org_id') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.messages.index.table.created') %></th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -89,23 +89,23 @@
               <td class="px-4 py-3 text-sm text-gray-700"><%= msg.federation_partner&.name || 'N/A' %></td>
               <td class="px-4 py-3 text-sm">
                 <% if msg.direction == 'inbound' %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Inbound</span>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.messages.index.inbound') %></span>
                 <% else %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Outbound</span>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><%= t('federation_admin.messages.index.outbound') %></span>
                 <% end %>
               </td>
               <td class="px-4 py-3 text-sm text-gray-700"><%= msg.remote_user_identifier || '-' %></td>
-              <td class="px-4 py-3 text-sm text-gray-700"><%= truncate(msg.subject.to_s, length: 40) %></td>
+              <td class="px-4 py-3 text-sm text-gray-700" title="<%= msg.subject %>"><%= truncate(msg.subject.to_s, length: 40) %></td>
               <td class="px-4 py-3 text-sm">
                 <% case msg.status %>
                 <% when 'pending' %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pending</span>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><%= t('federation_admin.messages.index.pending') %></span>
                 <% when 'delivered' %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Delivered</span>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><%= t('federation_admin.messages.index.delivered') %></span>
                 <% when 'read' %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-federation-100 text-federation-800">Read</span>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-federation-100 text-federation-800"><%= t('federation_admin.messages.index.read') %></span>
                 <% when 'failed' %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Failed</span>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><%= t('federation_admin.messages.index.failed') %></span>
                 <% else %>
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"><%= msg.status %></span>
                 <% end %>
@@ -122,7 +122,7 @@
     <% if @total_pages > 1 %>
       <div class="bg-gray-50 px-5 py-3 flex items-center justify-between border-t border-gray-200">
         <div class="text-sm text-gray-500">
-          Page <%= @current_page %> of <%= @total_pages %> (<%= @total_count %> messages)
+          <%= t('federation_admin.messages.index.page') %> <%= @current_page %> <%= t('federation_admin.messages.index.of') %> <%= @total_pages %> (<%= @total_count %> <%= t('federation_admin.messages.index.total') %>)
         </div>
         <div class="flex gap-2">
           <% if @current_page > 1 %>
@@ -146,8 +146,8 @@
       <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
       </svg>
-      <h3 class="mt-2 text-sm font-medium text-gray-900">No messages found</h3>
-      <p class="mt-1 text-sm text-gray-500">No federation messages match the current filters.</p>
+      <h3 class="mt-2 text-sm font-medium text-gray-900"><%= t('federation_admin.messages.index.no_messages') %></h3>
+      <p class="mt-1 text-sm text-gray-500"><%= t('federation_admin.messages.index.empty') %></p>
     </div>
   <% end %>
 </div>

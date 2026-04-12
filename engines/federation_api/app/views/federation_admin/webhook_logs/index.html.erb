@@ -1,9 +1,9 @@
-<% content_for(:title, "Webhook Logs") %>
+<% content_for(:title, t('federation_admin.webhook_logs.index.title')) %>
 
 <div class="sm:flex sm:items-center sm:justify-between mb-8">
   <div>
-    <h1 class="text-2xl font-bold text-gray-900">Webhook Logs</h1>
-    <p class="mt-1 text-sm text-gray-500"><%= @total_count %> total log<%= @total_count == 1 ? '' : 's' %></p>
+    <h1 class="text-2xl font-bold text-gray-900"><%= t('federation_admin.webhook_logs.index.title') %></h1>
+    <p class="mt-1 text-sm text-gray-500"><%= @total_count %> <%= t('federation_admin.webhook_logs.index.total') %></p>
   </div>
 </div>
 
@@ -11,32 +11,32 @@
 <div class="bg-white shadow rounded-lg p-4 mb-6">
   <form method="get" action="<%= federation_admin_webhook_logs_path %>" class="flex flex-wrap items-end gap-4">
     <div>
-      <label for="status" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Status</label>
+      <label for="status" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.webhook_logs.index.status') %></label>
       <select name="status" id="status" onchange="this.form.submit()"
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
-        <option value="">All Statuses</option>
+        <option value=""><%= t('federation_admin.webhook_logs.index.all_statuses') %></option>
         <% %w[pending success failed].each do |s| %>
-          <option value="<%= s %>" <%= params[:status] == s ? 'selected' : '' %>><%= s.capitalize %></option>
+          <option value="<%= s %>" <%= params[:status] == s ? 'selected' : '' %>><%= t("federation_admin.webhook_logs.index.#{s}") %></option>
         <% end %>
       </select>
     </div>
 
     <div>
-      <label for="direction" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Direction</label>
+      <label for="direction" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.webhook_logs.index.direction') %></label>
       <select name="direction" id="direction" onchange="this.form.submit()"
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
-        <option value="">All Directions</option>
+        <option value=""><%= t('federation_admin.webhook_logs.index.all_directions') %></option>
         <% %w[inbound outbound].each do |d| %>
-          <option value="<%= d %>" <%= params[:direction] == d ? 'selected' : '' %>><%= d.capitalize %></option>
+          <option value="<%= d %>" <%= params[:direction] == d ? 'selected' : '' %>><%= t("federation_admin.webhook_logs.index.#{d}") %></option>
         <% end %>
       </select>
     </div>
 
     <div>
-      <label for="partner_id" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Partner</label>
+      <label for="partner_id" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.webhook_logs.index.partner') %></label>
       <select name="partner_id" id="partner_id" onchange="this.form.submit()"
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
-        <option value="">All Partners</option>
+        <option value=""><%= t('federation_admin.webhook_logs.index.all_partners') %></option>
         <% @partners.each do |partner| %>
           <option value="<%= partner.id %>" <%= params[:partner_id].to_s == partner.id.to_s ? 'selected' : '' %>><%= partner.name %></option>
         <% end %>
@@ -47,7 +47,7 @@
       <div>
         <a href="<%= federation_admin_webhook_logs_path %>"
            class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
-          Clear filters
+          <%= t('federation_admin.webhook_logs.index.clear_filters') %>
         </a>
       </div>
     <% end %>
@@ -61,20 +61,24 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Partner</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Type</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Direction</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Response Code</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attempt</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.webhook_logs.index.table.id') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.webhook_logs.index.table.partner') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.webhook_logs.index.table.event_type') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.webhook_logs.index.table.direction') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.webhook_logs.index.table.status') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.webhook_logs.index.table.response_code') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.webhook_logs.index.table.attempt') %></th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t('federation_admin.webhook_logs.index.table.created_at') %></th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <% @logs.each do |log| %>
-            <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='<%= federation_admin_webhook_log_path(log) %>'">
-              <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap font-mono"><%= log.id %></td>
+            <tr class="hover:bg-gray-50 cursor-pointer" role="link" tabindex="0"
+                onclick="window.location='<%= federation_admin_webhook_log_path(log) %>'"
+                onkeydown="if(event.key==='Enter'){window.location='<%= federation_admin_webhook_log_path(log) %>'}">
+              <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap font-mono">
+                <a href="<%= federation_admin_webhook_log_path(log) %>" class="text-federation-600 hover:text-federation-800"><%= log.id %></a>
+              </td>
               <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
                 <%= log.federation_partner&.name || "N/A" %>
               </td>
@@ -101,35 +105,35 @@
     <!-- Pagination -->
     <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3 mt-4">
       <div class="text-sm text-gray-700">
-        Page <span class="font-medium"><%= @current_page %></span> of <span class="font-medium"><%= @total_pages %></span>
+        <%= t('federation_admin.webhook_logs.index.page') %> <span class="font-medium"><%= @current_page %></span> <%= t('federation_admin.webhook_logs.index.of') %> <span class="font-medium"><%= @total_pages %></span>
       </div>
       <div class="flex space-x-2">
         <% if @current_page > 1 %>
           <a href="<%= federation_admin_webhook_logs_path(request.query_parameters.merge(page: @current_page - 1)) %>"
              class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            Previous
+            <%= t('federation_admin.webhook_logs.index.previous') %>
           </a>
         <% else %>
           <span class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 opacity-50 cursor-not-allowed">
-            Previous
+            <%= t('federation_admin.webhook_logs.index.previous') %>
           </span>
         <% end %>
 
         <% if @current_page < @total_pages %>
           <a href="<%= federation_admin_webhook_logs_path(request.query_parameters.merge(page: @current_page + 1)) %>"
              class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            Next
+            <%= t('federation_admin.webhook_logs.index.next') %>
           </a>
         <% else %>
           <span class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 opacity-50 cursor-not-allowed">
-            Next
+            <%= t('federation_admin.webhook_logs.index.next') %>
           </span>
         <% end %>
       </div>
     </div>
   <% else %>
     <div class="text-center py-12">
-      <p class="text-sm text-gray-500">No webhook logs found.</p>
+      <p class="text-sm text-gray-500"><%= t('federation_admin.webhook_logs.index.empty') %></p>
     </div>
   <% end %>
 </div>

@@ -90,7 +90,7 @@
               <div class="row">
                 <div class="col-md-4">
                   <div class="input-group">
-                    <input type="number" name="hours" min="0" max="100" value="0" class="form-control" id="transfer_hours">
+                    <input type="number" name="hours" min="0" max="100" value="0" class="form-control" id="transfer_hours" required>
                     <span class="input-group-text"><%= t("federation_hub.transfers.hours") %></span>
                   </div>
                 </div>
@@ -106,7 +106,7 @@
             <%# Reason %>
             <div class="mb-3">
               <label for="reason" class="form-label fw-bold"><%= t("federation_hub.transfers.reason") %></label>
-              <textarea name="reason" id="reason" class="form-control" rows="2"
+              <textarea name="reason" id="reason" class="form-control" rows="2" maxlength="500"
                         placeholder="<%= t("federation_hub.transfers.reason_placeholder") %>"></textarea>
             </div>
 

@@ -1,44 +1,57 @@
-<% content_for(:title, "API Key: #{@api_key.name}") %>
+<% content_for(:title, "#{t('federation_admin.api_keys.index.title')}: #{@api_key.name}") %>
 
 <div class="mb-8">
-  <a href="<%= federation_admin_api_keys_path %>" class="text-sm text-federation-600 hover:text-federation-800">&larr; Back to API Keys</a>
+  <a href="<%= federation_admin_api_keys_path %>" class="text-sm text-federation-600 hover:text-federation-800">&larr; <%= t('federation_admin.api_keys.show.back') %></a>
   <h1 class="mt-2 text-2xl font-bold text-gray-900"><%= @api_key.name %></h1>
 </div>
 
 <% if @raw_key.present? %>
   <div class="mb-6 rounded-lg border-2 border-yellow-400 bg-yellow-50 p-6">
-    <h3 class="text-sm font-semibold text-yellow-800 mb-2">Your API Key (shown only once)</h3>
-    <p class="text-xs text-yellow-700 mb-3">Copy this key now and store it securely. It will not be displayed again.</p>
+    <h3 class="text-sm font-semibold text-yellow-800 mb-2"><%= t('federation_admin.api_keys.show.raw_key_title') %></h3>
+    <p class="text-xs text-yellow-700 mb-3"><%= t('federation_admin.api_keys.show.raw_key_help') %></p>
     <div class="flex items-center gap-2">
       <code id="raw-key" class="block flex-1 bg-white border border-yellow-300 rounded-md px-4 py-3 font-mono text-sm text-gray-900 select-all break-all">
         <%= @raw_key %>
       </code>
-      <button onclick="navigator.clipboard.writeText(document.getElementById('raw-key').textContent.trim()); this.textContent='Copied!'; setTimeout(() => this.textContent='Copy', 2000);"
+      <button onclick="navigator.clipboard.writeText(document.getElementById('raw-key').textContent.trim()); this.textContent='<%= t('federation_admin.api_keys.show.copied') %>'; setTimeout(() => this.textContent='<%= t('federation_admin.api_keys.show.copy') %>', 2000);"
               class="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-md text-sm whitespace-nowrap transition-colors">
-        Copy
+        <%= t('federation_admin.api_keys.show.copy') %>
       </button>
     </div>
+  </div>
+<% end %>
+
+<% if @api_key.active && !@api_key.expired? %>
+  <div class="mb-6 flex gap-2">
+    <form method="post" action="<%= rotate_federation_admin_api_key_path(@api_key) %>" class="inline"
+          onsubmit="return confirm('<%= t('federation_admin.api_keys.show.rotate_confirm') %>');">
+      <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+      <button type="submit"
+              class="inline-flex items-center bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm">
+        <%= t('federation_admin.api_keys.show.rotate') %>
+      </button>
+    </form>
   </div>
 <% end %>
 
 <div class="bg-white shadow rounded-lg p-6 max-w-2xl">
   <dl class="divide-y divide-gray-200">
     <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Name</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.api_keys.show.name') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @api_key.name %></dd>
     </div>
     <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Prefix</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.api_keys.show.prefix') %></dt>
       <dd class="mt-1 text-sm font-mono text-gray-900 sm:col-span-2 sm:mt-0"><%= @api_key.key_prefix %>...</dd>
     </div>
     <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Organization</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.api_keys.show.organization') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-        <%= @api_key.organization&.name || "Global (all organizations)" %>
+        <%= @api_key.organization&.name || t('federation_admin.api_keys.show.global') %>
       </dd>
     </div>
     <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Permissions</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.api_keys.show.permissions') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <% if @api_key.permissions.present? %>
           <% @api_key.permissions.select { |_, v| v }.each do |perm, _| %>
@@ -47,41 +60,41 @@
             </span>
           <% end %>
           <% if @api_key.permissions.none? { |_, v| v } %>
-            <span class="text-gray-400 text-xs">None</span>
+            <span class="text-gray-400 text-xs"><%= t('federation_admin.api_keys.show.none') %></span>
           <% end %>
         <% else %>
-          <span class="text-gray-400 text-xs">All (unrestricted)</span>
+          <span class="text-gray-400 text-xs"><%= t('federation_admin.api_keys.show.all_permissions') %></span>
         <% end %>
       </dd>
     </div>
     <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Created</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.api_keys.show.created') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @api_key.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></dd>
     </div>
     <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Last Used</dt>
-      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @api_key.last_used_at&.strftime("%Y-%m-%d %H:%M:%S UTC") || "Never" %></dd>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.api_keys.show.last_used') %></dt>
+      <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @api_key.last_used_at&.strftime("%Y-%m-%d %H:%M:%S UTC") || t('federation_admin.api_keys.show.never') %></dd>
     </div>
     <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Expires</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.api_keys.show.expires') %></dt>
       <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
         <% if @api_key.expires_at.present? %>
           <span class="<%= @api_key.expired? ? 'text-red-600 font-medium' : '' %>">
             <%= @api_key.expires_at.strftime("%Y-%m-%d") %>
-            <%= "(Expired)" if @api_key.expired? %>
+            <%= t('federation_admin.api_keys.show.expired') if @api_key.expired? %>
           </span>
         <% else %>
-          Never
+          <%= t('federation_admin.api_keys.show.never') %>
         <% end %>
       </dd>
     </div>
     <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt class="text-sm font-medium text-gray-500">Status</dt>
+      <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.api_keys.show.status') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <% if @api_key.active && !@api_key.expired? %>
-          <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Active</span>
+          <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800"><%= t('federation_admin.api_keys.show.active') %></span>
         <% else %>
-          <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">Revoked</span>
+          <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600"><%= t('federation_admin.api_keys.show.revoked') %></span>
         <% end %>
       </dd>
     </div>

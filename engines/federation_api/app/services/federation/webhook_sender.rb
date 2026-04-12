@@ -5,7 +5,13 @@
 #
 module Federation
   class WebhookSender
-    TIMEOUT = 10 # seconds
+    # Read timeout from engine config (set via FEDERATION_WEBHOOK_TIMEOUT env var).
+    # Falls back to 10 seconds if config is unavailable.
+    def self.timeout
+      Rails.application.config.federation.webhook_timeout
+    rescue
+      10
+    end
 
     # M9: Cap the size of payload stored in webhook logs to avoid bloating the DB.
     # Full payload is always sent over the wire — this only affects the log record.
@@ -54,9 +60,10 @@ module Federation
         uri = URI(@partner.webhook_url)
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = uri.scheme == "https"
-        http.open_timeout = TIMEOUT
-        http.read_timeout = TIMEOUT
-        http.write_timeout = TIMEOUT if http.respond_to?(:write_timeout=)
+        timeout = self.class.timeout
+        http.open_timeout = timeout
+        http.read_timeout = timeout
+        http.write_timeout = timeout if http.respond_to?(:write_timeout=)
 
         timestamp = Time.current.to_i.to_s
 

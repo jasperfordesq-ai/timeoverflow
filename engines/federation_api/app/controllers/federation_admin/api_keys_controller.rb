@@ -50,6 +50,27 @@ module FederationAdmin
       redirect_to federation_admin_api_keys_path
     end
 
+    def rotate
+      old_key = FederationApiKey.find(params[:id])
+
+      ActiveRecord::Base.transaction do
+        @api_key, @raw_key = FederationApiKey.generate!(
+          name: old_key.name,
+          organization: old_key.organization,
+          permissions: old_key.permissions || {},
+          expires_at: old_key.expires_at
+        )
+        old_key.update!(active: false)
+      end
+
+      flash[:notice] = "Key rotated successfully. The old key has been deactivated. Copy the new raw key now — it cannot be retrieved later."
+      render :show
+    rescue => e
+      Rails.logger.error("[FederationAdmin] API key rotation failed: #{e.class}: #{e.message}")
+      flash[:alert] = "Key rotation failed: #{e.message}"
+      redirect_to federation_admin_api_key_path(params[:id])
+    end
+
     def bulk_revoke
       ids = (params[:ids] || []).map(&:to_i).reject(&:zero?)
       if ids.any?

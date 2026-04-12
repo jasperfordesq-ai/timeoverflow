@@ -1,0 +1,66 @@
+<% content_for(:title) { t("federation_hub.listings.title") } %>
+
+<div class="row">
+  <div class="col-md-12">
+    <h1><%= t("federation_hub.listings.title") %></h1>
+    <p class="text-muted"><%= t("federation_hub.listings.subtitle") %></p>
+  </div>
+</div>
+
+<%# Filters %>
+<div class="row mb-4">
+  <div class="col-md-8">
+    <form method="get" action="<%= federation_hub_listings_path %>" class="d-flex gap-2">
+      <select name="partner_id" class="form-control" onchange="this.form.submit()">
+        <option value=""><%= t("federation_hub.listings.select_partner") %></option>
+        <% @partners.each do |p| %>
+          <option value="<%= p.id %>" <%= 'selected' if @selected_partner&.id == p.id %>><%= p.name %></option>
+        <% end %>
+      </select>
+      <select name="type" class="form-control" onchange="this.form.submit()">
+        <option value=""><%= t("federation_hub.listings.all_types") %></option>
+        <option value="offer" <%= 'selected' if params[:type] == 'offer' %>><%= t("federation_hub.listings.offers") %></option>
+        <option value="inquiry" <%= 'selected' if params[:type] == 'inquiry' %>><%= t("federation_hub.listings.inquiries") %></option>
+      </select>
+      <input type="text" name="q" value="<%= params[:q] %>" placeholder="<%= t("federation_hub.listings.search_placeholder") %>" class="form-control">
+      <button type="submit" class="btn btn-info"><%= t("federation_hub.listings.search") %></button>
+    </form>
+  </div>
+</div>
+
+<% if @selected_partner %>
+  <% if @listings.any? %>
+    <% @listings.each do |listing| %>
+      <div class="post mb-3 p-3 border rounded bg-white">
+        <div class="d-flex justify-content-between">
+          <h4>
+            <%= listing["title"] || listing["name"] || "Listing ##{listing["id"]}" %>
+            <% if listing["type"] %>
+              <span class="badge rounded-pill <%= listing["type"] == "offer" ? "bg-success" : "bg-warning text-dark" %>">
+                <%= listing["type"]&.capitalize %>
+              </span>
+            <% end %>
+          </h4>
+        </div>
+        <% if listing["description"].present? %>
+          <p class="text-muted"><%= truncate(listing["description"].to_s, length: 200) %></p>
+        <% end %>
+        <% if listing["category"].present? %>
+          <span class="badge rounded-pill bg-info"><%= listing["category"] %></span>
+        <% end %>
+        <% Array(listing["tags"]).first(5).each do |tag| %>
+          <span class="badge rounded-pill bg-secondary"><%= tag %></span>
+        <% end %>
+        <small class="text-muted float-end"><%= @selected_partner.name %></small>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="alert alert-info">
+      <%= t("federation_hub.listings.none_found", partner: @selected_partner.name) %>
+    </div>
+  <% end %>
+<% else %>
+  <div class="alert alert-info">
+    <%= t("federation_hub.listings.choose_partner") %>
+  </div>
+<% end %>

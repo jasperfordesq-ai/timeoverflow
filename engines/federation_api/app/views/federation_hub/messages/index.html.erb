@@ -1,0 +1,40 @@
+<% content_for(:title) { t("federation_hub.messages.title") } %>
+
+<div class="row mb-3">
+  <div class="col-md-8">
+    <h1><%= t("federation_hub.messages.title") %></h1>
+  </div>
+  <div class="col-md-4 text-end">
+    <a href="<%= new_federation_hub_message_path %>" class="btn btn-info">
+      <%= t("federation_hub.messages.compose") %>
+    </a>
+  </div>
+</div>
+
+<% if @messages.any? %>
+  <% @messages.each do |msg| %>
+    <a href="<%= federation_hub_message_path(msg) %>" class="text-decoration-none">
+      <div class="card mb-2 <%= msg.inbound? && !msg.read_at ? 'border-info' : 'border-light' %>">
+        <div class="card-body py-2 d-flex justify-content-between align-items-center">
+          <div>
+            <span class="badge <%= msg.inbound? ? 'bg-success' : 'bg-info' %> me-2">
+              <%= msg.inbound? ? t("federation_hub.messages.received") : t("federation_hub.messages.sent_label") %>
+            </span>
+            <strong class="text-dark"><%= msg.subject.present? ? msg.subject : truncate(msg.body, length: 60) %></strong>
+            <% if msg.inbound? && !msg.read_at %>
+              <span class="badge bg-warning text-dark ms-1"><%= t("federation_hub.messages.unread") %></span>
+            <% end %>
+          </div>
+          <div>
+            <small class="text-muted"><%= msg.remote_user_identifier %></small>
+            <small class="text-muted ms-2"><%= time_ago_in_words(msg.created_at) %> ago</small>
+          </div>
+        </div>
+      </div>
+    </a>
+  <% end %>
+<% else %>
+  <div class="alert alert-info">
+    <%= t("federation_hub.messages.none") %>
+  </div>
+<% end %>

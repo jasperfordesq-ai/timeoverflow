@@ -148,6 +148,9 @@ module FederationApi
           root to: "dashboard#index"
           resource :settings, only: [:show, :update]
           resources :partners, only: [:index, :show]
+          resources :members, only: [:index]
+          resources :listings, only: [:index]
+          resources :messages, only: [:index, :show, :new, :create]
         end
       end
     end

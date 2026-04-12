@@ -1,0 +1,62 @@
+<% content_for(:title) { t("federation_hub.members.title") } %>
+
+<div class="row">
+  <div class="col-md-12">
+    <h1><%= t("federation_hub.members.title") %></h1>
+    <p class="text-muted"><%= t("federation_hub.members.subtitle") %></p>
+  </div>
+</div>
+
+<%# Partner selector %>
+<div class="row mb-4">
+  <div class="col-md-6">
+    <form method="get" action="<%= federation_hub_members_path %>">
+      <div class="input-group">
+        <select name="partner_id" class="form-control" onchange="this.form.submit()">
+          <option value=""><%= t("federation_hub.members.select_partner") %></option>
+          <% @partners.each do |p| %>
+            <option value="<%= p.id %>" <%= 'selected' if @selected_partner&.id == p.id %>><%= p.name %></option>
+          <% end %>
+        </select>
+        <button type="submit" class="btn btn-info"><%= t("federation_hub.members.browse") %></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<% if @selected_partner %>
+  <% if @members.any? %>
+    <div class="row">
+      <% @members.each do |member| %>
+        <div class="col-md-4 mb-3">
+          <div class="card border-info h-100">
+            <div class="card-body">
+              <h5 class="card-title"><%= member["username"] || member["name"] || "Member ##{member["id"]}" %></h5>
+              <% if member["balance"] %>
+                <p class="card-text">
+                  <span class="badge bg-info"><%= (member["balance"].to_f / 3600).round(1) %>h</span>
+                </p>
+              <% end %>
+              <% if member["tags"].present? %>
+                <p>
+                  <% Array(member["tags"]).first(3).each do |tag| %>
+                    <span class="badge rounded-pill bg-secondary"><%= tag %></span>
+                  <% end %>
+                </p>
+              <% end %>
+              <small class="text-muted"><%= @selected_partner.name %></small>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="alert alert-info">
+      <%= t("federation_hub.members.none_found", partner: @selected_partner.name) %>
+    </div>
+  <% end %>
+<% else %>
+  <div class="alert alert-info">
+    <%= t("federation_hub.members.choose_partner") %>
+  </div>
+<% end %>

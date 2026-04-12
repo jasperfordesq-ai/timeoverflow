@@ -61,17 +61,32 @@
               <ul class="nav nav-pills actions-menu">
                 <li class="nav-item">
                   <a class="nav-link <%= 'active' if request.path == federation_hub_root_path %>" href="<%= federation_hub_root_path %>">
-                    &#127760; <%= t("federation_hub.nav.dashboard") %>
+                    <%= t("federation_hub.nav.dashboard") %>
                   </a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link <%= 'active' if request.path.start_with?(federation_hub_partners_path) %>" href="<%= federation_hub_partners_path %>">
-                    &#128279; <%= t("federation_hub.nav.partners") %>
+                    <%= t("federation_hub.nav.partners") %>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link <%= 'active' if request.path.start_with?(federation_hub_members_path) %>" href="<%= federation_hub_members_path %>">
+                    <%= t("federation_hub.nav.members") %>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link <%= 'active' if request.path.start_with?(federation_hub_listings_path) %>" href="<%= federation_hub_listings_path %>">
+                    <%= t("federation_hub.nav.listings") %>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link <%= 'active' if request.path.start_with?(federation_hub_messages_path) %>" href="<%= federation_hub_messages_path %>">
+                    <%= t("federation_hub.nav.messages") %>
                   </a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link <%= 'active' if request.path == federation_hub_settings_path %>" href="<%= federation_hub_settings_path %>">
-                    &#9881; <%= t("federation_hub.nav.settings") %>
+                    <%= t("federation_hub.nav.settings") %>
                   </a>
                 </li>
               </ul>
@@ -108,7 +123,7 @@
           <div class="col-12 text-center">
             <small class="text-muted">
               Federation Hub &mdash; Powered by
-              <a href="https://project-nexus.ie" target="_blank" rel="noopener">Project NEXUS</a>
+              <a href="https://www.timeoverflow.org" target="_blank" rel="noopener">TimeOverflow</a>
             </small>
           </div>
         </div>

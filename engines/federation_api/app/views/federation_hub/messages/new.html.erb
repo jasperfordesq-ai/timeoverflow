@@ -1,0 +1,49 @@
+<% content_for(:title) { t("federation_hub.messages.compose") } %>
+
+<div class="row mb-3">
+  <div class="col-md-12">
+    <a href="<%= federation_hub_messages_path %>" class="text-muted">&larr; <%= t("federation_hub.messages.back") %></a>
+    <h1><%= t("federation_hub.messages.compose") %></h1>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card border-info">
+      <div class="card-body">
+        <form action="<%= federation_hub_messages_path %>" method="post">
+          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+
+          <div class="mb-3">
+            <label for="partner_id" class="form-label"><%= t("federation_hub.messages.partner") %></label>
+            <select name="partner_id" id="partner_id" class="form-control" required>
+              <option value=""><%= t("federation_hub.messages.select_partner") %></option>
+              <% @partners.each do |p| %>
+                <option value="<%= p.id %>"><%= p.name %></option>
+              <% end %>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="recipient_id" class="form-label"><%= t("federation_hub.messages.recipient") %></label>
+            <input type="text" name="recipient_id" id="recipient_id" class="form-control" required
+                   placeholder="<%= t("federation_hub.messages.recipient_placeholder") %>">
+          </div>
+
+          <div class="mb-3">
+            <label for="subject" class="form-label"><%= t("federation_hub.messages.subject_label") %></label>
+            <input type="text" name="subject" id="subject" class="form-control">
+          </div>
+
+          <div class="mb-3">
+            <label for="body" class="form-label"><%= t("federation_hub.messages.body_label") %></label>
+            <textarea name="body" id="body" rows="6" class="form-control" required></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-info"><%= t("federation_hub.messages.send_button") %></button>
+          <a href="<%= federation_hub_messages_path %>" class="btn btn-secondary ms-2"><%= t("federation_hub.messages.cancel") %></a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

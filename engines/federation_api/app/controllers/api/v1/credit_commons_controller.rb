@@ -11,7 +11,7 @@ module Api
           return respond_with_error("No organizations configured", status: :service_unavailable)
         end
         config = FederationCcNodeConfig.for(org)
-        render json: config.build_about_response
+        respond_with_data(config.build_about_response)
       end
 
       def accounts
@@ -33,7 +33,7 @@ module Api
           }
         end
 
-        render json: { data: accounts, meta: { number_of_results: accounts.size } }
+        respond_with_data(accounts, meta: { number_of_results: accounts.size })
       end
 
       def account
@@ -50,14 +50,14 @@ module Api
         balance = member.account.balance.to_i / 3600.0
         completed = FederationTransaction.completed.where(local_account_id: member.account.id)
 
-        render json: {
+        respond_with_data({
           balance: balance,
           volume: completed.sum(:amount) / 3600.0,
           gross_in: completed.inbound.sum(:amount) / 3600.0,
           gross_out: completed.outbound.sum(:amount) / 3600.0,
           trades: completed.count,
           partners: completed.select(:remote_user_identifier).distinct.count
-        }
+        })
       end
 
       def create_transaction
@@ -100,7 +100,7 @@ module Api
         adapter = Federation::Adapters::CreditCommonsAdapter.new(partner: nil)
         entries = transactions.flat_map { |txn| adapter.generate_entries(txn) }
 
-        render json: { data: entries, meta: { number_of_results: entries.size } }
+        respond_with_data(entries, meta: { number_of_results: entries.size })
       end
 
       def transaction_entries
@@ -112,12 +112,10 @@ module Api
       end
 
       def forms
-        render json: {
-          data: [
-            { id: "default", workflow: "+|PPC-PE-CE=", label: "Standard Transfer" },
-            { id: "instant", workflow: "+|PC-PE-CE=", label: "Instant Transfer (skip validation)" }
-          ]
-        }
+        respond_with_data([
+          { id: "default", workflow: "+|PPC-PE-CE=", label: "Standard Transfer" },
+          { id: "instant", workflow: "+|PC-PE-CE=", label: "Instant Transfer (skip validation)" }
+        ])
       end
     end
   end

@@ -147,6 +147,7 @@ es:
       send_failed: "Error al enviar mensaje: %{error}"
       compose_to: "Mensaje a %{partner}"
       no_recipients: "No hay miembros disponibles para enviar mensajes en %{partner}."
+      internal_not_yet: "La mensajería interna entre comunidades de TimeOverflow pronto estará disponible. Por ahora, usa la página de Miembros para enviar créditos de tiempo."
       choose_partner_prompt: "Selecciona una comunidad arriba para redactar un mensaje."
       select_recipient: "Elige un miembro..."
       you: "Tú"
@@ -191,6 +192,9 @@ es:
       default_reason: "Transferencia federada de %{from_org} a %{to_org}"
       no_members: "No hay miembros de %{org} disponibles para transferencias."
       external_success: "Transferencia de %{amount} enviada a %{partner}. Se completará cuando el socio confirme."
+      confirm_send: "¿Está seguro de que desea enviar esta transferencia?"
+      exceeds_balance: "Advertencia: la cantidad supera tu saldo actual."
+      hours_short: "h"
       external_note: "Las transferencias externas se envían a la plataforma del socio para su procesamiento. Tu saldo se debitará inmediatamente y el destinatario recibirá el crédito cuando el socio confirme."
   federation_mailer:
     common:

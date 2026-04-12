@@ -127,7 +127,7 @@
             </div>
 
             <button type="submit" class="btn btn-success btn-lg"
-                    data-confirm="<%= t("federation_hub.transfers.confirm_send", default: "Are you sure you want to send this transfer?") %>">
+                    data-confirm="<%= t("federation_hub.transfers.confirm_send") %>">
               <%= t("federation_hub.transfers.send_button") %>
             </button>
             <small id="balance-warning" class="text-danger d-none ms-3"></small>
@@ -157,7 +157,7 @@
   function checkBalance() {
     var amount = (parseInt(hoursEl.value, 10) || 0) * 3600 + (parseInt(minsEl.value, 10) || 0) * 60;
     if (amount > 0 && amount > balanceSeconds) {
-      warning.textContent = '<%= j t("federation_hub.transfers.exceeds_balance", default: "Warning: amount exceeds your current balance.") %>';
+      warning.textContent = '<%= j t("federation_hub.transfers.exceeds_balance") %>';
       warning.classList.remove('d-none');
     } else {
       warning.classList.add('d-none');

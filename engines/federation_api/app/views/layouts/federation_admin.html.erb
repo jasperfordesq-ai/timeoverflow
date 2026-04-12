@@ -4,16 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= content_for?(:title) ? "#{yield(:title)} — " : "" %><%= t("federation_admin.layout.title") %></title>
-  <script>
-    // Apply dark mode BEFORE paint to prevent flash of wrong theme.
-    (function(){
-      var stored = localStorage.getItem('federation_admin_theme');
-      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (stored === 'dark' || (!stored && prefersDark)) {
-        document.documentElement.classList.add('dark');
-      }
-    })();
-  </script>
   <%# DESIGN SYSTEM: Tailwind CSS (self-contained, inlined)
       The admin panel intentionally uses Tailwind CSS while the member-facing
       Federation Hub uses Bootstrap 5. This is by design:
@@ -46,106 +36,6 @@
     }
     .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0; }
 
-    /* --- Dark mode overrides --- */
-    html.dark { background-color: #111827; }
-    .dark body { background-color: #111827; color: #e5e7eb; }
-
-    /* Page background */
-    .dark .bg-gray-50 { background-color: #111827 !important; }
-
-    /* Cards, panels, table rows */
-    .dark .bg-white { background-color: #1f2937 !important; }
-    .dark .hover\:bg-gray-50:hover { background-color: #374151 !important; }
-
-    /* Text */
-    .dark .text-gray-900 { color: #f3f4f6 !important; }
-    .dark .text-gray-800 { color: #e5e7eb !important; }
-    .dark .text-gray-700 { color: #d1d5db !important; }
-    .dark .text-gray-600 { color: #9ca3af !important; }
-    .dark .text-gray-500 { color: #9ca3af !important; }
-    .dark .text-gray-400 { color: #6b7280 !important; }
-
-    /* Borders */
-    .dark .border-gray-200 { border-color: #374151 !important; }
-    .dark .border-gray-300 { border-color: #4b5563 !important; }
-    .dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: #374151 !important; }
-
-    /* Table headers */
-    .dark thead .bg-gray-50,
-    .dark .bg-gray-50 { background-color: #1a2332 !important; }
-
-    /* Form inputs */
-    .dark input, .dark select, .dark textarea {
-      background-color: #374151 !important;
-      border-color: #4b5563 !important;
-      color: #e5e7eb !important;
-    }
-    .dark input:focus, .dark select:focus, .dark textarea:focus {
-      border-color: #3b82f6 !important;
-    }
-
-    /* Shadows */
-    .dark .shadow { box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
-    .dark .shadow-lg { box-shadow: 0 10px 15px rgba(0,0,0,0.4) !important; }
-
-    /* Flash messages */
-    .dark .bg-green-50 { background-color: #064e3b !important; }
-    .dark .border-green-200 { border-color: #065f46 !important; }
-    .dark .text-green-800 { color: #6ee7b7 !important; }
-    .dark .bg-red-50 { background-color: #7f1d1d !important; }
-    .dark .border-red-200 { border-color: #991b1b !important; }
-    .dark .text-red-800 { color: #fca5a5 !important; }
-
-    /* Alpha notice bar */
-    .dark .bg-amber-500 { background-color: #92400e !important; }
-    .dark .text-amber-950 { color: #fef3c7 !important; }
-
-    /* Badges — keep legible */
-    .dark .bg-green-100 { background-color: #065f46 !important; }
-    .dark .text-green-800 { color: #6ee7b7 !important; }
-    .dark .bg-blue-100 { background-color: #1e3a5f !important; }
-    .dark .text-blue-800 { color: #93c5fd !important; }
-    .dark .bg-yellow-100 { background-color: #78350f !important; }
-    .dark .text-yellow-800 { color: #fde68a !important; }
-    .dark .bg-red-100 { background-color: #7f1d1d !important; }
-    .dark .bg-gray-100 { background-color: #374151 !important; }
-    .dark .text-gray-600 { color: #9ca3af !important; }
-    .dark .bg-purple-100 { background-color: #3b0764 !important; }
-    .dark .text-purple-800 { color: #c4b5fd !important; }
-
-    /* Federation brand colors in dark */
-    .dark .bg-federation-50 { background-color: #1e3a5f !important; }
-    .dark .bg-federation-100 { background-color: #1e3a5f !important; }
-    .dark .text-federation-700 { color: #93c5fd !important; }
-    .dark .text-federation-800 { color: #bfdbfe !important; }
-    .dark .text-federation-600 { color: #60a5fa !important; }
-
-    /* Pre/code blocks */
-    .dark pre { background-color: #111827 !important; color: #d1d5db !important; }
-
-    /* Footer */
-    .dark footer { border-color: #374151 !important; }
-
-    /* Scroll shadows for dark */
-    .dark .scroll-shadow { background:
-      linear-gradient(to right, #1f2937 30%, rgba(31,41,55,0)),
-      linear-gradient(to right, rgba(31,41,55,0), #1f2937 70%) 100% 0,
-      linear-gradient(to right, rgba(255,255,255,.05), rgba(255,255,255,0)),
-      linear-gradient(to left, rgba(255,255,255,.05), rgba(255,255,255,0)) 100% 0;
-      background-repeat: no-repeat;
-      background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
-      background-attachment: local, local, scroll, scroll;
-    }
-
-    /* Filter bar backgrounds */
-    .dark .rounded-lg.p-4 { background-color: #1f2937; }
-
-    /* Details/summary in audit logs */
-    .dark details pre { background-color: #111827 !important; }
-
-    /* Toggle button */
-    .theme-toggle { cursor:pointer; background:none; border:none; padding:4px 8px; font-size:1.1rem; line-height:1; border-radius:6px; transition: background-color 0.2s; }
-    .theme-toggle:hover { background-color: rgba(255,255,255,0.1); }
   </style>
   <%= csrf_meta_tags %>
 </head>
@@ -167,11 +57,6 @@
             <%= t("federation_admin.layout.brand") %>
           </a>
           <div class="flex items-center gap-3">
-            <button type="button" class="theme-toggle text-federation-200 hover:text-white" id="theme-toggle"
-                    aria-label="Toggle dark mode" title="Toggle dark mode">
-              <span id="theme-icon-light" style="display:none;">&#9790;</span>
-              <span id="theme-icon-dark">&#9728;</span>
-            </button>
             <a href="<%= main_app.root_path rescue '/' %>" class="text-federation-200 hover:text-white text-sm">
               &larr; <%= t("federation_admin.layout.back_to_timeoverflow") %>
             </a>
@@ -267,37 +152,5 @@
       </div>
     </footer>
   </div>
-  <script>
-    (function(){
-      var html = document.documentElement;
-      var btn = document.getElementById('theme-toggle');
-      var iconLight = document.getElementById('theme-icon-light');
-      var iconDark = document.getElementById('theme-icon-dark');
-
-      function updateIcons() {
-        var isDark = html.classList.contains('dark');
-        iconLight.style.display = isDark ? 'inline' : 'none';
-        iconDark.style.display = isDark ? 'none' : 'inline';
-      }
-      updateIcons();
-
-      if (btn) {
-        btn.addEventListener('click', function() {
-          html.classList.toggle('dark');
-          var isDark = html.classList.contains('dark');
-          localStorage.setItem('federation_admin_theme', isDark ? 'dark' : 'light');
-          updateIcons();
-        });
-      }
-
-      // Listen for system preference changes (only if user hasn't explicitly chosen)
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
-        if (!localStorage.getItem('federation_admin_theme')) {
-          html.classList.toggle('dark', e.matches);
-          updateIcons();
-        }
-      });
-    })();
-  </script>
 </body>
 </html>

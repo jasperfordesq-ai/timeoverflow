@@ -49,11 +49,9 @@ class FederationApiKey < ActiveRecord::Base
 
   # Check whether this key grants a specific permission.
   # Keys with explicit permissions: only the flagged ones are allowed.
-  # Keys with *empty* permissions created BEFORE the default-deny change
-  # are treated as unrestricted for backward compatibility — but new keys
-  # MUST specify at least one permission (see validate_permissions_schema).
+  # Keys with empty permissions are denied — all keys must specify at
+  # least one permission (enforced by validate_permissions_schema).
   def has_permission?(permission)
-    return true if permissions.blank? && persisted? && created_at < Time.utc(2026, 4, 13)
     return false if permissions.blank?
     permissions[permission.to_s] == true
   end

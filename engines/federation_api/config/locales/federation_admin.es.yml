@@ -578,6 +578,19 @@ es:
       cc_endpoints: "Puntos de acceso CC:"
       save: "Guardar"
 
+    reconciliation_runs:
+      title: "Ejecuciones de Conciliación"
+      subtitle: "Historial de resultados de la tarea de conciliación automatizada."
+      empty: "Aún no se han registrado ejecuciones de conciliación."
+      table:
+        id: "ID"
+        status: "Estado"
+        critical: "Críticos"
+        warnings: "Advertencias"
+        total: "Total"
+        duration: "Duración"
+        run_at: "Ejecutado el"
+
     errors:
       not_found: "El recurso solicitado no se encontró."
       unexpected: "Ocurrió un error inesperado. Por favor, inténtelo de nuevo."

@@ -57,7 +57,7 @@
 <!-- Table -->
 <div class="bg-white shadow rounded-lg overflow-hidden">
   <% if @logs.any? %>
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto scroll-shadow">
       <table class="min-w-full divide-y divide-gray-200">
         <caption class="sr-only"><%= t('federation_admin.webhook_logs.index.title') %></caption>
         <thead class="bg-gray-50">
@@ -74,9 +74,7 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <% @logs.each do |log| %>
-            <tr class="hover:bg-gray-50 cursor-pointer" role="link" tabindex="0"
-                onclick="window.location='<%= federation_admin_webhook_log_path(log) %>'"
-                onkeydown="if(event.key==='Enter'){window.location='<%= federation_admin_webhook_log_path(log) %>'}">
+            <tr class="hover:bg-gray-50">
               <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap font-mono">
                 <a href="<%= federation_admin_webhook_log_path(log) %>" class="text-federation-600 hover:text-federation-800"><%= log.id %></a>
               </td>

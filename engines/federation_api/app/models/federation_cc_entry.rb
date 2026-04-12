@@ -6,7 +6,8 @@ class FederationCcEntry < ActiveRecord::Base
   validates :transaction_uuid, presence: true
   validates :payer, presence: true
   validates :payee, presence: true
-  validates :quant, presence: true, numericality: { greater_than: 0 }
+  validates :quant, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :quant, numericality: { greater_than: 0 }, unless: -> { state == "X" }
   validates :state, presence: true, inclusion: { in: STATES }
 
   scope :completed, -> { where(state: "C") }

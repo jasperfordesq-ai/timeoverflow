@@ -28,9 +28,9 @@ module FederationAdmin
 
     def format_date(datetime)
       return "—" unless datetime
-      l(datetime, format: :long, default: datetime.strftime("%Y-%m-%d %H:%M UTC"))
+      l(datetime, format: :long, default: datetime.in_time_zone.strftime("%Y-%m-%d %H:%M %Z"))
     rescue
-      datetime.strftime("%Y-%m-%d %H:%M UTC")
+      datetime.in_time_zone.strftime("%Y-%m-%d %H:%M %Z")
     end
 
     def format_hours(seconds)
@@ -41,12 +41,12 @@ module FederationAdmin
     def sort_link(label, column, current_sort, current_dir)
       new_dir = (current_sort == column.to_s && current_dir != "asc") ? "asc" : "desc"
       arrow = if current_sort == column.to_s
-        current_dir == "asc" ? " ↑" : " ↓"
+        current_dir == "asc" ? " \u2191" : " \u2193"
       else
         ""
       end
       params_hash = request.query_parameters.merge(sort: column, dir: new_dir)
-      "<a href=\"?#{params_hash.to_query}\" class=\"hover:text-federation-600\">#{label}#{arrow}</a>".html_safe
+      link_to("#{h(label)}#{arrow}".html_safe, "?#{params_hash.to_query}", class: "hover:text-federation-600")
     end
   end
 end

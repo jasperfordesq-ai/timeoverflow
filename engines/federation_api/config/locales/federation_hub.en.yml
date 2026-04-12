@@ -147,6 +147,7 @@ en:
       send_failed: "Failed to send message: %{error}"
       compose_to: "Message to %{partner}"
       no_recipients: "No members available to message on %{partner}."
+      internal_not_yet: "Internal messaging between TimeOverflow communities is coming soon. Use the Members page to send time credits instead."
       choose_partner_prompt: "Select a partner community above to compose a message."
       select_recipient: "Choose a member..."
       you: "You"
@@ -191,6 +192,9 @@ en:
       default_reason: "Federation transfer from %{from_org} to %{to_org}"
       no_members: "No members from %{org} are currently available for transfers."
       external_success: "Transfer of %{amount} sent to %{partner}. It will be completed once the partner confirms."
+      confirm_send: "Are you sure you want to send this transfer?"
+      exceeds_balance: "Warning: amount exceeds your current balance."
+      hours_short: "h"
       external_note: "External transfers are sent to the partner platform for processing. Your balance will be debited immediately, and the recipient will be credited once the partner confirms."
   federation_mailer:
     common:

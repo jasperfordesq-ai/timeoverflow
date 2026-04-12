@@ -578,6 +578,19 @@ en:
       cc_endpoints: "CC endpoints:"
       save: "Save"
 
+    reconciliation_runs:
+      title: "Reconciliation Runs"
+      subtitle: "History of automated reconciliation job results."
+      empty: "No reconciliation runs recorded yet."
+      table:
+        id: "ID"
+        status: "Status"
+        critical: "Critical"
+        warnings: "Warnings"
+        total: "Total"
+        duration: "Duration"
+        run_at: "Run At"
+
     errors:
       not_found: "The requested resource could not be found."
       unexpected: "An unexpected error occurred. Please try again."

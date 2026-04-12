@@ -111,11 +111,7 @@ module Api
         response.set_header("X-RateLimit-Remaining", [limit - estimated.ceil, 0].max.to_s)
 
         if estimated > limit
-          render json: {
-            success: false,
-            error: "Rate limit exceeded",
-            message: "Maximum #{limit} requests per minute"
-          }, status: :too_many_requests
+          respond_with_error("Rate limit exceeded — maximum #{limit} requests per minute", status: :too_many_requests)
         end
       end
 
@@ -173,7 +169,8 @@ module Api
           current_page: paginated.current_page,
           total_pages: paginated.total_pages,
           total_count: paginated.total_count,
-          per_page: per_page
+          per_page: per_page,
+          max_per_page: 100
         }
 
         [paginated, meta]

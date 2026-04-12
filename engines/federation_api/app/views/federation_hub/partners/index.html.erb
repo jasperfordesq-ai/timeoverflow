@@ -1,0 +1,62 @@
+<div class="container-fluid py-4">
+  <div class="row mb-4">
+    <div class="col">
+      <h1><%= t("federation_hub.partners.title") %></h1>
+      <p class="text-muted"><%= t("federation_hub.partners.subtitle") %></p>
+    </div>
+  </div>
+
+  <% if @partners.any? %>
+    <div class="row">
+      <% @partners.each do |partner| %>
+        <div class="col-md-4 mb-4">
+          <div class="card border-info h-100">
+            <div class="card-body">
+              <h5 class="card-title"><%= partner.name %></h5>
+              <div class="mb-3">
+                <%= federation_status_badge(partner.status) %>
+                <%= partnership_level_badge(partner.partnership_level, partner.level_name) %>
+              </div>
+              <table class="table table-sm table-borderless mb-3">
+                <tbody>
+                  <tr>
+                    <td><%= t("federation_hub.partners.feature_profiles") %></td>
+                    <td class="text-end"><%= federation_feature_icon(partner.can_share_profiles?) %></td>
+                  </tr>
+                  <tr>
+                    <td><%= t("federation_hub.partners.feature_listings") %></td>
+                    <td class="text-end"><%= federation_feature_icon(partner.can_share_listings?) %></td>
+                  </tr>
+                  <tr>
+                    <td><%= t("federation_hub.partners.feature_transfers") %></td>
+                    <td class="text-end"><%= federation_feature_icon(partner.can_transact?) %></td>
+                  </tr>
+                </tbody>
+              </table>
+              <% if partner.last_health_check_at.present? %>
+                <small class="text-muted d-block mb-3">
+                  <%= t("federation_hub.partners.last_check", time: time_ago_in_words(partner.last_health_check_at)) %>
+                </small>
+              <% end %>
+            </div>
+            <div class="card-footer bg-transparent">
+              <%= link_to t("federation_hub.partners.view_details"), federation_hub_partner_path(partner), class: "btn btn-info btn-sm" %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="row">
+      <div class="col-md-8">
+        <div class="alert alert-secondary">
+          <%= t("federation_hub.partners.none_available") %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="mt-3">
+    <%= link_to t("federation_hub.nav.dashboard"), federation_hub_root_path, class: "btn btn-outline-secondary" %>
+  </div>
+</div>

@@ -1,0 +1,77 @@
+<div class="container-fluid py-4">
+  <div class="row mb-4">
+    <div class="col">
+      <h1><%= @partner.name %></h1>
+    </div>
+  </div>
+
+  <div class="row">
+    <%# === Sidebar: status / level / platform === %>
+    <div class="col-md-3 mb-4">
+      <div class="card border-info">
+        <div class="card-header bg-info text-white">
+          <strong><%= t("federation_hub.partners.details") %></strong>
+        </div>
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr>
+              <td class="fw-bold"><%= t("federation_hub.partners.status") %></td>
+              <td class="text-end"><%= federation_status_badge(@partner.status) %></td>
+            </tr>
+            <tr>
+              <td class="fw-bold"><%= t("federation_hub.partners.level") %></td>
+              <td class="text-end"><%= partnership_level_badge(@partner.partnership_level, @partner.level_name) %></td>
+            </tr>
+            <tr>
+              <td class="fw-bold"><%= t("federation_hub.partners.platform") %></td>
+              <td class="text-end"><span class="badge bg-secondary"><%= @partner.platform_type.capitalize %></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <% if @partner.last_health_check_at.present? %>
+        <div class="mt-3">
+          <small class="text-muted">
+            <%= t("federation_hub.partners.last_check", time: time_ago_in_words(@partner.last_health_check_at)) %>
+          </small>
+        </div>
+      <% end %>
+    </div>
+
+    <%# === Main: capabilities table === %>
+    <div class="col-md-9 mb-4">
+      <div class="card border-info">
+        <div class="card-header bg-info text-white">
+          <strong><%= t("federation_hub.partners.capabilities") %></strong>
+        </div>
+        <table class="table table-striped mb-0">
+          <thead>
+            <tr>
+              <th><%= t("federation_hub.partners.capabilities") %></th>
+              <th class="text-end"><%= t("federation_hub.partners.status") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><%= t("federation_hub.partners.feature_profiles") %></td>
+              <td class="text-end"><%= federation_feature_icon(@partner.can_share_profiles?) %></td>
+            </tr>
+            <tr>
+              <td><%= t("federation_hub.partners.feature_listings") %></td>
+              <td class="text-end"><%= federation_feature_icon(@partner.can_share_listings?) %></td>
+            </tr>
+            <tr>
+              <td><%= t("federation_hub.partners.feature_transfers") %></td>
+              <td class="text-end"><%= federation_feature_icon(@partner.can_transact?) %></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <%= link_to t("federation_hub.partners.back_to_list"), federation_hub_partners_path, class: "btn btn-outline-secondary" %>
+  </div>
+</div>

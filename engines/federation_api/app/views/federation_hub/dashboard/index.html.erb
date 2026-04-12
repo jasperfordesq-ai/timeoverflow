@@ -1,0 +1,152 @@
+<div class="container-fluid py-4">
+  <div class="row mb-4">
+    <div class="col">
+      <h1><%= t("federation_hub.dashboard.title") %></h1>
+    </div>
+  </div>
+
+  <% unless @org_settings&.federation_enabled? %>
+    <div class="alert alert-warning">
+      <%= t("federation_hub.dashboard.org_not_enabled") %>
+    </div>
+  <% end %>
+
+  <% if !@prefs&.opted_in? %>
+    <%# === Welcome / CTA for non-opted-in members === %>
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card border-info">
+          <div class="card-body text-center py-5">
+            <h2 class="card-title mb-3"><%= t("federation_hub.dashboard.welcome_title") %></h2>
+            <p class="card-text mb-4"><%= t("federation_hub.dashboard.welcome_description") %></p>
+            <ul class="list-unstyled mb-4">
+              <li class="mb-2"><span class="text-success fw-bold">&#10148;</span> <%= t("federation_hub.dashboard.benefit_transfers") %></li>
+              <li class="mb-2"><span class="text-success fw-bold">&#10148;</span> <%= t("federation_hub.dashboard.benefit_discovery") %></li>
+              <li class="mb-2"><span class="text-success fw-bold">&#10148;</span> <%= t("federation_hub.dashboard.benefit_messaging") %></li>
+            </ul>
+            <% if @org_settings&.federation_enabled? %>
+              <%= link_to t("federation_hub.dashboard.opt_in_cta"), federation_hub_settings_path, class: "btn btn-info btn-lg" %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <% else %>
+    <%# === Dashboard for opted-in members === %>
+
+    <%# --- Stat cards row --- %>
+    <div class="row mb-4">
+      <div class="col-md-3 mb-3">
+        <div class="card card-info border-info h-100">
+          <div class="card-body text-center">
+            <h3 class="card-title"><span class="badge bg-info rounded-pill"><%= @stats[:partners_count] %></span></h3>
+            <p class="card-text text-muted"><%= t("federation_hub.dashboard.stat_partners") %></p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="card card-info border-info h-100">
+          <div class="card-body text-center">
+            <h3 class="card-title"><span class="badge bg-info rounded-pill"><%= @stats[:transactions_completed] %></span></h3>
+            <p class="card-text text-muted"><%= t("federation_hub.dashboard.stat_transactions") %></p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="card card-info border-info h-100">
+          <div class="card-body text-center">
+            <h3 class="card-title"><span class="badge bg-info rounded-pill"><%= format_federation_hours(@stats[:time_given]) %></span></h3>
+            <p class="card-text text-muted"><%= t("federation_hub.dashboard.stat_given") %></p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="card card-info border-info h-100">
+          <div class="card-body text-center">
+            <h3 class="card-title"><span class="badge bg-info rounded-pill"><%= format_federation_hours(@stats[:time_received]) %></span></h3>
+            <p class="card-text text-muted"><%= t("federation_hub.dashboard.stat_received") %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <%# --- Main column: partners + quick links --- %>
+      <div class="col-md-8 mb-4">
+        <%# Quick links card %>
+        <div class="card border-info mb-4">
+          <div class="card-header bg-info text-white">
+            <strong><%= t("federation_hub.dashboard.quick_links") %></strong>
+          </div>
+          <div class="card-body">
+            <div class="d-flex flex-wrap gap-2">
+              <%= link_to federation_hub_partners_path, class: "btn btn-outline-info" do %>
+                &#9733; <%= t("federation_hub.nav.partners") %>
+              <% end %>
+              <%= link_to federation_hub_settings_path, class: "btn btn-outline-info" do %>
+                &#9881; <%= t("federation_hub.nav.settings") %>
+              <% end %>
+              <span class="btn btn-outline-secondary disabled">
+                &#9993; <%= t("federation_hub.dashboard.messages_coming_soon") %>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <%# Partner preview list %>
+        <div class="card border-info">
+          <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+            <strong><%= t("federation_hub.dashboard.partner_preview") %></strong>
+            <%= link_to t("federation_hub.dashboard.view_all"), federation_hub_partners_path, class: "btn btn-sm btn-light" %>
+          </div>
+          <ul class="list-group list-group-flush">
+            <% @partners.each do |partner| %>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <%= link_to partner.name, federation_hub_partner_path(partner), class: "text-decoration-none fw-bold" %>
+                  <%= federation_status_badge(partner.status) %>
+                  <%= partnership_level_badge(partner.partnership_level, partner.level_name) %>
+                </div>
+                <div>
+                  <%= federation_feature_icon(partner.can_share_profiles?) %>
+                  <%= federation_feature_icon(partner.can_share_listings?) %>
+                  <%= federation_feature_icon(partner.can_transact?) %>
+                </div>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+
+      <%# --- Sidebar: status table --- %>
+      <div class="col-md-4 mb-4">
+        <div class="card border-info">
+          <div class="card-header bg-info text-white">
+            <strong><%= t("federation_hub.dashboard.your_status") %></strong>
+          </div>
+          <table class="table table-sm mb-0">
+            <tbody>
+              <tr>
+                <td><%= t("federation_hub.dashboard.status_discoverable") %></td>
+                <td class="text-end"><%= federation_feature_icon(@effective_status[:discoverable]) %></td>
+              </tr>
+              <tr>
+                <td><%= t("federation_hub.dashboard.status_can_receive") %></td>
+                <td class="text-end"><%= federation_feature_icon(@effective_status[:can_receive]) %></td>
+              </tr>
+              <tr>
+                <td><%= t("federation_hub.dashboard.status_can_send") %></td>
+                <td class="text-end"><%= federation_feature_icon(@effective_status[:can_send]) %></td>
+              </tr>
+              <tr>
+                <td><%= t("federation_hub.dashboard.status_listings") %></td>
+                <td class="text-end"><%= federation_feature_icon(@effective_status[:listings_visible]) %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

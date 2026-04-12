@@ -1,0 +1,169 @@
+<div class="container-fluid py-4">
+  <div class="row mb-4">
+    <div class="col">
+      <h1><%= t("federation_hub.settings.title") %></h1>
+    </div>
+  </div>
+
+  <% unless @org_settings&.federation_enabled? %>
+    <div class="alert alert-warning">
+      <%= t("federation_hub.settings.org_not_enabled") %>
+    </div>
+  <% end %>
+
+  <div class="row">
+    <%# === Main form column === %>
+    <div class="col-md-8">
+      <%= form_for :settings, url: federation_hub_settings_path, method: :patch do |f| %>
+
+        <%# --- Opt-in card --- %>
+        <div class="card border-info mb-4">
+          <div class="card-header bg-info text-white">
+            <strong><%= t("federation_hub.settings.opt_in_section") %></strong>
+          </div>
+          <div class="card-body">
+            <div class="form-check form-switch">
+              <input type="hidden" name="opted_in" value="0">
+              <input type="checkbox" class="form-check-input" id="opted_in" name="opted_in" value="1"
+                     <%= "checked" if @prefs&.opted_in? %>>
+              <label class="form-check-label" for="opted_in">
+                <strong><%= t("federation_hub.settings.opted_in_label") %></strong>
+              </label>
+            </div>
+            <small class="text-muted d-block mt-1"><%= t("federation_hub.settings.opted_in_help") %></small>
+            <% if @prefs&.opted_in? && @prefs.opted_in_at.present? %>
+              <small class="text-muted d-block mt-2">
+                <%= t("federation_hub.settings.opted_in_since", date: @prefs.opted_in_at.strftime("%d %b %Y")) %>
+              </small>
+            <% end %>
+          </div>
+        </div>
+
+        <%# --- Privacy card --- %>
+        <div class="card border-info mb-4">
+          <div class="card-header bg-info text-white">
+            <strong><%= t("federation_hub.settings.privacy_section") %></strong>
+          </div>
+          <div class="card-body">
+            <div class="form-check form-switch mb-3">
+              <input type="hidden" name="discoverable" value="0">
+              <input type="checkbox" class="form-check-input" id="discoverable" name="discoverable" value="1"
+                     <%= "checked" if @prefs&.discoverable %>>
+              <label class="form-check-label" for="discoverable">
+                <strong><%= t("federation_hub.settings.discoverable_label") %></strong>
+              </label>
+              <small class="text-muted d-block mt-1"><%= t("federation_hub.settings.discoverable_help") %></small>
+            </div>
+
+            <div class="form-check form-switch mb-3">
+              <input type="hidden" name="share_profile" value="0">
+              <input type="checkbox" class="form-check-input" id="share_profile" name="share_profile" value="1"
+                     <%= "checked" if @prefs&.share_profile %>>
+              <label class="form-check-label" for="share_profile">
+                <strong><%= t("federation_hub.settings.share_profile_label") %></strong>
+              </label>
+              <small class="text-muted d-block mt-1"><%= t("federation_hub.settings.share_profile_help") %></small>
+            </div>
+
+            <div class="form-check form-switch">
+              <input type="hidden" name="share_listings" value="0">
+              <input type="checkbox" class="form-check-input" id="share_listings" name="share_listings" value="1"
+                     <%= "checked" if @prefs&.share_listings %>>
+              <label class="form-check-label" for="share_listings">
+                <strong><%= t("federation_hub.settings.share_listings_label") %></strong>
+              </label>
+              <small class="text-muted d-block mt-1"><%= t("federation_hub.settings.share_listings_help") %></small>
+            </div>
+          </div>
+        </div>
+
+        <%# --- Transfers card --- %>
+        <div class="card border-info mb-4">
+          <div class="card-header bg-info text-white">
+            <strong><%= t("federation_hub.settings.transfers_section") %></strong>
+          </div>
+          <div class="card-body">
+            <div class="form-check form-switch mb-3">
+              <input type="hidden" name="allow_inbound_transfers" value="0">
+              <input type="checkbox" class="form-check-input" id="allow_inbound_transfers" name="allow_inbound_transfers" value="1"
+                     <%= "checked" if @prefs&.allow_inbound_transfers %>>
+              <label class="form-check-label" for="allow_inbound_transfers">
+                <strong><%= t("federation_hub.settings.allow_inbound_transfers_label") %></strong>
+              </label>
+              <small class="text-muted d-block mt-1"><%= t("federation_hub.settings.allow_inbound_transfers_help") %></small>
+            </div>
+
+            <div class="form-check form-switch">
+              <input type="hidden" name="allow_outbound_transfers" value="0">
+              <input type="checkbox" class="form-check-input" id="allow_outbound_transfers" name="allow_outbound_transfers" value="1"
+                     <%= "checked" if @prefs&.allow_outbound_transfers %>>
+              <label class="form-check-label" for="allow_outbound_transfers">
+                <strong><%= t("federation_hub.settings.allow_outbound_transfers_label") %></strong>
+              </label>
+              <small class="text-muted d-block mt-1"><%= t("federation_hub.settings.allow_outbound_transfers_help") %></small>
+            </div>
+          </div>
+        </div>
+
+        <%# --- Blocked partners card --- %>
+        <% if @partners.any? %>
+          <div class="card border-info mb-4">
+            <div class="card-header bg-info text-white">
+              <strong><%= t("federation_hub.settings.blocked_partners_section") %></strong>
+            </div>
+            <div class="card-body">
+              <small class="text-muted d-block mb-3"><%= t("federation_hub.settings.blocked_partners_help") %></small>
+              <% @partners.each do |partner| %>
+                <div class="form-check mb-2">
+                  <input type="checkbox" class="form-check-input" id="blocked_partner_<%= partner.id %>"
+                         name="blocked_partner_ids[]" value="<%= partner.id %>"
+                         <%= "checked" if @prefs&.blocks_partner?(partner.id) %>>
+                  <label class="form-check-label" for="blocked_partner_<%= partner.id %>">
+                    <%= partner.name %>
+                    <%= federation_status_badge(partner.status) %>
+                  </label>
+                </div>
+              <% end %>
+              <%# Ensure empty array is sent when nothing is checked %>
+              <input type="hidden" name="blocked_partner_ids[]" value="">
+            </div>
+          </div>
+        <% end %>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-info"><%= t("federation_hub.settings.save") %></button>
+          <%= link_to t("federation_hub.nav.dashboard"), federation_hub_root_path, class: "btn btn-outline-secondary" %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# === Sidebar: current status === %>
+    <div class="col-md-4">
+      <div class="card border-info">
+        <div class="card-header bg-info text-white">
+          <strong><%= t("federation_hub.settings.current_status") %></strong>
+        </div>
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr>
+              <td><%= t("federation_hub.dashboard.status_discoverable") %></td>
+              <td class="text-end"><%= federation_feature_icon(@effective_status[:discoverable]) %></td>
+            </tr>
+            <tr>
+              <td><%= t("federation_hub.dashboard.status_can_receive") %></td>
+              <td class="text-end"><%= federation_feature_icon(@effective_status[:can_receive]) %></td>
+            </tr>
+            <tr>
+              <td><%= t("federation_hub.dashboard.status_can_send") %></td>
+              <td class="text-end"><%= federation_feature_icon(@effective_status[:can_send]) %></td>
+            </tr>
+            <tr>
+              <td><%= t("federation_hub.dashboard.status_listings") %></td>
+              <td class="text-end"><%= federation_feature_icon(@effective_status[:listings_visible]) %></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

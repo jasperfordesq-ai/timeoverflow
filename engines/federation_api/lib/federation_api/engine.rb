@@ -140,6 +140,15 @@ module FederationApi
           resources :transfers, only: [:create]
           resources :partner_listings, only: [:index, :show], path: "partner-listings"
         end
+
+        # --- Federation Hub (member-facing HTML pages) ---
+        # Uses the host app's layout ("application") so pages look identical
+        # to native TimeOverflow pages. Entry point: /federation-hub
+        namespace :federation_hub, path: "federation-hub" do
+          root to: "dashboard#index"
+          resource :settings, only: [:show, :update]
+          resources :partners, only: [:index, :show]
+        end
       end
     end
 
@@ -203,6 +212,13 @@ module FederationApi
     initializer "federation_api.autoload_paths" do |app|
       app.config.autoload_paths    += Dir[root.join("app", "services")]
       app.config.eager_load_paths  += Dir[root.join("app", "services")]
+    end
+
+    # --- I18n locale files ------------------------------------------------
+    # Load federation_hub locale files for the member-facing UI.
+    initializer "federation_api.locale_paths" do |app|
+      locale_dir = root.join("config", "locales")
+      app.config.i18n.load_path += Dir[locale_dir.join("*.yml")] if locale_dir.exist?
     end
 
     # --- Rake tasks ---------------------------------------------------

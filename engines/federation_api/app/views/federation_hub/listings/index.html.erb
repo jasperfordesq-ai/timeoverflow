@@ -68,31 +68,35 @@
 
       <% @listings.each do |listing| %>
         <div class="post mb-3 p-3 border rounded bg-white">
-          <div class="d-flex justify-content-between">
-            <h4>
-              <%= sanitize(listing["title"].to_s.presence || listing["name"].to_s.presence || t("federation_hub.listings.listing_fallback", id: listing["id"])) %>
-              <% if listing["type"] %>
-                <span class="badge rounded-pill <%= listing["type"].to_s.downcase == "offer" ? "bg-success" : "bg-warning text-dark" %>">
-                  <%= sanitize(listing["type"].to_s.capitalize) %>
-                </span>
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h4 class="mb-1">
+                <%= sanitize(listing["title"].to_s.presence || listing["name"].to_s.presence || t("federation_hub.listings.listing_fallback", id: listing["id"])) %>
+              </h4>
+              <% if listing["description"].present? %>
+                <p class="text-muted mb-2"><%= sanitize(truncate(listing["description"].to_s, length: 200)) %></p>
               <% end %>
-            </h4>
+              <div class="d-flex flex-wrap gap-1">
+                <% if listing["type"] %>
+                  <span class="badge rounded-pill <%= listing["type"].to_s.downcase == "offer" ? "bg-success" : "bg-warning text-dark" %>">
+                    <%= sanitize(listing["type"].to_s.capitalize) %>
+                  </span>
+                <% end %>
+                <% if listing["category"].present? %>
+                  <span class="badge rounded-pill bg-info"><%= sanitize(listing["category"].to_s) %></span>
+                <% end %>
+                <% tags = listing["tags"] %>
+                <% tags = tags.split(",").map(&:strip) if tags.is_a?(String) %>
+                <% Array(tags).first(5).each do |tag| %>
+                  <% next if tag.blank? %>
+                  <span class="badge rounded-pill bg-secondary"><%= sanitize(tag.to_s) %></span>
+                <% end %>
+              </div>
+            </div>
+            <% if listing["user"].present? %>
+              <small class="text-muted ms-3 text-nowrap"><%= sanitize(listing["user"].to_s) %></small>
+            <% end %>
           </div>
-          <% if listing["description"].present? %>
-            <p class="text-muted"><%= sanitize(truncate(listing["description"].to_s, length: 200)) %></p>
-          <% end %>
-          <% if listing["category"].present? %>
-            <span class="badge rounded-pill bg-info"><%= sanitize(listing["category"].to_s) %></span>
-          <% end %>
-          <% tags = listing["tags"] %>
-          <% tags = tags.split(",").map(&:strip) if tags.is_a?(String) %>
-          <% Array(tags).first(5).each do |tag| %>
-            <% next if tag.blank? %>
-            <span class="badge rounded-pill bg-secondary"><%= sanitize(tag.to_s) %></span>
-          <% end %>
-          <% if listing["user"].present? %>
-            <small class="text-muted float-end"><%= sanitize(listing["user"].to_s) %></small>
-          <% end %>
         </div>
       <% end %>
     </div>

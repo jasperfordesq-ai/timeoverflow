@@ -7,49 +7,89 @@
   </div>
 </div>
 
-<div class="row">
-  <div class="col-md-8">
-    <div class="card card-info border-info">
-      <div class="card-body">
-        <form action="<%= federation_hub_messages_path %>" method="post">
-          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+<%# Step 1: Select partner/community %>
+<div class="row mb-4">
+  <div class="col-md-6">
+    <form method="get" action="<%= new_federation_hub_message_path %>">
+      <label class="form-label fw-bold"><%= t("federation_hub.messages.partner") %></label>
+      <div class="input-group">
+        <select name="partner_id" class="form-control" onchange="
+          var opt = this.options[this.selectedIndex];
+          document.getElementById('msg_source_type').value = opt.dataset.type || '';
+          this.form.submit();
+        ">
+          <option value=""><%= t("federation_hub.messages.select_partner") %></option>
 
-          <div class="mb-3">
-            <label for="partner_id" class="form-label fw-bold"><%= t("federation_hub.messages.partner") %></label>
-            <select name="partner_id" id="partner_id" class="form-control" required>
-              <option value=""><%= t("federation_hub.messages.select_partner") %></option>
-              <% @partners.each do |p| %>
-                <option value="<%= p.id %>" <%= 'selected' if @pre_partner_id.to_s == p.id.to_s %>><%= p.name %></option>
+          <% if @external_partners.any? %>
+            <optgroup label="<%= t("federation_hub.common.external_partners") %>">
+              <% @external_partners.each do |p| %>
+                <option value="<%= p.id %>"
+                        data-type="external"
+                        <%= 'selected' if @selected_id.to_s == p.id.to_s && @selected_type != "internal" %>>
+                  <%= p.name %>
+                </option>
               <% end %>
-            </select>
-          </div>
+            </optgroup>
+          <% end %>
+        </select>
+        <input type="hidden" name="source_type" id="msg_source_type" value="<%= @selected_type %>">
+        <button type="submit" class="btn btn-info"><%= t("federation_hub.transfers.select") %></button>
+      </div>
+    </form>
+  </div>
+</div>
 
-          <div class="mb-3">
-            <label for="recipient_id" class="form-label fw-bold"><%= t("federation_hub.messages.recipient") %></label>
-            <% if @pre_recipient_name.present? %>
-              <p class="form-text mb-1"><%= t("federation_hub.messages.sending_to", name: @pre_recipient_name) %></p>
-            <% end %>
-            <input type="text" name="recipient_id" id="recipient_id" class="form-control" required
-                   value="<%= @pre_recipient %>"
-                   placeholder="<%= t("federation_hub.messages.recipient_placeholder") %>">
-          </div>
+<% if @selected_id.blank? %>
+  <div class="alert alert-info">
+    <%= t("federation_hub.messages.choose_partner_prompt", default: "Select a partner community above to compose a message.") %>
+  </div>
+<% elsif @recipient_members.any? %>
+  <%# Step 2: Compose form with member dropdown %>
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card card-info border-info">
+        <div class="card-header bg-info text-white">
+          <strong><%= t("federation_hub.messages.compose_to", partner: @selected_name, default: "Message to %{partner}") %></strong>
+        </div>
+        <div class="card-body">
+          <form action="<%= federation_hub_messages_path %>" method="post">
+            <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+            <input type="hidden" name="partner_id" value="<%= @selected_id %>">
+            <input type="hidden" name="source_type" value="<%= @selected_type %>">
 
-          <div class="mb-3">
-            <label for="subject" class="form-label fw-bold"><%= t("federation_hub.messages.subject_label") %></label>
-            <input type="text" name="subject" id="subject" class="form-control"
-                   placeholder="<%= t("federation_hub.messages.subject_placeholder") %>">
-          </div>
+            <div class="mb-3">
+              <label for="recipient_id" class="form-label fw-bold"><%= t("federation_hub.messages.recipient") %></label>
+              <select name="recipient_id" id="recipient_id" class="form-control" required>
+                <option value=""><%= t("federation_hub.messages.select_recipient", default: "Choose a member...") %></option>
+                <% @recipient_members.each do |m| %>
+                  <option value="<%= m["id"] %>" <%= 'selected' if @pre_recipient.to_s == m["id"].to_s %>>
+                    <%= m["username"] %>
+                  </option>
+                <% end %>
+              </select>
+            </div>
 
-          <div class="mb-3">
-            <label for="body" class="form-label fw-bold"><%= t("federation_hub.messages.body_label") %></label>
-            <textarea name="body" id="body" rows="6" class="form-control" required
-                      placeholder="<%= t("federation_hub.messages.body_placeholder") %>"></textarea>
-          </div>
+            <div class="mb-3">
+              <label for="subject" class="form-label fw-bold"><%= t("federation_hub.messages.subject_label") %></label>
+              <input type="text" name="subject" id="subject" class="form-control"
+                     placeholder="<%= t("federation_hub.messages.subject_placeholder") %>">
+            </div>
 
-          <button type="submit" class="btn btn-info"><%= t("federation_hub.messages.send_button") %></button>
-          <a href="<%= federation_hub_messages_path %>" class="btn btn-secondary ms-2"><%= t("federation_hub.messages.cancel") %></a>
-        </form>
+            <div class="mb-3">
+              <label for="body" class="form-label fw-bold"><%= t("federation_hub.messages.body_label") %></label>
+              <textarea name="body" id="body" rows="6" class="form-control" required
+                        placeholder="<%= t("federation_hub.messages.body_placeholder") %>"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-info"><%= t("federation_hub.messages.send_button") %></button>
+            <a href="<%= federation_hub_messages_path %>" class="btn btn-secondary ms-2"><%= t("federation_hub.messages.cancel") %></a>
+          </form>
+        </div>
       </div>
     </div>
   </div>
-</div>
+<% else %>
+  <div class="alert alert-warning">
+    <%= t("federation_hub.messages.no_recipients", partner: @selected_name, default: "No members available to message on %{partner}.") %>
+  </div>
+<% end %>

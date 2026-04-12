@@ -117,7 +117,7 @@ module Federation
             # before the HTTP call, so ReconciliationJob may have cancelled or
             # reversed it in the meantime.
             fed_txn.reload
-            unless fed_txn.pending?
+            if !fed_txn.pending?
               Rails.logger.info(
                 "[Federation::WebhookDelivery] Fed_txn #{fed_txn_id} is now #{fed_txn.status} (changed during delivery) — skipping completion"
               )

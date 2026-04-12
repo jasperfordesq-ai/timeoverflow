@@ -12,7 +12,7 @@
   <form method="get" action="<%= federation_admin_webhook_logs_path %>" class="flex flex-wrap items-end gap-4">
     <div>
       <label for="status" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.webhook_logs.index.status') %></label>
-      <select name="status" id="status" onchange="this.form.submit()"
+      <select name="status" id="status" data-auto-submit
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
         <option value=""><%= t('federation_admin.webhook_logs.index.all_statuses') %></option>
         <% %w[pending success failed].each do |s| %>
@@ -23,7 +23,7 @@
 
     <div>
       <label for="direction" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.webhook_logs.index.direction') %></label>
-      <select name="direction" id="direction" onchange="this.form.submit()"
+      <select name="direction" id="direction" data-auto-submit
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
         <option value=""><%= t('federation_admin.webhook_logs.index.all_directions') %></option>
         <% %w[inbound outbound].each do |d| %>
@@ -34,7 +34,7 @@
 
     <div>
       <label for="partner_id" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.webhook_logs.index.partner') %></label>
-      <select name="partner_id" id="partner_id" onchange="this.form.submit()"
+      <select name="partner_id" id="partner_id" data-auto-submit
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
         <option value=""><%= t('federation_admin.webhook_logs.index.all_partners') %></option>
         <% @partners.each do |partner| %>

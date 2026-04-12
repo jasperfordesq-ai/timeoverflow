@@ -126,6 +126,8 @@ module FederationApi
           resources :org_settings, only: [:index, :edit, :update]
           resources :member_preferences, only: [:index, :show, :update, :create]
           resources :activity, only: [:index]
+          resources :reconciliation_runs, only: [:index, :show]
+          resources :audit_logs, only: [:index]
           resources :cc_config, only: [:index] do
             collection do
               patch :update

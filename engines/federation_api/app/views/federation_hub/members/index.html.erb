@@ -65,7 +65,7 @@
 <% elsif @members.any? %>
   <div class="row">
     <% @members.each do |member| %>
-      <div class="col-md-4 mb-3">
+      <div class="col-12 col-sm-6 col-md-4 mb-3">
         <div class="card card-info border-info h-100">
           <div class="card-body">
             <h5 class="card-title">
@@ -109,6 +109,22 @@
       </div>
     <% end %>
   </div>
+
+  <% if @total_pages > 1 %>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <small class="text-muted"><%= t("federation_hub.common.page") %> <%= @current_page %> / <%= @total_pages %> (<%= @total_count %> <%= t("federation_hub.members.total", default: "total") %>)</small>
+      <nav aria-label="Pagination">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item <%= 'disabled' if @current_page <= 1 %>">
+            <a class="page-link" href="<%= federation_hub_members_path(request.query_parameters.merge(page: @current_page - 1)) %>"><%= t("federation_hub.common.previous", default: "Previous") %></a>
+          </li>
+          <li class="page-item <%= 'disabled' if @current_page >= @total_pages %>">
+            <a class="page-link" href="<%= federation_hub_members_path(request.query_parameters.merge(page: @current_page + 1)) %>"><%= t("federation_hub.common.next_page", default: "Next") %></a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  <% end %>
 <% else %>
   <div class="alert alert-info">
     <%= t("federation_hub.members.none_found", partner: @source_name) %>

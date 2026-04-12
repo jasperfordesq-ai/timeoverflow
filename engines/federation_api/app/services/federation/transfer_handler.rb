@@ -216,9 +216,11 @@ module Federation
         }
       )
 
-      fed_txn.update(metadata: (fed_txn.metadata || {}).merge("webhook_queued_at" => Time.current.iso8601))
       # Use update (not update!) — metadata timestamp is informational;
       # failure here should not crash the transfer flow.
+      unless fed_txn.update(metadata: (fed_txn.metadata || {}).merge("webhook_queued_at" => Time.current.iso8601))
+        Rails.logger.warn("[Federation::TransferHandler] Failed to update webhook_queued_at metadata for fed_txn #{fed_txn.id}")
+      end
 
       fed_txn
     end

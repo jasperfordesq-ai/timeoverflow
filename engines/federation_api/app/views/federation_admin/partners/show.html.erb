@@ -1,4 +1,10 @@
 <% content_for(:title, "Partner: #{@partner.name}") %>
+<% content_for(:breadcrumbs) do %>
+  <li class="text-gray-400">/</li>
+  <li><a href="<%= federation_admin_partners_path %>" class="hover:text-federation-600"><%= t("federation_admin.layout.nav.partners") %></a></li>
+  <li class="text-gray-400">/</li>
+  <li class="text-gray-900 font-medium"><%= @partner.name %></li>
+<% end %>
 
 <div class="mb-8 sm:flex sm:items-center sm:justify-between">
   <div>

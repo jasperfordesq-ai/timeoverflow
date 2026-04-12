@@ -44,7 +44,27 @@ class FederationApiKey < ActiveRecord::Base
     expires_at.present? && expires_at < Time.current
   end
 
+  # Blank/empty permissions = unrestricted ("all"). Otherwise, only known
+  # keys (profiles, listings, transactions) mapping to booleans are accepted.
+  KNOWN_PERMISSIONS = %w[profiles listings transactions].freeze
+
   def has_permission?(permission)
     permissions.blank? || permissions[permission.to_s] == true
+  end
+
+  validate :validate_permissions_schema
+
+  private
+
+  def validate_permissions_schema
+    return if permissions.blank?
+    unless permissions.is_a?(Hash)
+      errors.add(:permissions, "must be a JSON object")
+      return
+    end
+    unknown = permissions.keys - KNOWN_PERMISSIONS
+    errors.add(:permissions, "contains unknown keys: #{unknown.join(', ')}") if unknown.any?
+    non_bool = permissions.select { |_, v| ![true, false].include?(v) }
+    errors.add(:permissions, "values must be booleans") if non_bool.any?
   end
 end

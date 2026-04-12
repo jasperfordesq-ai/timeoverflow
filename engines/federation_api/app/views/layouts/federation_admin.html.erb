@@ -4,7 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= content_for?(:title) ? "#{yield(:title)} — " : "" %><%= t("federation_admin.layout.title") %></title>
-  <%# Production-ready: compiled Tailwind CSS + Rails UJS bundled inline.
+  <%# DESIGN SYSTEM: Tailwind CSS (self-contained, inlined)
+      The admin panel intentionally uses Tailwind CSS while the member-facing
+      Federation Hub uses Bootstrap 5. This is by design:
+      - Hub (Bootstrap): matches the host TimeOverflow app's look and feel so
+        members experience a consistent UI across the platform.
+      - Admin (Tailwind): provides a distinct, purpose-built admin experience
+        that is fully self-contained with zero host app dependencies.
+      Both systems coexist without conflict because they render in separate
+      layouts and page contexts. Do not attempt to unify them.
+
+      Production-ready: compiled Tailwind CSS + Rails UJS bundled inline.
       No external CDN dependencies. To regenerate CSS after view changes:
       cd engines/federation_api && npx tailwindcss -i ./app/assets/stylesheets/federation_admin_input.css -o ./app/assets/stylesheets/federation_admin.css --minify %>
   <style><%= File.read(FederationApi::Engine.root.join("app/assets/stylesheets/federation_admin.css")) rescue "/* CSS not found — run: cd engines/federation_api && npx tailwindcss ... */" %></style>
@@ -14,6 +24,17 @@
   <style>
     [data-flash] { animation: fadeOut 8s ease-in-out forwards; }
     @keyframes fadeOut { 0%,85% { opacity: 1; } 100% { opacity: 0; display: none; } }
+    .overflow-x-auto { position: relative; }
+    .scroll-shadow { background:
+      linear-gradient(to right, white 30%, rgba(255,255,255,0)),
+      linear-gradient(to right, rgba(255,255,255,0), white 70%) 100% 0,
+      linear-gradient(to right, rgba(0,0,0,.08), rgba(0,0,0,0)),
+      linear-gradient(to left, rgba(0,0,0,.08), rgba(0,0,0,0)) 100% 0;
+      background-repeat: no-repeat;
+      background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+      background-attachment: local, local, scroll, scroll;
+    }
+    .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0; }
   </style>
   <%= csrf_meta_tags %>
 </head>
@@ -53,6 +74,8 @@
               [federation_admin_org_settings_path, t("federation_admin.layout.nav.orgs")],
               [federation_admin_member_preferences_path, t("federation_admin.layout.nav.members")],
               [federation_admin_activity_index_path, t("federation_admin.layout.nav.activity")],
+              [federation_admin_reconciliation_runs_path, t("federation_admin.layout.nav.reconciliation", default: "Reconciliation")],
+              [federation_admin_audit_logs_path, t("federation_admin.layout.nav.audit_logs", default: "Audit")],
               [federation_admin_cc_config_index_path, t("federation_admin.layout.nav.cc_config")]
             ] %>
             <% nav_items.each do |path, label| %>
@@ -86,6 +109,16 @@
           <p class="text-sm font-medium text-red-800"><%= flash[:alert] %></p>
         </div>
       </div>
+    <% end %>
+
+    <!-- Breadcrumbs -->
+    <% if content_for?(:breadcrumbs) %>
+      <nav aria-label="breadcrumb" class="mx-auto max-w-7xl px-4 mt-4">
+        <ol class="flex items-center space-x-2 text-sm text-gray-500">
+          <li><a href="<%= federation_admin_root_path %>" class="hover:text-federation-600"><%= t("federation_admin.layout.nav.dashboard") %></a></li>
+          <%= yield :breadcrumbs %>
+        </ol>
+      </nav>
     <% end %>
 
     <!-- Main content -->

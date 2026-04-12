@@ -1,4 +1,8 @@
 <% content_for(:title) { t("federation_hub.messages.compose") } %>
+<% content_for(:breadcrumbs) do %>
+  <li class="breadcrumb-item"><a href="<%= federation_hub_messages_path %>"><%= t("federation_hub.nav.messages") %></a></li>
+  <li class="breadcrumb-item active" aria-current="page"><%= t("federation_hub.messages.compose") %></li>
+<% end %>
 
 <div class="row mb-3">
   <div class="col-md-12">
@@ -72,13 +76,15 @@
             <div class="mb-3">
               <label for="subject" class="form-label fw-bold"><%= t("federation_hub.messages.subject_label") %></label>
               <input type="text" name="subject" id="subject" class="form-control" required maxlength="255"
-                     placeholder="<%= t("federation_hub.messages.subject_placeholder") %>">
+                     placeholder="<%= t("federation_hub.messages.subject_placeholder") %>" data-char-counter="true">
+              <small class="text-muted char-counter"></small>
             </div>
 
             <div class="mb-3">
               <label for="body" class="form-label fw-bold"><%= t("federation_hub.messages.body_label") %></label>
               <textarea name="body" id="body" rows="6" class="form-control" required maxlength="10000"
-                        placeholder="<%= t("federation_hub.messages.body_placeholder") %>"></textarea>
+                        placeholder="<%= t("federation_hub.messages.body_placeholder") %>" data-char-counter="true"></textarea>
+              <small class="text-muted char-counter"></small>
             </div>
 
             <button type="submit" class="btn btn-info"><%= t("federation_hub.messages.send_button") %></button>

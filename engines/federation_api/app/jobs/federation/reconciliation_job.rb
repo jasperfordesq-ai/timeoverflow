@@ -16,11 +16,12 @@ module Federation
     # M4: Two distinct timeouts with different semantics.
     # STALE_WARNING_TIMEOUT — pending transactions older than this are flagged in the report.
     # REVERSAL_TIMEOUT — pending transactions older than this are auto-cancelled and reversed.
-    STALE_WARNING_TIMEOUT = 1.hour
-    REVERSAL_TIMEOUT      = 24.hours
+    STALE_WARNING_TIMEOUT = ENV.fetch("FEDERATION_STALE_WARNING_TIMEOUT", "3600").to_i.seconds
+    REVERSAL_TIMEOUT      = ENV.fetch("FEDERATION_REVERSAL_TIMEOUT", "86400").to_i.seconds
 
     def perform
       Rails.logger.info("[Federation::Reconciliation] Starting reconciliation run")
+      started_at = Time.current
 
       issues = []
 
@@ -97,8 +98,7 @@ module Federation
       end
 
       # Check 3: Stale pending transactions (two thresholds — see constants above)
-      # Use Time.now.utc explicitly to avoid timezone mismatch with DB timestamps
-      stale = FederationTransaction.pending.where("created_at < ?", Time.now.utc - STALE_WARNING_TIMEOUT)
+      stale = FederationTransaction.pending.where("created_at < ?", Time.current - STALE_WARNING_TIMEOUT)
       if stale.any?
         issues << {
           type: "stale_pending",
@@ -110,7 +110,7 @@ module Federation
         }
 
         # Auto-cancel and reverse transactions older than REVERSAL_TIMEOUT
-        very_stale = stale.where("created_at < ?", Time.now.utc - REVERSAL_TIMEOUT)
+        very_stale = stale.where("created_at < ?", Time.current - REVERSAL_TIMEOUT)
         very_stale.find_each do |txn|
           begin
             ActiveRecord::Base.transaction do
@@ -254,7 +254,20 @@ module Federation
 
       Rails.logger.info("[Federation::Reconciliation] Complete. #{issues.count} total findings (#{critical_count} critical, #{warning_count} warnings)")
 
-      issues
+      # Persist run results for admin visibility
+      FederationReconciliationRun.create!(
+        status: critical_count > 0 ? "critical" : "completed",
+        critical_count: critical_count,
+        warning_count: warning_count,
+        total_findings: issues.count,
+        issues: issues,
+        started_at: started_at,
+        finished_at: Time.current
+      )
+    rescue => e
+      Rails.logger.error("[Federation::Reconciliation] Failed to persist run: #{e.message}")
+    ensure
+      return issues || []
     end
 
     private

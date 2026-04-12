@@ -45,7 +45,7 @@
       <input type="hidden" name="source_type" id="listings_source_type" value="<%= @selected_type %>">
 
       <% if @selected_id.present? %>
-        <select name="type" class="form-control" onchange="this.form.submit()">
+        <select name="type" class="form-control" data-auto-submit>
           <option value=""><%= t("federation_hub.listings.all_types") %></option>
           <option value="offer" <%= 'selected' if params[:type] == 'offer' %>><%= t("federation_hub.listings.offers") %></option>
           <option value="inquiry" <%= 'selected' if params[:type] == 'inquiry' %>><%= t("federation_hub.listings.inquiries") %></option>
@@ -65,7 +65,24 @@
 <% elsif @listings.any? %>
   <div class="row">
     <div class="col-md-12">
-      <h4 class="mb-3"><%= t("federation_hub.listings.source_label", source: @source_name) %></h4>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0"><%= t("federation_hub.listings.source_label", source: @source_name) %></h4>
+        <div class="d-flex gap-2 align-items-center">
+          <small class="text-muted"><%= t("federation_hub.listings.sort_by", default: "Sort:") %></small>
+          <% sort_base = request.query_parameters.except("sort", "dir", "page") %>
+          <% current_sort = params[:sort] %>
+          <% current_dir = params[:dir] || "asc" %>
+          <% [["title", t("federation_hub.listings.sort_title", default: "Title")],
+              ["type", t("federation_hub.listings.sort_type", default: "Type")],
+              ["user", t("federation_hub.listings.sort_user", default: "User")]].each do |key, label| %>
+            <% next_dir = (current_sort == key && current_dir == "asc") ? "desc" : "asc" %>
+            <a href="<%= federation_hub_listings_path(sort_base.merge(sort: key, dir: next_dir)) %>"
+               class="btn btn-sm <%= current_sort == key ? 'btn-info' : 'btn-outline-secondary' %>">
+              <%= label %><%= current_sort == key ? (current_dir == "asc" ? " &uarr;" : " &darr;").html_safe : "" %>
+            </a>
+          <% end %>
+        </div>
+      </div>
 
       <% @listings.each do |listing| %>
         <div class="post mb-3 p-3 border rounded bg-white">
@@ -75,7 +92,19 @@
                 <%= sanitize(listing["title"].to_s.presence || listing["name"].to_s.presence || t("federation_hub.listings.listing_fallback", id: listing["id"])) %>
               </h4>
               <% if listing["description"].present? %>
-                <p class="text-muted mb-2"><%= sanitize(truncate(listing["description"].to_s, length: 200)) %></p>
+                <% desc = listing["description"].to_s %>
+                <% if desc.length > 200 %>
+                  <p class="text-muted mb-2">
+                    <span class="listing-desc-short"><%= sanitize(truncate(desc, length: 200)) %>
+                      <a href="#" class="text-info listing-expand" onclick="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='inline';return false;"><%= t("federation_hub.listings.read_more", default: "Read more") %></a>
+                    </span>
+                    <span class="listing-desc-full" style="display:none"><%= sanitize(desc) %>
+                      <a href="#" class="text-info listing-collapse" onclick="this.parentElement.style.display='none';this.parentElement.previousElementSibling.style.display='inline';return false;"><%= t("federation_hub.listings.read_less", default: "Show less") %></a>
+                    </span>
+                  </p>
+                <% else %>
+                  <p class="text-muted mb-2"><%= sanitize(desc) %></p>
+                <% end %>
               <% end %>
               <div class="d-flex flex-wrap gap-1">
                 <% if listing["type"] %>
@@ -101,6 +130,22 @@
         </div>
       <% end %>
     </div>
+
+    <% if @total_pages > 1 %>
+      <div class="d-flex justify-content-between align-items-center mt-3 px-3 pb-3">
+        <small class="text-muted"><%= t("federation_hub.common.page") %> <%= @current_page %> / <%= @total_pages %> (<%= @total_count %> <%= t("federation_hub.listings.total", default: "total") %>)</small>
+        <nav aria-label="Pagination">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item <%= 'disabled' if @current_page <= 1 %>">
+              <a class="page-link" href="<%= federation_hub_listings_path(request.query_parameters.merge(page: @current_page - 1)) %>"><%= t("federation_hub.common.previous", default: "Previous") %></a>
+            </li>
+            <li class="page-item <%= 'disabled' if @current_page >= @total_pages %>">
+              <a class="page-link" href="<%= federation_hub_listings_path(request.query_parameters.merge(page: @current_page + 1)) %>"><%= t("federation_hub.common.next_page", default: "Next") %></a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    <% end %>
   </div>
 <% else %>
   <div class="alert alert-info">

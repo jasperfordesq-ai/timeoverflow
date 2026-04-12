@@ -17,6 +17,8 @@ en:
         orgs: "Orgs"
         members: "Members"
         activity: "Activity"
+        reconciliation: "Reconciliation"
+        audit_logs: "Audit"
         cc_config: "CC Config"
 
     dashboard:
@@ -276,6 +278,11 @@ en:
           status: "Status"
           transfer_id: "Transfer ID"
           created_at: "Created At"
+        all_statuses: "All Statuses"
+        all_directions: "All Directions"
+        all_partners: "All Partners"
+        all_organizations: "All Organizations"
+        organization: "Organization"
         page: "Page"
         of: "of"
         previous: "Previous"
@@ -387,6 +394,8 @@ en:
           created: "Created"
         page: "Page"
         of: "of"
+        previous: "Previous"
+        next: "Next"
         empty: "No federation messages match the current filters."
         no_messages: "No messages found"
       show:

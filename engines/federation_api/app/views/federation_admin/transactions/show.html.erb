@@ -1,4 +1,10 @@
 <% content_for(:title, t('federation_admin.transactions.show.title', id: @transaction.id)) %>
+<% content_for(:breadcrumbs) do %>
+  <li class="text-gray-400">/</li>
+  <li><a href="<%= federation_admin_transactions_path %>" class="hover:text-federation-600"><%= t("federation_admin.layout.nav.transactions") %></a></li>
+  <li class="text-gray-400">/</li>
+  <li class="text-gray-900 font-medium">#<%= @transaction.id %></li>
+<% end %>
 
 <div class="mb-6">
   <a href="<%= federation_admin_transactions_path %>"

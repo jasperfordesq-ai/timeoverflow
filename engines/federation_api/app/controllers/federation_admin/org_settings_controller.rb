@@ -41,6 +41,7 @@ module FederationAdmin
       end
 
       @settings.update!(attrs)
+      audit!("org_settings.updated", target: @settings, changes_made: @settings.previous_changes.except("updated_at"))
       flash[:notice] = "Federation settings for '#{@org.name}' updated."
       redirect_to federation_admin_org_settings_path
     rescue => e

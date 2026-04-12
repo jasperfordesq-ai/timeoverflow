@@ -122,7 +122,19 @@ class FederationPartner < ActiveRecord::Base
     next_webhook_secret.present?
   end
 
+  validate :sanitize_permitted_organization_ids
+
   private
+
+  def sanitize_permitted_organization_ids
+    return if permitted_organization_ids.blank?
+    valid_ids = Organization.where(id: permitted_organization_ids).pluck(:id)
+    orphaned = permitted_organization_ids - valid_ids
+    if orphaned.any?
+      Rails.logger.warn("[FederationPartner] Stripping orphaned org IDs #{orphaned} from partner #{id || '(new)'}")
+      self.permitted_organization_ids = valid_ids
+    end
+  end
 
   def valid_status_transition
     return if new_record?

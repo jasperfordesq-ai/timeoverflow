@@ -17,38 +17,38 @@
 <div class="bg-white shadow rounded-lg p-4 mb-6">
   <form method="get" action="<%= federation_admin_transactions_path %>" class="flex flex-wrap items-end gap-4">
     <div>
-      <label class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.transactions.index.search_placeholder') %></label>
-      <input type="text" name="search" value="<%= params[:search] %>" placeholder="<%= t('federation_admin.transactions.index.search_placeholder') %>"
+      <label for="search" class="block text-xs font-medium text-gray-500 mb-1"><%= t('federation_admin.transactions.index.search_placeholder') %></label>
+      <input type="text" name="search" id="search" value="<%= params[:search] %>" placeholder="<%= t('federation_admin.transactions.index.search_placeholder') %>"
              class="rounded-lg border border-gray-300 text-sm px-3 py-2 w-48 focus:ring-federation-500 focus:border-federation-500">
     </div>
 
     <div>
       <label for="status" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.transactions.index.table.status') %></label>
-      <select name="status" id="status" onchange="this.form.submit()"
+      <select name="status" id="status" data-auto-submit
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
-        <option value="">All Statuses</option>
+        <option value=""><%= t('federation_admin.transactions.index.all_statuses') %></option>
         <% %w[pending completed cancelled disputed].each do |s| %>
-          <option value="<%= s %>" <%= params[:status] == s ? 'selected' : '' %>><%= s.capitalize %></option>
+          <option value="<%= s %>" <%= params[:status] == s ? 'selected' : '' %>><%= t("federation_admin.common.#{s}") %></option>
         <% end %>
       </select>
     </div>
 
     <div>
       <label for="direction" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.transactions.index.table.direction') %></label>
-      <select name="direction" id="direction" onchange="this.form.submit()"
+      <select name="direction" id="direction" data-auto-submit
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
-        <option value="">All Directions</option>
+        <option value=""><%= t('federation_admin.transactions.index.all_directions') %></option>
         <% %w[inbound outbound].each do |d| %>
-          <option value="<%= d %>" <%= params[:direction] == d ? 'selected' : '' %>><%= d.capitalize %></option>
+          <option value="<%= d %>" <%= params[:direction] == d ? 'selected' : '' %>><%= t("federation_admin.common.#{d}") %></option>
         <% end %>
       </select>
     </div>
 
     <div>
       <label for="partner_id" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.transactions.index.table.partner') %></label>
-      <select name="partner_id" id="partner_id" onchange="this.form.submit()"
+      <select name="partner_id" id="partner_id" data-auto-submit
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
-        <option value="">All Partners</option>
+        <option value=""><%= t('federation_admin.transactions.index.all_partners') %></option>
         <% @partners.each do |partner| %>
           <option value="<%= partner.id %>" <%= params[:partner_id].to_s == partner.id.to_s ? 'selected' : '' %>><%= partner.name %></option>
         <% end %>
@@ -56,10 +56,10 @@
     </div>
 
     <div>
-      <label for="organization_id" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Organization</label>
-      <select name="organization_id" id="organization_id" onchange="this.form.submit()"
+      <label for="organization_id" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.transactions.index.organization') %></label>
+      <select name="organization_id" id="organization_id" data-auto-submit
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
-        <option value="">All Organizations</option>
+        <option value=""><%= t('federation_admin.transactions.index.all_organizations') %></option>
         <% @organizations.each do |org| %>
           <option value="<%= org.id %>" <%= params[:organization_id].to_s == org.id.to_s ? 'selected' : '' %>><%= org.name %></option>
         <% end %>
@@ -86,7 +86,7 @@
 <!-- Table -->
 <div class="bg-white shadow rounded-lg overflow-hidden">
   <% if @transactions.any? %>
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto scroll-shadow">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
@@ -103,9 +103,7 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <% @transactions.each do |txn| %>
-            <tr class="hover:bg-gray-50 cursor-pointer" role="link" tabindex="0"
-                onclick="window.location='<%= federation_admin_transaction_path(txn) %>'"
-                onkeydown="if(event.key==='Enter'){window.location='<%= federation_admin_transaction_path(txn) %>'}">
+            <tr class="hover:bg-gray-50">
               <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap font-mono">
                 <a href="<%= federation_admin_transaction_path(txn) %>" class="text-federation-600 hover:text-federation-800"><%= txn.id %></a>
               </td>

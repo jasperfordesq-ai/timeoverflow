@@ -15,7 +15,8 @@ class FederationMessage < ActiveRecord::Base
 
   validates :direction, presence: true, inclusion: { in: DIRECTIONS }
   validates :body, presence: true, length: { maximum: 10_000 }
-  validates :remote_user_identifier, presence: true
+  validates :remote_user_identifier, presence: true, length: { maximum: 255 }
+  validates :subject, length: { maximum: 255 }
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :organization_id, presence: true
   validates :local_member_id, presence: true, if: -> { direction == "inbound" }

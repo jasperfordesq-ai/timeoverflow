@@ -24,7 +24,7 @@
   <form method="get" action="<%= federation_admin_member_preferences_path %>" class="flex flex-wrap items-end gap-4">
     <div>
       <label for="organization_id" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.member_preferences.index.organization') %></label>
-      <select name="organization_id" id="organization_id" onchange="this.form.submit()"
+      <select name="organization_id" id="organization_id" data-auto-submit
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
         <option value=""><%= t('federation_admin.member_preferences.index.all_organizations') %></option>
         <% @organizations.each do |org| %>
@@ -35,7 +35,7 @@
 
     <div>
       <label for="opted_in" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= t('federation_admin.member_preferences.index.status') %></label>
-      <select name="opted_in" id="opted_in" onchange="this.form.submit()"
+      <select name="opted_in" id="opted_in" data-auto-submit
               class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-federation-500 focus:ring-federation-500">
         <option value=""><%= t('federation_admin.member_preferences.index.all_members') %></option>
         <option value="true" <%= params[:opted_in] == 'true' ? 'selected' : '' %>><%= t('federation_admin.member_preferences.index.opted_in_label') %></option>

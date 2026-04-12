@@ -1,4 +1,8 @@
 <% content_for(:title) { t("federation_hub.messages.conversation_with", name: @message.remote_user_identifier) } %>
+<% content_for(:breadcrumbs) do %>
+  <li class="breadcrumb-item"><a href="<%= federation_hub_messages_path %>"><%= t("federation_hub.nav.messages") %></a></li>
+  <li class="breadcrumb-item active" aria-current="page"><%= @message.remote_user_identifier %></li>
+<% end %>
 
 <div class="row mb-3">
   <div class="col-md-12">
@@ -68,8 +72,9 @@
       <input type="hidden" name="subject" value="<%= reply_subject %>">
 
       <div class="mb-2">
-        <textarea name="body" rows="3" class="form-control" required
-                  placeholder="<%= t("federation_hub.messages.reply_placeholder") %>"></textarea>
+        <textarea name="body" rows="3" class="form-control" required maxlength="10000"
+                  placeholder="<%= t("federation_hub.messages.reply_placeholder") %>" data-char-counter="true"></textarea>
+        <small class="text-muted char-counter"></small>
       </div>
       <button type="submit" class="btn btn-info">
         <%= t("federation_hub.messages.reply_button") %>

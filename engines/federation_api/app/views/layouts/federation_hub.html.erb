@@ -1,3 +1,8 @@
+<%# DESIGN SYSTEM: Bootstrap 5 (matches host TimeOverflow app)
+    The member-facing Hub uses Bootstrap 5 to match the host app's UI,
+    ensuring a consistent experience for members. The admin panel uses
+    Tailwind CSS in a separate layout — this is intentional. See the
+    federation_admin layout for details. Do not attempt to unify them. %>
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -112,6 +117,16 @@
     <% end %>
 
     <div class="container content">
+      <%# Breadcrumbs %>
+      <% if content_for?(:breadcrumbs) %>
+        <nav aria-label="breadcrumb" class="mt-2 mb-3">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="<%= federation_hub_root_path %>"><%= t("federation_hub.nav.dashboard") %></a></li>
+            <%= yield :breadcrumbs %>
+          </ol>
+        </nav>
+      <% end %>
+
       <%# Flash messages — matches TimeOverflow pattern %>
       <% flash.each do |type, message| %>
         <% alert_css = case type.to_s

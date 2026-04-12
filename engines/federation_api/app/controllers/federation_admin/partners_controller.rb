@@ -44,6 +44,7 @@ module FederationAdmin
         permitted_organization_ids: permitted_org_ids
       )
 
+      audit!("partner.created", target: @partner, changes_made: { name: @partner.name, platform_type: @partner.platform_type })
       flash[:notice] = "Partner '#{@partner.name}' created successfully. The webhook secret is shown on the partner detail page."
       redirect_to federation_admin_partner_path(@partner)
     rescue ActiveRecord::RecordInvalid => e
@@ -88,6 +89,7 @@ module FederationAdmin
         permitted_organization_ids: permitted_org_ids
       )
 
+      audit!("partner.updated", target: @partner, changes_made: @partner.previous_changes.except("updated_at"))
       flash[:notice] = "Partner '#{@partner.name}' updated."
       redirect_to federation_admin_partner_path(@partner)
     rescue ActiveRecord::RecordInvalid => e
@@ -124,6 +126,7 @@ module FederationAdmin
     def regenerate_secret
       @partner = FederationPartner.find(params[:id])
       @partner.rotate_webhook_secret!
+      audit!("partner.secret_rotated", target: @partner)
       flash[:notice] = "Secret rotation started for #{@partner.name}. Both old and new secrets are now accepted. Complete the rotation after the partner has updated their configuration."
       redirect_to federation_admin_partner_path(@partner)
     end
@@ -133,6 +136,7 @@ module FederationAdmin
     def complete_rotation
       @partner = FederationPartner.find(params[:id])
       @partner.complete_secret_rotation!
+      audit!("partner.secret_rotation_completed", target: @partner)
       flash[:notice] = "Secret rotation completed for #{@partner.name}. Only the new secret is accepted from now on."
       redirect_to federation_admin_partner_path(@partner)
     rescue RuntimeError => e

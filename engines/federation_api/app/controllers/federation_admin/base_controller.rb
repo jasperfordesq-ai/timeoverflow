@@ -50,6 +50,19 @@ module FederationAdmin
       end
     end
 
+    # Audit logging helper — call from any admin controller action.
+    def audit!(action, target: nil, changes_made: {})
+      FederationAuditLog.record!(
+        action: action,
+        actor: current_user,
+        target: target,
+        changes_made: changes_made,
+        ip_address: request.remote_ip
+      )
+    rescue => e
+      Rails.logger.error("[FederationAdmin] Audit log failed: #{e.message}")
+    end
+
     # Quick stats for the sidebar/header
     def federation_stats
       @federation_stats ||= {

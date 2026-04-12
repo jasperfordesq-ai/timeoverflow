@@ -23,6 +23,14 @@ module FederationHub
         end
         @source_name ||= "Unknown"
       end
+
+      # Client-side pagination of the fetched array
+      per_page = 24
+      @total_count = @members.size
+      @current_page = [params[:page].to_i, 1].max
+      @total_pages = [(@total_count / per_page.to_f).ceil, 1].max
+      @current_page = @total_pages if @current_page > @total_pages
+      @members = @members.slice((@current_page - 1) * per_page, per_page) || []
     end
 
     private

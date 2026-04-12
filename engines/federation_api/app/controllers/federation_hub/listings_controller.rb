@@ -28,6 +28,29 @@ module FederationHub
         end
         @source_name ||= "Unknown"
       end
+
+      # Sort listings (client-side, since data comes from external APIs)
+      if params[:sort].present?
+        @listings = case params[:sort]
+                    when "title"
+                      @listings.sort_by { |l| (l["title"] || l["name"] || "").downcase }
+                    when "type"
+                      @listings.sort_by { |l| (l["type"] || "").downcase }
+                    when "user"
+                      @listings.sort_by { |l| (l["user"] || "").downcase }
+                    else
+                      @listings
+                    end
+        @listings = @listings.reverse if params[:dir] == "desc"
+      end
+
+      # Client-side pagination of the fetched array
+      per_page = 24
+      @total_count = @listings.size
+      @current_page = [params[:page].to_i, 1].max
+      @total_pages = [(@total_count / per_page.to_f).ceil, 1].max
+      @current_page = @total_pages if @current_page > @total_pages
+      @listings = @listings.slice((@current_page - 1) * per_page, per_page) || []
     end
 
     private

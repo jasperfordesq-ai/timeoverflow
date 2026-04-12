@@ -15,7 +15,7 @@ module Federation
 
     # M9: Cap the size of payload stored in webhook logs to avoid bloating the DB.
     # Full payload is always sent over the wire — this only affects the log record.
-    MAX_LOG_PAYLOAD_SIZE = 10_000 # bytes (JSON-serialised)
+    MAX_LOG_PAYLOAD_SIZE = ENV.fetch("FEDERATION_MAX_LOG_PAYLOAD_SIZE", "10000").to_i
 
     # Send a webhook synchronously (for testing or critical events)
     def self.send_now(partner:, event:, payload: {})
@@ -82,7 +82,7 @@ module Federation
         log.update!(
           status: response.code.to_i < 300 ? "success" : "failed",
           response_code: response.code.to_i,
-          response_body: response.body&.truncate(1000)
+          response_body: response.body&.truncate(ENV.fetch("FEDERATION_MAX_RESPONSE_LOG_SIZE", "1000").to_i)
         )
 
         if response.code.to_i < 300

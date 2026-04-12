@@ -1,4 +1,7 @@
 <% content_for(:title) { t("federation_hub.transfers.title") } %>
+<% content_for(:breadcrumbs) do %>
+  <li class="breadcrumb-item active" aria-current="page"><%= t("federation_hub.nav.transfers") %></li>
+<% end %>
 
 <div class="row">
   <div class="col-md-12">
@@ -13,7 +16,7 @@
     <form method="get" action="<%= new_federation_hub_transfer_path %>">
       <label class="form-label fw-bold"><%= t("federation_hub.transfers.select_org") %></label>
       <div class="input-group">
-        <select name="org_id" class="form-control" onchange="
+        <select name="org_id" class="form-control" required onchange="
           var opt = this.options[this.selectedIndex];
           document.getElementById('transfer_source_type').value = opt.dataset.type || '';
           this.form.submit();
@@ -123,9 +126,11 @@
               <% end %>
             </div>
 
-            <button type="submit" class="btn btn-success btn-lg">
+            <button type="submit" class="btn btn-success btn-lg"
+                    data-confirm="<%= t("federation_hub.transfers.confirm_send", default: "Are you sure you want to send this transfer?") %>">
               <%= t("federation_hub.transfers.send_button") %>
             </button>
+            <small id="balance-warning" class="text-danger d-none ms-3"></small>
             <a href="<%= federation_hub_root_path %>" class="btn btn-outline-secondary btn-lg ms-2">
               <%= t("federation_hub.transfers.cancel") %>
             </a>
@@ -139,3 +144,38 @@
     <%= t("federation_hub.transfers.no_members", org: @selected_name) %>
   </div>
 <% end %>
+
+<script>
+(function() {
+  var hoursEl = document.getElementById('transfer_hours');
+  var minsEl = document.getElementById('transfer_minutes');
+  var warning = document.getElementById('balance-warning');
+  if (!hoursEl || !minsEl || !warning) return;
+
+  var balanceSeconds = <%= current_member.account&.balance.to_i %>;
+
+  function checkBalance() {
+    var amount = (parseInt(hoursEl.value, 10) || 0) * 3600 + (parseInt(minsEl.value, 10) || 0) * 60;
+    if (amount > 0 && amount > balanceSeconds) {
+      warning.textContent = '<%= j t("federation_hub.transfers.exceeds_balance", default: "Warning: amount exceeds your current balance.") %>';
+      warning.classList.remove('d-none');
+    } else {
+      warning.classList.add('d-none');
+    }
+  }
+
+  hoursEl.addEventListener('input', checkBalance);
+  minsEl.addEventListener('input', checkBalance);
+
+  // Confirmation dialog for data-confirm buttons
+  var form = hoursEl.closest('form');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      var btn = form.querySelector('[data-confirm]');
+      if (btn && !confirm(btn.getAttribute('data-confirm'))) {
+        e.preventDefault();
+      }
+    });
+  }
+})();
+</script>

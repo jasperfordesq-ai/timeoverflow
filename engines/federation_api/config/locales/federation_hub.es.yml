@@ -10,6 +10,9 @@ es:
       internal_orgs: "Comunidades TimeOverflow"
       external_partners: "Socios Externos"
       platform_label: "TimeOverflow"
+      page: "Página"
+      previous: "Anterior"
+      next_page: "Siguiente"
     nav:
       dashboard: "Centro de Federación"
       partners: "Comunidades"

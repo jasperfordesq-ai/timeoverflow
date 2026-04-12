@@ -83,7 +83,7 @@ module Api
         cache_key = "federation_webhook_rate:#{ip}:#{Time.current.to_i / 60}"
         count = Rails.cache.increment(cache_key, 1, expires_in: 2.minutes) || 1
 
-        if count > 200 # webhooks get higher limit than API calls
+        if count > ENV.fetch("FEDERATION_WEBHOOK_IP_RATE_LIMIT", "200").to_i
           render json: { success: false, error: "Rate limit exceeded" }, status: :too_many_requests
         end
       end
@@ -187,7 +187,7 @@ module Api
         cache_key = "federation_webhook_partner:#{partner.id}:#{Time.current.to_i / 60}"
         count = Rails.cache.increment(cache_key, 1, expires_in: 2.minutes) || 1
 
-        if count > 100
+        if count > ENV.fetch("FEDERATION_WEBHOOK_PARTNER_RATE_LIMIT", "100").to_i
           render json: { success: false, error: "Partner rate limit exceeded" }, status: :too_many_requests
         end
       end

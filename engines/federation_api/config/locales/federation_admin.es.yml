@@ -17,6 +17,8 @@ es:
         orgs: "Organizaciones"
         members: "Miembros"
         activity: "Actividad"
+        reconciliation: "Conciliación"
+        audit_logs: "Auditoría"
         cc_config: "Config. CC"
 
     dashboard:
@@ -276,6 +278,11 @@ es:
           status: "Estado"
           transfer_id: "ID de Transferencia"
           created_at: "Fecha de Creación"
+        all_statuses: "Todos los Estados"
+        all_directions: "Todas las Direcciones"
+        all_partners: "Todos los Socios"
+        all_organizations: "Todas las Organizaciones"
+        organization: "Organización"
         page: "Página"
         of: "de"
         previous: "Anterior"
@@ -387,6 +394,8 @@ es:
           created: "Creado"
         page: "Página"
         of: "de"
+        previous: "Anterior"
+        next: "Siguiente"
         empty: "Ningún mensaje de federación coincide con los filtros actuales."
         no_messages: "No se encontraron mensajes"
       show:

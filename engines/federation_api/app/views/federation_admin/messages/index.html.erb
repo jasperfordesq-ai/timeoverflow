@@ -128,13 +128,13 @@
           <% if @current_page > 1 %>
             <a href="<%= federation_admin_messages_path(request.query_parameters.merge(page: @current_page - 1)) %>"
                class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50">
-              Previous
+              <%= t('federation_admin.messages.index.previous') %>
             </a>
           <% end %>
           <% if @current_page < @total_pages %>
             <a href="<%= federation_admin_messages_path(request.query_parameters.merge(page: @current_page + 1)) %>"
                class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50">
-              Next
+              <%= t('federation_admin.messages.index.next') %>
             </a>
           <% end %>
         </div>

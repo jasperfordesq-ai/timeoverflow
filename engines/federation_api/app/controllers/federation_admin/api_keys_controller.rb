@@ -26,6 +26,7 @@ module FederationAdmin
         expires_at: params[:expires_at].present? ? Time.parse(params[:expires_at]) : nil
       )
 
+      audit!("api_key.created", target: @api_key, changes_made: { name: @api_key.name, organization_id: @api_key.organization_id })
       flash[:notice] = "API key generated successfully. Copy the raw key now — it cannot be retrieved later."
       render :show
     rescue ActiveRecord::RecordInvalid => e
@@ -46,6 +47,7 @@ module FederationAdmin
     def destroy
       key = FederationApiKey.find(params[:id])
       key.update!(active: false)
+      audit!("api_key.revoked", target: key)
       flash[:notice] = "API key '#{key.name}' has been deactivated."
       redirect_to federation_admin_api_keys_path
     end
@@ -63,6 +65,7 @@ module FederationAdmin
         old_key.update!(active: false)
       end
 
+      audit!("api_key.rotated", target: @api_key, changes_made: { old_key_id: old_key.id })
       flash[:notice] = "Key rotated successfully. The old key has been deactivated. Copy the new raw key now — it cannot be retrieved later."
       render :show
     rescue => e
@@ -75,6 +78,7 @@ module FederationAdmin
       ids = (params[:ids] || []).map(&:to_i).reject(&:zero?)
       if ids.any?
         count = FederationApiKey.where(id: ids, active: true).update_all(active: false)
+        audit!("api_key.bulk_revoked", changes_made: { revoked_ids: ids, count: count })
         flash[:notice] = "#{count} API key(s) revoked."
       else
         flash[:alert] = "No keys selected."

@@ -22,6 +22,14 @@ module FederationAdmin
         orgs_federation_enabled: (FederationOrganizationSetting.where(federation_enabled: true).count rescue 0),
         members_opted_in: (FederationMemberPreference.opted_in.count rescue 0)
       }
+
+      # 7-day trend data for stat cards
+      @trends = {
+        transactions_7d: FederationTransaction.where("created_at > ?", 7.days.ago).count,
+        transactions_prev_7d: FederationTransaction.where(created_at: 14.days.ago..7.days.ago).count,
+        messages_7d: (FederationMessage.where("created_at > ?", 7.days.ago).count rescue 0),
+        messages_prev_7d: (FederationMessage.where(created_at: 14.days.ago..7.days.ago).count rescue 0)
+      }
     end
 
     def reconcile

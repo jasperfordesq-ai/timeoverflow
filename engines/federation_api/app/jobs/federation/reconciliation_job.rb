@@ -266,8 +266,7 @@ module Federation
       )
     rescue => e
       Rails.logger.error("[Federation::Reconciliation] Failed to persist run: #{e.message}")
-    ensure
-      return issues || []
+      raise # Let Sidekiq retry rather than silently swallowing
     end
 
     private

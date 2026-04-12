@@ -62,7 +62,7 @@
             <input type="hidden" name="source_type" value="<%= @selected_type %>">
 
             <div class="mb-3">
-              <label for="recipient_id" class="form-label fw-bold"><%= t("federation_hub.messages.recipient") %></label>
+              <label for="recipient_id" class="form-label fw-bold"><%= t("federation_hub.messages.recipient") %> <span class="text-danger">*</span></label>
               <select name="recipient_id" id="recipient_id" class="form-control" required>
                 <option value=""><%= t("federation_hub.messages.select_recipient", default: "Choose a member...") %></option>
                 <% @recipient_members.each do |m| %>
@@ -74,17 +74,17 @@
             </div>
 
             <div class="mb-3">
-              <label for="subject" class="form-label fw-bold"><%= t("federation_hub.messages.subject_label") %></label>
+              <label for="subject" class="form-label fw-bold"><%= t("federation_hub.messages.subject_label") %> <span class="text-danger">*</span></label>
               <input type="text" name="subject" id="subject" class="form-control" required maxlength="255"
                      placeholder="<%= t("federation_hub.messages.subject_placeholder") %>" data-char-counter="true">
-              <small class="text-muted char-counter"></small>
+              <small class="text-muted char-counter" aria-live="polite"></small>
             </div>
 
             <div class="mb-3">
-              <label for="body" class="form-label fw-bold"><%= t("federation_hub.messages.body_label") %></label>
+              <label for="body" class="form-label fw-bold"><%= t("federation_hub.messages.body_label") %> <span class="text-danger">*</span></label>
               <textarea name="body" id="body" rows="6" class="form-control" required maxlength="10000"
                         placeholder="<%= t("federation_hub.messages.body_placeholder") %>" data-char-counter="true"></textarea>
-              <small class="text-muted char-counter"></small>
+              <small class="text-muted char-counter" aria-live="polite"></small>
             </div>
 
             <button type="submit" class="btn btn-info"><%= t("federation_hub.messages.send_button") %></button>

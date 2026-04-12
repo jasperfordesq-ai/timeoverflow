@@ -6,6 +6,7 @@ en:
       brand: "Federation Admin"
       back_to_timeoverflow: "TimeOverflow"
       pending_count: "%{count} pending"
+      toggle_dark_mode: "Toggle dark mode"
       footer: "Federation Engine v%{version} · Self-contained module · Does not modify TimeOverflow core"
       nav:
         dashboard: "Dashboard"
@@ -538,6 +539,19 @@ en:
       subtitle: "Unified audit log of recent federation events"
       empty: "No activity yet"
       empty_detail: "Federation events will appear here as transactions, messages, and webhooks are processed."
+
+    audit_logs:
+      title: "Audit Logs"
+      subtitle: "Record of administrative actions in the federation engine."
+      table:
+        time: "Time"
+        action: "Action"
+        actor: "Actor"
+        target: "Target"
+        ip: "IP"
+        changes: "Changes"
+      fields: "%{count} field(s)"
+      empty: "No audit logs recorded yet."
 
     cc_config:
       title: "Credit Commons Node Configuration"

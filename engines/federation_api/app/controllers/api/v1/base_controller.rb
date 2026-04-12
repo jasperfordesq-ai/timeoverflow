@@ -77,22 +77,33 @@ module Api
         end
       end
 
-      # Simple sliding-window rate limiter using Rails cache.
+      # Sliding-window rate limiter using Rails cache.
+      # Uses two adjacent 1-minute buckets weighted by position within the
+      # current minute, preventing the 2x burst exploit at window boundaries.
       # Limits each API key to N requests per minute.
       def enforce_rate_limit!
         return unless @current_api_key # skip if auth failed (will 401 anyway)
 
         limit = [Rails.application.config.federation.rate_limit, 1].max rescue 100
-        cache_key = "federation_rate:#{@current_api_key.id}:#{Time.current.to_i / 60}"
+        now = Time.current.to_i
+        current_window = now / 60
+        previous_window = current_window - 1
+        elapsed_fraction = (now % 60) / 60.0
 
-        count = Rails.cache.increment(cache_key, 1, expires_in: 2.minutes) || 1
+        current_key  = "federation_rate:#{@current_api_key.id}:#{current_window}"
+        previous_key = "federation_rate:#{@current_api_key.id}:#{previous_window}"
+
+        # Increment current window count
+        current_count = Rails.cache.increment(current_key, 1, expires_in: 2.minutes) || 1
+        previous_count = Rails.cache.read(previous_key).to_i
+
+        # Weighted estimate: previous window's remainder + current window's count
+        estimated = (previous_count * (1 - elapsed_fraction)) + current_count
 
         response.set_header("X-RateLimit-Limit", limit.to_s)
-        response.set_header("X-RateLimit-Remaining", [limit - count, 0].max.to_s)
+        response.set_header("X-RateLimit-Remaining", [limit - estimated.ceil, 0].max.to_s)
 
-        # Rate limit: count > limit allows exactly `limit` requests per window.
-        # (count starts at 1 after first increment; the (limit+1)-th request is rejected.)
-        if count > limit
+        if estimated > limit
           render json: {
             success: false,
             error: "Rate limit exceeded",

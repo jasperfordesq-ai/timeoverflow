@@ -78,7 +78,7 @@
             <% next_dir = (current_sort == key && current_dir == "asc") ? "desc" : "asc" %>
             <a href="<%= federation_hub_listings_path(sort_base.merge(sort: key, dir: next_dir)) %>"
                class="btn btn-sm <%= current_sort == key ? 'btn-info' : 'btn-outline-secondary' %>">
-              <%= label %><%= current_sort == key ? (current_dir == "asc" ? " &uarr;" : " &darr;").html_safe : "" %>
+              <%= label %><%= current_sort == key ? (current_dir == "asc" ? " ↑" : " ↓") : "" %>
             </a>
           <% end %>
         </div>
@@ -89,42 +89,42 @@
           <div class="d-flex justify-content-between align-items-start">
             <div>
               <h4 class="mb-1">
-                <%= sanitize(listing["title"].to_s.presence || listing["name"].to_s.presence || t("federation_hub.listings.listing_fallback", id: listing["id"])) %>
+                <%= sanitize(listing["title"].to_s.presence || listing["name"].to_s.presence || t("federation_hub.listings.listing_fallback", id: listing["id"]), tags: %w[b i em strong]) %>
               </h4>
               <% if listing["description"].present? %>
                 <% desc = listing["description"].to_s %>
                 <% if desc.length > 200 %>
                   <p class="text-muted mb-2">
-                    <span class="listing-desc-short"><%= sanitize(truncate(desc, length: 200)) %>
-                      <a href="#" class="text-info listing-expand" onclick="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='inline';return false;"><%= t("federation_hub.listings.read_more", default: "Read more") %></a>
+                    <span class="listing-desc-short"><%= sanitize(truncate(desc, length: 200), tags: %w[b i em strong]) %>
+                      <a href="#" class="text-info listing-expand"><%= t("federation_hub.listings.read_more", default: "Read more") %></a>
                     </span>
-                    <span class="listing-desc-full" style="display:none"><%= sanitize(desc) %>
-                      <a href="#" class="text-info listing-collapse" onclick="this.parentElement.style.display='none';this.parentElement.previousElementSibling.style.display='inline';return false;"><%= t("federation_hub.listings.read_less", default: "Show less") %></a>
+                    <span class="listing-desc-full" style="display:none"><%= sanitize(desc, tags: %w[b i em strong br p]) %>
+                      <a href="#" class="text-info listing-collapse"><%= t("federation_hub.listings.read_less", default: "Show less") %></a>
                     </span>
                   </p>
                 <% else %>
-                  <p class="text-muted mb-2"><%= sanitize(desc) %></p>
+                  <p class="text-muted mb-2"><%= sanitize(desc, tags: %w[b i em strong br p]) %></p>
                 <% end %>
               <% end %>
               <div class="d-flex flex-wrap gap-1">
                 <% if listing["type"] %>
                   <span class="badge rounded-pill <%= listing["type"].to_s.downcase == "offer" ? "bg-success" : "bg-warning text-dark" %>">
-                    <%= sanitize(listing["type"].to_s.capitalize) %>
+                    <%= sanitize(listing["type"].to_s.capitalize, tags: []) %>
                   </span>
                 <% end %>
                 <% if listing["category"].present? %>
-                  <span class="badge rounded-pill bg-info"><%= sanitize(listing["category"].to_s) %></span>
+                  <span class="badge rounded-pill bg-info"><%= sanitize(listing["category"].to_s, tags: []) %></span>
                 <% end %>
                 <% tags = listing["tags"] %>
                 <% tags = tags.split(",").map(&:strip) if tags.is_a?(String) %>
                 <% Array(tags).first(5).each do |tag| %>
                   <% next if tag.blank? %>
-                  <span class="badge rounded-pill bg-secondary"><%= sanitize(tag.to_s) %></span>
+                  <span class="badge rounded-pill bg-secondary"><%= sanitize(tag.to_s, tags: []) %></span>
                 <% end %>
               </div>
             </div>
             <% if listing["user"].present? %>
-              <small class="text-muted ms-3 text-nowrap"><%= sanitize(listing["user"].to_s) %></small>
+              <small class="text-muted ms-3 text-nowrap"><%= sanitize(listing["user"].to_s, tags: []) %></small>
             <% end %>
           </div>
         </div>

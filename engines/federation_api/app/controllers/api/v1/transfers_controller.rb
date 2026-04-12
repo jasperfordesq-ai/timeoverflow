@@ -175,7 +175,7 @@ module Api
         params[:remote_user_identifier] = params[:sender_id] || "unknown_remote_user"
         params[:amount] = amount_seconds.to_s
         params[:reason] = params[:description] if params[:reason].blank?
-        params[:external_transaction_id] ||= "nexus_#{SecureRandom.hex(8)}"
+        params[:external_transaction_id] ||= "nexus_#{Digest::SHA256.hexdigest("#{params[:sender_id]}:#{params[:recipient_id]}:#{params[:amount]}:#{params[:description]}")[0..15]}"
       end
 
       def validate_transfer_params!

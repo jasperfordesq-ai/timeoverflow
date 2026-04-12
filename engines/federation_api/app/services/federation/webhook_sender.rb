@@ -33,7 +33,8 @@ module Federation
         fed_txn_id
       )
     rescue => e
-      Rails.logger.error("[Federation] Failed to queue webhook: #{e.message}")
+      Rails.logger.fatal("[Federation] Failed to queue webhook for partner #{partner.id} event=#{event}: #{e.class}: #{e.message}")
+      raise
     end
 
     def initialize(partner:, event:, payload: {})

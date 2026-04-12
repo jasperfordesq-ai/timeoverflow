@@ -6,6 +6,7 @@ es:
       brand: "Administración de Federación"
       back_to_timeoverflow: "TimeOverflow"
       pending_count: "%{count} pendiente(s)"
+      toggle_dark_mode: "Alternar modo oscuro"
       footer: "Motor de Federación v%{version} · Módulo autónomo · No modifica el núcleo de TimeOverflow"
       nav:
         dashboard: "Panel"
@@ -538,6 +539,19 @@ es:
       subtitle: "Registro de auditoría unificado de eventos recientes de federación"
       empty: "Sin actividad aún"
       empty_detail: "Los eventos de federación aparecerán aquí a medida que se procesen transacciones, mensajes y webhooks."
+
+    audit_logs:
+      title: "Registros de Auditoría"
+      subtitle: "Registro de acciones administrativas en el motor de federación."
+      table:
+        time: "Hora"
+        action: "Acción"
+        actor: "Actor"
+        target: "Objetivo"
+        ip: "IP"
+        changes: "Cambios"
+      fields: "%{count} campo(s)"
+      empty: "Aún no se han registrado acciones de auditoría."
 
     cc_config:
       title: "Configuración de Nodo Credit Commons"

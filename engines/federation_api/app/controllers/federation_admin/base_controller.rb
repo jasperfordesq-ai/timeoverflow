@@ -16,6 +16,13 @@ module FederationAdmin
       flash[:alert] = "The requested resource could not be found."
       redirect_to federation_admin_root_path
     end
+
+    rescue_from StandardError do |e|
+      raise e if Rails.env.development? || Rails.env.test?
+      Rails.logger.error("[FederationAdmin] Unhandled error: #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}")
+      flash[:alert] = "An unexpected error occurred. Please try again."
+      redirect_to federation_admin_root_path
+    end
     helper FederationAdmin::ApplicationHelper
 
     helper_method :current_user, :federation_stats

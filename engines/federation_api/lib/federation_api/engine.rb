@@ -27,6 +27,16 @@ module FederationApi
       app.config.federation.webhook_timeout    = [ENV.fetch("FEDERATION_WEBHOOK_TIMEOUT", "10").to_i, 1].max
       app.config.federation.max_transfer_amount = [ENV.fetch("FEDERATION_MAX_TRANSFER_AMOUNT", "360000").to_i, 0].max
       app.config.federation.rate_limit          = [ENV.fetch("FEDERATION_RATE_LIMIT", "100").to_i, 1].max
+
+      # Startup validation: warn about misconfigured ENV vars so ops can
+      # catch issues at deploy time rather than at runtime.
+      if app.config.federation.enabled
+        warnings = []
+        warnings << "FEDERATION_WEBHOOK_TIMEOUT=#{ENV['FEDERATION_WEBHOOK_TIMEOUT']} is not a positive integer" if ENV.key?("FEDERATION_WEBHOOK_TIMEOUT") && ENV["FEDERATION_WEBHOOK_TIMEOUT"].to_i <= 0
+        warnings << "FEDERATION_MAX_TRANSFER_AMOUNT=#{ENV['FEDERATION_MAX_TRANSFER_AMOUNT']} is not a positive integer" if ENV.key?("FEDERATION_MAX_TRANSFER_AMOUNT") && ENV["FEDERATION_MAX_TRANSFER_AMOUNT"].to_i <= 0
+        warnings << "FEDERATION_RATE_LIMIT=#{ENV['FEDERATION_RATE_LIMIT']} is not a positive integer" if ENV.key?("FEDERATION_RATE_LIMIT") && ENV["FEDERATION_RATE_LIMIT"].to_i <= 0
+        warnings.each { |w| Rails.logger.warn("[FederationApi] Config warning: #{w}") } if warnings.any?
+      end
     end
 
     # --- Devise-i18n compatibility ----------------------------------

@@ -19,6 +19,13 @@ module FederationHub
       flash[:alert] = t("federation_hub.errors.not_found", default: "The requested resource could not be found.")
       redirect_to federation_hub_root_path
     end
+
+    rescue_from StandardError do |e|
+      raise e if Rails.env.development? || Rails.env.test?
+      Rails.logger.error("[FederationHub] Unhandled error: #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}")
+      flash[:alert] = t("federation_hub.errors.unexpected", default: "An unexpected error occurred. Please try again.")
+      redirect_to federation_hub_root_path
+    end
     helper FederationHub::ApplicationHelper
 
     helper_method :current_user, :current_organization, :current_member,

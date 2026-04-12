@@ -77,13 +77,13 @@ module Api
 
       private
 
-      # Rate limit webhooks by IP (not by API key since webhooks skip auth)
+      # Sliding-window rate limit for webhooks by IP (not by API key since webhooks skip auth).
       def enforce_webhook_rate_limit!
         ip = request.remote_ip
-        cache_key = "federation_webhook_rate:#{ip}:#{Time.current.to_i / 60}"
-        count = Rails.cache.increment(cache_key, 1, expires_in: 2.minutes) || 1
+        limit = ENV.fetch("FEDERATION_WEBHOOK_IP_RATE_LIMIT", "200").to_i
+        estimated = sliding_window_count("federation_webhook_rate:#{ip}")
 
-        if count > ENV.fetch("FEDERATION_WEBHOOK_IP_RATE_LIMIT", "200").to_i
+        if estimated > limit
           render json: { success: false, error: "Rate limit exceeded" }, status: :too_many_requests
         end
       end
@@ -184,12 +184,30 @@ module Api
       # Per-partner rate limit — supplements the per-IP limit. Prevents a single
       # partner from flooding the webhook endpoint across multiple source IPs.
       def enforce_partner_rate_limit!(partner)
-        cache_key = "federation_webhook_partner:#{partner.id}:#{Time.current.to_i / 60}"
-        count = Rails.cache.increment(cache_key, 1, expires_in: 2.minutes) || 1
+        limit = ENV.fetch("FEDERATION_WEBHOOK_PARTNER_RATE_LIMIT", "100").to_i
+        estimated = sliding_window_count("federation_webhook_partner:#{partner.id}")
 
-        if count > ENV.fetch("FEDERATION_WEBHOOK_PARTNER_RATE_LIMIT", "100").to_i
+        if estimated > limit
           render json: { success: false, error: "Partner rate limit exceeded" }, status: :too_many_requests
         end
+      end
+
+      # Sliding-window counter shared by all webhook rate limiters.
+      # Weights the previous minute's count by how much of it is still
+      # within the 60-second sliding window, preventing 2x burst at boundaries.
+      def sliding_window_count(prefix)
+        now = Time.current.to_i
+        current_window = now / 60
+        previous_window = current_window - 1
+        elapsed_fraction = (now % 60) / 60.0
+
+        current_key  = "#{prefix}:#{current_window}"
+        previous_key = "#{prefix}:#{previous_window}"
+
+        current_count = Rails.cache.increment(current_key, 1, expires_in: 2.minutes) || 1
+        previous_count = Rails.cache.read(previous_key).to_i
+
+        (previous_count * (1 - elapsed_fraction)) + current_count
       end
 
       def handle_event(event_type, payload, partner)

@@ -1,5 +1,5 @@
 // Federation form helpers — disable-on-submit with spinner feedback,
-// character counters, and auto-submit selects.
+// character counters, auto-submit selects, and listing expand/collapse.
 // Included in both admin and hub layouts.
 (function() {
   document.addEventListener('DOMContentLoaded', function() {
@@ -15,11 +15,12 @@
       var btn = form.querySelector('button[type="submit"], input[type="submit"]');
       if (!btn || btn.disabled) return;
 
-      // Disable button and show spinner
+      // Disable button and show spinner — use data attribute for i18n
       btn.disabled = true;
       var originalText = btn.innerHTML;
       btn.setAttribute('data-original-text', originalText);
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Processing\u2026';
+      var processingText = btn.getAttribute('data-processing-text') || 'Processing\u2026';
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ' + processingText;
 
       // Re-enable after 30 seconds as safety timeout (page will reload on response)
       setTimeout(function() {
@@ -58,13 +59,40 @@
       updateCounter();
     });
 
-    // --- Auto-submit selects ---
+    // --- Auto-submit selects (with debounce to prevent accidental taps) ---
     // Any select with data-auto-submit will submit its parent form on change.
     document.querySelectorAll('select[data-auto-submit]').forEach(function(sel) {
+      var debounceTimer = null;
       sel.addEventListener('change', function() {
-        var form = sel.closest('form');
-        if (form) form.submit();
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+          var form = sel.closest('form');
+          if (form) form.submit();
+        }, 300);
       });
+    });
+
+    // --- Listing expand/collapse (delegated, replaces inline onclick) ---
+    document.addEventListener('click', function(e) {
+      var expand = e.target.closest('.listing-expand');
+      if (expand) {
+        e.preventDefault();
+        var shortSpan = expand.closest('.listing-desc-short');
+        if (shortSpan) {
+          shortSpan.style.display = 'none';
+          shortSpan.nextElementSibling.style.display = 'inline';
+        }
+        return;
+      }
+      var collapse = e.target.closest('.listing-collapse');
+      if (collapse) {
+        e.preventDefault();
+        var fullSpan = collapse.closest('.listing-desc-full');
+        if (fullSpan) {
+          fullSpan.style.display = 'none';
+          fullSpan.previousElementSibling.style.display = 'inline';
+        }
+      }
     });
   });
 })();

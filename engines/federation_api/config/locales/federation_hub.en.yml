@@ -84,6 +84,7 @@ en:
       none_found: "No federation members found on %{partner}."
       choose_partner: "Select a partner community above to browse their members."
       member_fallback: "Member #%{id}"
+      browse_unavailable: "Direct member browsing is not yet available for this partner. Members from this community will appear here once the feature is enabled."
     listings:
       title: "Partner Listings"
       subtitle: "Discover offers and inquiries from partner timebanking communities."
@@ -97,6 +98,7 @@ en:
       none_found: "No listings found on %{partner}."
       choose_partner: "Select a partner community above to browse their listings."
       listing_fallback: "Listing #%{id}"
+      browse_unavailable: "Direct listing browsing is not yet available for this partner. Listings from this community will appear here once the feature is enabled."
     messages:
       title: "Federation Messages"
       compose: "New Message"

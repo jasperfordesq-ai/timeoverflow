@@ -30,7 +30,11 @@
   </div>
 </div>
 
-<% if @members.any? %>
+<% if @partner_browse_unavailable %>
+  <div class="alert alert-info">
+    <strong><%= @source_name %></strong> &mdash; <%= t("federation_hub.members.browse_unavailable") %>
+  </div>
+<% elsif @members.any? %>
   <div class="row">
     <% @members.each do |member| %>
       <div class="col-md-4 mb-3">

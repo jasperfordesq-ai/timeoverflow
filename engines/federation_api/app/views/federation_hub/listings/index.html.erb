@@ -29,7 +29,11 @@
 </div>
 
 <% if @selected_partner %>
-  <% if @listings.any? %>
+  <% if @partner_browse_unavailable %>
+    <div class="alert alert-info">
+      <strong><%= @selected_partner.name %></strong> &mdash; <%= t("federation_hub.listings.browse_unavailable") %>
+    </div>
+  <% elsif @listings.any? %>
     <% @listings.each do |listing| %>
       <div class="post mb-3 p-3 border rounded bg-white">
         <div class="d-flex justify-content-between">

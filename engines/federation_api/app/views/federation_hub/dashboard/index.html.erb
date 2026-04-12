@@ -145,15 +145,15 @@
             <tbody>
               <tr>
                 <td><%= t("federation_hub.dashboard.status_discoverable") %></td>
-                <td class="text-end"><%= federation_feature_icon(@effective_status[:discoverable]) %></td>
+                <td class="text-end"><%= federation_feature_icon(@effective_status[:discoverable_to_partners]) %></td>
               </tr>
               <tr>
                 <td><%= t("federation_hub.dashboard.status_can_receive") %></td>
-                <td class="text-end"><%= federation_feature_icon(@effective_status[:can_receive]) %></td>
+                <td class="text-end"><%= federation_feature_icon(@effective_status[:can_receive_transfers]) %></td>
               </tr>
               <tr>
                 <td><%= t("federation_hub.dashboard.status_can_send") %></td>
-                <td class="text-end"><%= federation_feature_icon(@effective_status[:can_send]) %></td>
+                <td class="text-end"><%= federation_feature_icon(@effective_status[:can_send_transfers]) %></td>
               </tr>
               <tr>
                 <td><%= t("federation_hub.dashboard.status_listings") %></td>

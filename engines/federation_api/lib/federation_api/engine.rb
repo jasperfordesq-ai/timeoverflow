@@ -222,6 +222,8 @@ module FederationApi
     initializer "federation_api.locale_paths" do |app|
       locale_dir = root.join("config", "locales")
       app.config.i18n.load_path += Dir[locale_dir.join("*.yml")] if locale_dir.exist?
+      # Ensure English is available as fallback for missing translations
+      app.config.i18n.fallbacks = true if app.config.i18n.respond_to?(:fallbacks=)
     end
 
     # --- Rake tasks ---------------------------------------------------

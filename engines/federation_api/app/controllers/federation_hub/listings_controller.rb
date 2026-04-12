@@ -38,28 +38,11 @@ module FederationHub
     private
 
     def fetch_partner_listings(partner)
-      # Try REST API first (uses browse_base_url if set)
-      if partner.browse_base_url.present?
-        begin
-          client = Federation::PartnerApiClient.new(partner: partner)
-          result = client.fetch_listings(
-            organization_id: params[:organization_id],
-            type: params[:type],
-            search: params[:q]
-          )
-          if result["success"] != false
-            raw = result["data"] || []
-            return raw.is_a?(Array) ? raw : []
-          end
-        rescue => e
-          Rails.logger.warn("[FederationHub::Listings] REST browse failed for #{partner.name}: #{e.message}")
-        end
-      end
+      client = Federation::PartnerApiClient.new(partner: partner)
 
-      # Fallback: request listings via webhook event
+      # Method 1: Webhook event (preferred — works with all partners)
       if partner.api_key_hash.present?
         begin
-          client = Federation::PartnerApiClient.new(partner: partner)
           result = client.send(:post, client.send(:build_uri, "/receive"), {
             event: "listings.list",
             timestamp: Time.current.iso8601,
@@ -72,11 +55,28 @@ module FederationHub
           })
           if result["success"] != false
             data = result["data"] || result
-            listings = data["result"]&.dig("listings") || data["listings"] || []
+            listings = data.dig("result", "listings") || data["listings"] || []
             return listings.is_a?(Array) ? listings : []
           end
         rescue => e
           Rails.logger.warn("[FederationHub::Listings] Webhook browse failed for #{partner.name}: #{e.message}")
+        end
+      end
+
+      # Method 2: REST browse (only if browse_base_url is explicitly set)
+      if partner.browse_base_url.present?
+        begin
+          result = client.fetch_listings(
+            organization_id: params[:organization_id],
+            type: params[:type],
+            search: params[:q]
+          )
+          if result["success"] != false
+            raw = result["data"] || []
+            return raw.is_a?(Array) ? raw : []
+          end
+        rescue => e
+          Rails.logger.warn("[FederationHub::Listings] REST browse failed for #{partner.name}: #{e.message}")
         end
       end
 

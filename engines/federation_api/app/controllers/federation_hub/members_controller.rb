@@ -31,24 +31,11 @@ module FederationHub
     private
 
     def fetch_partner_members(partner)
-      # Try REST API first (uses browse_base_url if set)
-      if partner.browse_base_url.present?
-        begin
-          client = Federation::PartnerApiClient.new(partner: partner)
-          result = client.fetch_members(organization_id: params[:organization_id])
-          if result["success"] != false
-            raw = result["data"] || []
-            return raw.is_a?(Array) ? raw : []
-          end
-        rescue => e
-          Rails.logger.warn("[FederationHub::Members] REST browse failed for #{partner.name}: #{e.message}")
-        end
-      end
+      client = Federation::PartnerApiClient.new(partner: partner)
 
-      # Fallback: request members via webhook event
+      # Method 1: Webhook event (preferred — works with all partners)
       if partner.api_key_hash.present?
         begin
-          client = Federation::PartnerApiClient.new(partner: partner)
           result = client.send(:post, client.send(:build_uri, "/receive"), {
             event: "members.list",
             timestamp: Time.current.iso8601,
@@ -57,11 +44,24 @@ module FederationHub
           })
           if result["success"] != false
             data = result["data"] || result
-            members = data["result"]&.dig("members") || data["members"] || []
+            members = data.dig("result", "members") || data["members"] || []
             return members.is_a?(Array) ? members : []
           end
         rescue => e
           Rails.logger.warn("[FederationHub::Members] Webhook browse failed for #{partner.name}: #{e.message}")
+        end
+      end
+
+      # Method 2: REST browse (only if browse_base_url is explicitly set)
+      if partner.browse_base_url.present?
+        begin
+          result = client.fetch_members(organization_id: params[:organization_id])
+          if result["success"] != false
+            raw = result["data"] || []
+            return raw.is_a?(Array) ? raw : []
+          end
+        rescue => e
+          Rails.logger.warn("[FederationHub::Members] REST browse failed for #{partner.name}: #{e.message}")
         end
       end
 

@@ -36,9 +36,9 @@ module FederationAdmin
           @log.payload || {},
           nil
         )
-        flash[:notice] = "Webhook retry queued for log ##{@log.id}."
+        flash[:notice] = t("federation_admin.flash.webhook_retry_queued", id: @log.id, default: "Webhook retry queued for log #%{id}.")
       else
-        flash[:alert] = "Cannot retry: partner inactive or webhook not in failed state."
+        flash[:alert] = t("federation_admin.flash.webhook_retry_failed", default: "Cannot retry: partner inactive or webhook not in failed state.")
       end
       redirect_to federation_admin_webhook_log_path(@log)
     end

@@ -20,10 +20,10 @@ module FederationAdmin
       attrs[:parent_node_url] = params[:parent_node_url] if params.key?(:parent_node_url)
 
       @config.update!(attrs)
-      flash[:notice] = "CC node configuration updated for '#{org.name}'."
+      flash[:notice] = t("federation_admin.flash.cc_config_updated", name: org.name, default: "CC node configuration updated for '%{name}'.")
       redirect_to federation_admin_cc_config_index_path
     rescue => e
-      flash[:alert] = "Failed to update: #{e.message}"
+      flash[:alert] = t("federation_admin.flash.cc_config_failed", error: e.message, default: "Failed to update: %{error}")
       redirect_to federation_admin_cc_config_index_path
     end
   end

@@ -78,7 +78,7 @@ module Federation
       fed_txn = nil
 
       begin
-        ActiveRecord::Base.transaction do
+        ActiveRecord::Base.transaction(isolation: :repeatable_read) do
           # H7: Second idempotency check INSIDE the transaction with a row lock
           # to eliminate the TOCTOU window between the fast-path check and INSERT.
           # If a concurrent request slipped through, we find and return the
@@ -168,7 +168,7 @@ module Federation
       fed_txn = nil
       local_transfer = nil
 
-      ActiveRecord::Base.transaction do
+      ActiveRecord::Base.transaction(isolation: :repeatable_read) do
         fed_txn = FederationTransaction.create!(
           federation_partner: @partner,
           external_transaction_id: external_transaction_id,

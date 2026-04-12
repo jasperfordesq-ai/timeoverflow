@@ -84,4 +84,16 @@ class FederationTransaction < ActiveRecord::Base
   def outbound?
     direction == "outbound"
   end
+
+  # Prevent metadata from growing unboundedly (max 100 KB).
+  validate :metadata_size_limit
+
+  private
+
+  def metadata_size_limit
+    return if metadata.blank?
+    if metadata.to_json.bytesize > 100_000
+      errors.add(:metadata, "exceeds 100 KB size limit")
+    end
+  end
 end

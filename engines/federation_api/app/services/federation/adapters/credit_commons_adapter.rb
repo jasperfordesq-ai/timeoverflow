@@ -275,8 +275,11 @@ module Federation
       end
 
       def serialize_error(message, status: nil, errors: nil)
-        # CC error format: CCViolation / CCFailure
-        { errors: [{ class: "CCViolation", message: message }] }
+        # CC error format: CCViolation / CCFailure — also include success: false
+        # for consistency with REST adapter's error envelope.
+        body = { success: false, error: message, errors: [{ class: "CCViolation", message: message }] }
+        body[:field_errors] = errors if errors.present?
+        body
       end
 
       # --- Hashchain verification ---

@@ -6,6 +6,7 @@ en:
     errors:
       no_active_membership: "You need an active membership to access the Federation Hub."
       not_found: "The requested resource could not be found."
+      unexpected: "An unexpected error occurred. Please try again."
     common:
       internal_orgs: "TimeOverflow Communities"
       external_partners: "External Partners"
@@ -191,3 +192,10 @@ en:
       no_members: "No members from %{org} are currently available for transfers."
       external_success: "Transfer of %{amount} sent to %{partner}. It will be completed once the partner confirms."
       external_note: "External transfers are sent to the partner platform for processing. Your balance will be debited immediately, and the recipient will be credited once the partner confirms."
+  federation_mailer:
+    message_received:
+      subject: "[Federation] New message from %{sender_name}"
+    transfer_received:
+      subject: "[Federation] You received %{amount} hours from %{sender_name}"
+    transfer_sent:
+      subject: "[Federation] You sent %{amount} hours to %{recipient_name}"

@@ -1,4 +1,15 @@
 en:
+  activerecord:
+    errors:
+      models:
+        federation_partner:
+          attributes:
+            api_endpoint:
+              invalid_url: "must be a valid HTTP(S) URL"
+        federation_cc_node_config:
+          attributes:
+            node_slug:
+              invalid_node_slug: "must be 3-15 lowercase alphanumeric characters, hyphens allowed in middle"
   federation_admin:
     layout:
       title: "Federation Admin"
@@ -566,6 +577,40 @@ en:
       child_node: "Child node"
       cc_endpoints: "CC endpoints:"
       save: "Save"
+
+    errors:
+      not_found: "The requested resource could not be found."
+      unexpected: "An unexpected error occurred. Please try again."
+      forbidden: "Federation admin requires superadmin privileges."
+
+    flash:
+      partner_created: "Partner '%{name}' created successfully. The webhook secret is shown on the partner detail page."
+      partner_updated: "Partner '%{name}' updated."
+      test_webhook_sent: "Test webhook sent to %{name}. Check webhook logs for delivery status."
+      webhook_test_failed: "Webhook test failed: %{error}"
+      secret_rotation_started: "Secret rotation started for %{name}. Both old and new secrets are now accepted. Complete the rotation after the partner has updated their configuration."
+      secret_rotation_completed: "Secret rotation completed for %{name}. Only the new secret is accepted from now on."
+      health_check_passed: "Health check passed for %{name}."
+      health_check_failed: "Health check failed for %{name}: %{error}"
+      health_check_error: "Health check failed: %{error}"
+      api_key_created: "API key generated successfully. Copy the raw key now — it cannot be retrieved later."
+      api_key_revoked: "API key '%{name}' has been deactivated."
+      api_key_rotated: "Key rotated successfully. The old key has been deactivated. Copy the new raw key now — it cannot be retrieved later."
+      api_key_rotation_failed: "Key rotation failed: %{error}"
+      api_keys_bulk_revoked: "%{count} API key(s) revoked."
+      no_keys_selected: "No keys selected."
+      reconciliation_throttled: "Reconciliation was already queued recently. Please wait 5 minutes."
+      reconciliation_queued: "Reconciliation job queued. Results will appear in the server logs."
+      org_settings_updated: "Federation settings for '%{name}' updated."
+      org_settings_failed: "Failed to update settings: %{error}"
+      cc_config_updated: "CC node configuration updated for '%{name}'."
+      cc_config_failed: "Failed to update: %{error}"
+      preferences_updated: "Preferences updated for %{name}."
+      preferences_failed: "Failed to update: %{error}"
+      bulk_opt_in: "%{count} member(s) opted in to federation."
+      bulk_opt_in_failed: "Bulk opt-in failed: %{error}. No changes were made."
+      webhook_retry_queued: "Webhook retry queued for log #%{id}."
+      webhook_retry_failed: "Cannot retry: partner inactive or webhook not in failed state."
 
     common:
       inbound: "Inbound"

@@ -15,6 +15,9 @@ module FederationHub
     end
 
     def partnership_level_badge(level, name)
+      unless level.is_a?(Integer) && level.between?(1, 4)
+        return content_tag(:span, "Unknown", class: "badge bg-secondary")
+      end
       css = case level
             when 4 then "bg-primary"
             when 3 then "bg-info"

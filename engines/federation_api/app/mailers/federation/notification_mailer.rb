@@ -10,10 +10,12 @@ module Federation
       @body_preview = body_preview
       @partner_name = partner_name
 
-      mail(
-        to: to,
-        subject: "[Federation] New message from #{sender_name}"
-      )
+      I18n.with_locale(member.user&.locale || I18n.default_locale) do
+        mail(
+          to: to,
+          subject: I18n.t("federation_mailer.message_received.subject", sender_name: sender_name, default: "[Federation] New message from %{sender_name}")
+        )
+      end
     end
 
     def transfer_received(to:, member:, amount_hours:, sender_name:, reason:, partner_name:)
@@ -23,10 +25,12 @@ module Federation
       @reason = reason
       @partner_name = partner_name
 
-      mail(
-        to: to,
-        subject: "[Federation] You received #{amount_hours} hours from #{sender_name}"
-      )
+      I18n.with_locale(member.user&.locale || I18n.default_locale) do
+        mail(
+          to: to,
+          subject: I18n.t("federation_mailer.transfer_received.subject", amount: amount_hours, sender_name: sender_name, default: "[Federation] You received %{amount} hours from %{sender_name}")
+        )
+      end
     end
 
     def transfer_sent(to:, member:, amount_hours:, recipient_name:, reason:, partner_name:)
@@ -36,10 +40,12 @@ module Federation
       @reason = reason
       @partner_name = partner_name
 
-      mail(
-        to: to,
-        subject: "[Federation] You sent #{amount_hours} hours to #{recipient_name}"
-      )
+      I18n.with_locale(member.user&.locale || I18n.default_locale) do
+        mail(
+          to: to,
+          subject: I18n.t("federation_mailer.transfer_sent.subject", amount: amount_hours, recipient_name: recipient_name, default: "[Federation] You sent %{amount} hours to %{recipient_name}")
+        )
+      end
     end
   end
 end

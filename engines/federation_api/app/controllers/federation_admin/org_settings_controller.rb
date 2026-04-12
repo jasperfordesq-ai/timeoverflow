@@ -42,10 +42,10 @@ module FederationAdmin
 
       @settings.update!(attrs)
       audit!("org_settings.updated", target: @settings, changes_made: @settings.previous_changes.except("updated_at"))
-      flash[:notice] = "Federation settings for '#{@org.name}' updated."
+      flash[:notice] = t("federation_admin.flash.org_settings_updated", name: @org.name, default: "Federation settings for '%{name}' updated.")
       redirect_to federation_admin_org_settings_path
     rescue => e
-      flash[:alert] = "Failed to update settings: #{e.message}"
+      flash[:alert] = t("federation_admin.flash.org_settings_failed", error: e.message, default: "Failed to update settings: %{error}")
       redirect_to edit_federation_admin_org_setting_path(@org)
     end
   end

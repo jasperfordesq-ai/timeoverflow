@@ -1,4 +1,15 @@
 es:
+  activerecord:
+    errors:
+      models:
+        federation_partner:
+          attributes:
+            api_endpoint:
+              invalid_url: "debe ser una URL HTTP(S) válida"
+        federation_cc_node_config:
+          attributes:
+            node_slug:
+              invalid_node_slug: "debe tener entre 3 y 15 caracteres alfanuméricos en minúsculas, se permiten guiones en el medio"
   federation_admin:
     layout:
       title: "Administración de Federación"
@@ -566,6 +577,40 @@ es:
       child_node: "Nodo hijo"
       cc_endpoints: "Puntos de acceso CC:"
       save: "Guardar"
+
+    errors:
+      not_found: "El recurso solicitado no se encontró."
+      unexpected: "Ocurrió un error inesperado. Por favor, inténtelo de nuevo."
+      forbidden: "La administración de federación requiere privilegios de superadministrador."
+
+    flash:
+      partner_created: "Socio '%{name}' creado correctamente. El secreto del webhook se muestra en la página de detalles del socio."
+      partner_updated: "Socio '%{name}' actualizado."
+      test_webhook_sent: "Webhook de prueba enviado a %{name}. Consulte los registros de webhooks para ver el estado de la entrega."
+      webhook_test_failed: "Prueba de webhook fallida: %{error}"
+      secret_rotation_started: "Rotación de secreto iniciada para %{name}. Tanto el secreto antiguo como el nuevo son aceptados. Complete la rotación después de que el socio haya actualizado su configuración."
+      secret_rotation_completed: "Rotación de secreto completada para %{name}. Solo el nuevo secreto es aceptado a partir de ahora."
+      health_check_passed: "Comprobación de estado superada para %{name}."
+      health_check_failed: "Comprobación de estado fallida para %{name}: %{error}"
+      health_check_error: "Comprobación de estado fallida: %{error}"
+      api_key_created: "Clave API generada correctamente. Copie la clave ahora — no se volverá a mostrar."
+      api_key_revoked: "Clave API '%{name}' ha sido desactivada."
+      api_key_rotated: "Clave rotada correctamente. La clave anterior ha sido desactivada. Copie la nueva clave ahora — no se volverá a mostrar."
+      api_key_rotation_failed: "Error en la rotación de clave: %{error}"
+      api_keys_bulk_revoked: "%{count} clave(s) API revocada(s)."
+      no_keys_selected: "No se seleccionaron claves."
+      reconciliation_throttled: "La conciliación ya fue programada recientemente. Espere 5 minutos."
+      reconciliation_queued: "Tarea de conciliación programada. Los resultados aparecerán en los registros del servidor."
+      org_settings_updated: "Configuración de federación para '%{name}' actualizada."
+      org_settings_failed: "Error al actualizar la configuración: %{error}"
+      cc_config_updated: "Configuración de nodo CC actualizada para '%{name}'."
+      cc_config_failed: "Error al actualizar: %{error}"
+      preferences_updated: "Preferencias actualizadas para %{name}."
+      preferences_failed: "Error al actualizar: %{error}"
+      bulk_opt_in: "%{count} miembro(s) inscrito(s) en la federación."
+      bulk_opt_in_failed: "Inscripción masiva fallida: %{error}. No se realizaron cambios."
+      webhook_retry_queued: "Reintento de webhook programado para registro #%{id}."
+      webhook_retry_failed: "No se puede reintentar: socio inactivo o webhook no en estado fallido."
 
     common:
       inbound: "Entrante"

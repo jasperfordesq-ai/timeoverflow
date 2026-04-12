@@ -107,7 +107,7 @@
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.metadata') %></dt>
       <dd class="text-sm text-gray-900 col-span-2">
         <% if @message.metadata.present? %>
-          <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 font-mono text-xs leading-relaxed"><%= JSON.pretty_generate(@message.metadata) %></div>
+          <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 font-mono text-xs leading-relaxed"><%= h(JSON.pretty_generate(@message.metadata)) %></div>
         <% else %>
           <span class="text-gray-400"><%= t('federation_admin.messages.show.none') %></span>
         <% end %>

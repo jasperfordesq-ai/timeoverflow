@@ -6,6 +6,7 @@ es:
     errors:
       no_active_membership: "Necesitas una membresía activa para acceder al Centro de Federación."
       not_found: "El recurso solicitado no se encontró."
+      unexpected: "Ocurrió un error inesperado. Por favor, inténtelo de nuevo."
     common:
       internal_orgs: "Comunidades TimeOverflow"
       external_partners: "Socios Externos"
@@ -191,3 +192,10 @@ es:
       no_members: "No hay miembros de %{org} disponibles para transferencias."
       external_success: "Transferencia de %{amount} enviada a %{partner}. Se completará cuando el socio confirme."
       external_note: "Las transferencias externas se envían a la plataforma del socio para su procesamiento. Tu saldo se debitará inmediatamente y el destinatario recibirá el crédito cuando el socio confirme."
+  federation_mailer:
+    message_received:
+      subject: "[Federación] Nuevo mensaje de %{sender_name}"
+    transfer_received:
+      subject: "[Federación] Has recibido %{amount} horas de %{sender_name}"
+    transfer_sent:
+      subject: "[Federación] Has enviado %{amount} horas a %{recipient_name}"

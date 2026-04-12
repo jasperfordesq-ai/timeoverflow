@@ -63,10 +63,10 @@ module FederationAdmin
       end
 
       @preference.update!(attrs)
-      flash[:notice] = "Preferences updated for #{member.user&.username || "member ##{member.id}"}."
+      flash[:notice] = t("federation_admin.flash.preferences_updated", name: member.user&.username || "member ##{member.id}", default: "Preferences updated for %{name}.")
       redirect_to federation_admin_member_preferences_path
     rescue => e
-      flash[:alert] = "Failed to update: #{e.message}"
+      flash[:alert] = t("federation_admin.flash.preferences_failed", error: e.message, default: "Failed to update: %{error}")
       redirect_to federation_admin_member_preference_path(member)
     end
 
@@ -99,10 +99,10 @@ module FederationAdmin
         end
       end
 
-      flash[:notice] = "#{count} member#{'s' unless count == 1} opted in to federation."
+      flash[:notice] = t("federation_admin.flash.bulk_opt_in", count: count, default: "%{count} member(s) opted in to federation.")
       redirect_to federation_admin_member_preferences_path
     rescue => e
-      flash[:alert] = "Bulk opt-in failed: #{e.message}. No changes were made."
+      flash[:alert] = t("federation_admin.flash.bulk_opt_in_failed", error: e.message, default: "Bulk opt-in failed: %{error}. No changes were made.")
       redirect_to federation_admin_member_preferences_path
     end
   end

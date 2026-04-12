@@ -8,7 +8,7 @@ module Api
       def about
         org = current_organization || Organization.first
         unless org
-          return render json: { errors: [{ class: "CCFailure", message: "No organizations configured" }] }, status: :service_unavailable
+          return respond_with_error("No organizations configured", status: :service_unavailable)
         end
         config = FederationCcNodeConfig.for(org)
         render json: config.build_about_response
@@ -44,8 +44,8 @@ module Api
         member = current_organization.members.active.find_by(member_uid: username) ||
                  current_organization.members.active.find_by(id: username)
 
-        return render(json: { errors: [{ class: "CCViolation", message: "Account not found" }] }, status: :not_found) unless member
-        return render(json: { errors: [{ class: "CCViolation", message: "Account has no balance record" }] }, status: :not_found) unless member.account
+        return respond_with_error("Account not found", status: :not_found) unless member
+        return respond_with_error("Account has no balance record", status: :not_found) unless member.account
 
         balance = member.account.balance.to_i / 3600.0
         completed = FederationTransaction.completed.where(local_account_id: member.account.id)
@@ -73,10 +73,10 @@ module Api
         # Scope by organization to prevent cross-partner transaction leaks
         scope = current_organization ? FederationTransaction.where(organization_id: current_organization.id) : FederationTransaction
         txn = scope.find_by(external_transaction_id: params[:uuid])
-        return render(json: { errors: [{ class: "CCViolation", message: "Transaction not found" }] }, status: :not_found) unless txn
+        return respond_with_error("Transaction not found", status: :not_found) unless txn
 
         adapter = Federation::Adapters::CreditCommonsAdapter.new(partner: txn.federation_partner)
-        render json: adapter.to_cc_transaction(txn)
+        respond_with_data(adapter.to_cc_transaction(txn))
       end
 
       def transition_transaction
@@ -105,10 +105,10 @@ module Api
 
       def transaction_entries
         txn = FederationTransaction.find_by(external_transaction_id: params[:uuid])
-        return render(json: { errors: [{ class: "CCViolation", message: "Transaction not found" }] }, status: :not_found) unless txn
+        return respond_with_error("Transaction not found", status: :not_found) unless txn
 
         adapter = Federation::Adapters::CreditCommonsAdapter.new(partner: txn.federation_partner)
-        render json: { data: adapter.generate_entries(txn) }
+        respond_with_data(adapter.generate_entries(txn))
       end
 
       def forms

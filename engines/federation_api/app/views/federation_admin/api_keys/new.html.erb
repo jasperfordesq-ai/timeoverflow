@@ -15,21 +15,22 @@
         <label for="name" class="block text-sm font-medium text-gray-700"><%= t('federation_admin.api_keys.new.name') %> <span class="text-red-500">*</span></label>
         <input type="text" name="name" id="name" required
                placeholder="<%= t('federation_admin.api_keys.new.name_placeholder') %>"
+               aria-describedby="name-help"
                class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-federation-500 focus:ring-federation-500 sm:text-sm px-3 py-2">
-        <p class="mt-1 text-xs text-gray-400"><%= t('federation_admin.api_keys.new.name_help') %></p>
+        <p id="name-help" class="mt-1 text-xs text-gray-400"><%= t('federation_admin.api_keys.new.name_help') %></p>
       </div>
 
       <!-- Organization -->
       <div>
         <label for="organization_id" class="block text-sm font-medium text-gray-700"><%= t('federation_admin.api_keys.new.organization') %></label>
-        <select name="organization_id" id="organization_id"
+        <select name="organization_id" id="organization_id" aria-describedby="org-help"
                 class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-federation-500 focus:ring-federation-500 sm:text-sm px-3 py-2">
           <option value=""><%= t('federation_admin.api_keys.new.global') %></option>
           <% @organizations.each do |org| %>
             <option value="<%= org.id %>"><%= org.name %></option>
           <% end %>
         </select>
-        <p class="mt-1 text-xs text-gray-400"><%= t('federation_admin.api_keys.new.organization_help') %></p>
+        <p id="org-help" class="mt-1 text-xs text-gray-400"><%= t('federation_admin.api_keys.new.organization_help') %></p>
       </div>
 
       <!-- Permissions -->
@@ -61,8 +62,9 @@
       <div>
         <label for="expires_at" class="block text-sm font-medium text-gray-700"><%= t('federation_admin.api_keys.new.expires_at') %></label>
         <input type="date" name="expires_at" id="expires_at" min="<%= Date.tomorrow.to_s %>"
+               aria-describedby="expires-help"
                class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-federation-500 focus:ring-federation-500 sm:text-sm px-3 py-2">
-        <p class="mt-1 text-xs text-gray-400"><%= t('federation_admin.api_keys.new.expires_help') %></p>
+        <p id="expires-help" class="mt-1 text-xs text-gray-400"><%= t('federation_admin.api_keys.new.expires_help') %></p>
       </div>
     </div>
 

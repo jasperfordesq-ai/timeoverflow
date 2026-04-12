@@ -84,7 +84,7 @@ module Api
         estimated = sliding_window_count("federation_webhook_rate:#{ip}")
 
         if estimated > limit
-          render json: { success: false, error: "Rate limit exceeded" }, status: :too_many_requests
+          respond_with_error("Rate limit exceeded", status: :too_many_requests)
         end
       end
 
@@ -95,6 +95,12 @@ module Api
 
         body = request.raw_post
         return respond_with_error("Empty request body", status: :bad_request) if body.blank?
+
+        # Reject oversized payloads to prevent memory exhaustion (max 1 MB).
+        max_body_size = ENV.fetch("FEDERATION_WEBHOOK_MAX_BODY_SIZE", "1048576").to_i
+        if body.bytesize > max_body_size
+          return respond_with_error("Request body too large", status: :payload_too_large)
+        end
 
         # H5: Limit JSON nesting depth to prevent stack exhaustion attacks.
         parsed = JSON.parse(body, max_nesting: 10) rescue nil
@@ -188,7 +194,7 @@ module Api
         estimated = sliding_window_count("federation_webhook_partner:#{partner.id}")
 
         if estimated > limit
-          render json: { success: false, error: "Partner rate limit exceeded" }, status: :too_many_requests
+          respond_with_error("Partner rate limit exceeded", status: :too_many_requests)
         end
       end
 

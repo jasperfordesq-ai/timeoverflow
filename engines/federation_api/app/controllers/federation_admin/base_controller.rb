@@ -13,14 +13,14 @@ module FederationAdmin
     layout "federation_admin"
 
     rescue_from ActiveRecord::RecordNotFound do
-      flash[:alert] = "The requested resource could not be found."
+      flash[:alert] = t("federation_admin.errors.not_found", default: "The requested resource could not be found.")
       redirect_to federation_admin_root_path
     end
 
     rescue_from StandardError do |e|
       raise e if Rails.env.development? || Rails.env.test?
       Rails.logger.error("[FederationAdmin] Unhandled error: #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}")
-      flash[:alert] = "An unexpected error occurred. Please try again."
+      flash[:alert] = t("federation_admin.errors.unexpected", default: "An unexpected error occurred. Please try again.")
       redirect_to federation_admin_root_path
     end
     helper FederationAdmin::ApplicationHelper
@@ -42,7 +42,7 @@ module FederationAdmin
     def authenticate_federation_admin!
       unless current_user&.superadmin?
         if current_user
-          render plain: "403 — Federation admin requires superadmin privileges.", status: :forbidden
+          render json: { success: false, error: t("federation_admin.errors.forbidden", default: "Federation admin requires superadmin privileges.") }, status: :forbidden
         else
           redirect_to "/login"
         end

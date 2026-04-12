@@ -4,7 +4,7 @@
     Tailwind CSS in a separate layout — this is intentional. See the
     federation_admin layout for details. Do not attempt to unify them. %>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= I18n.locale %>">
   <head>
     <meta charset="utf-8">
     <meta content="IE=Edge,chrome=1" http-equiv="X-UA-Compatible">
@@ -160,7 +160,7 @@
           <div class="col-12 text-center">
             <small class="text-muted">
               <%= t("federation_hub.layout.powered_by") %>
-              <a href="https://www.timeoverflow.org" target="_blank" rel="noopener">TimeOverflow</a>
+              <a href="https://www.timeoverflow.org" target="_blank" rel="noopener noreferrer">TimeOverflow</a>
             </small>
           </div>
         </div>

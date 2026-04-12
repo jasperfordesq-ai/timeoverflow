@@ -28,6 +28,8 @@ module FederationAdmin
 
     def format_date(datetime)
       return "—" unless datetime
+      l(datetime, format: :long, default: datetime.strftime("%Y-%m-%d %H:%M UTC"))
+    rescue
       datetime.strftime("%Y-%m-%d %H:%M UTC")
     end
 

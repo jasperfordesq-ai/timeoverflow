@@ -45,7 +45,7 @@ module FederationAdmin
       )
 
       audit!("partner.created", target: @partner, changes_made: { name: @partner.name, platform_type: @partner.platform_type })
-      flash[:notice] = "Partner '#{@partner.name}' created successfully. The webhook secret is shown on the partner detail page."
+      flash[:notice] = t("federation_admin.flash.partner_created", name: @partner.name, default: "Partner '%{name}' created successfully. The webhook secret is shown on the partner detail page.")
       redirect_to federation_admin_partner_path(@partner)
     rescue ActiveRecord::RecordInvalid => e
       flash.now[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
@@ -90,7 +90,7 @@ module FederationAdmin
       )
 
       audit!("partner.updated", target: @partner, changes_made: @partner.previous_changes.except("updated_at"))
-      flash[:notice] = "Partner '#{@partner.name}' updated."
+      flash[:notice] = t("federation_admin.flash.partner_updated", name: @partner.name, default: "Partner '%{name}' updated.")
       redirect_to federation_admin_partner_path(@partner)
     rescue ActiveRecord::RecordInvalid => e
       flash.now[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
@@ -112,10 +112,10 @@ module FederationAdmin
         event: "partnership.test",
         payload: { test: true, timestamp: Time.current.iso8601 }
       )
-      flash[:notice] = "Test webhook sent to #{@partner.name}. Check webhook logs for delivery status."
+      flash[:notice] = t("federation_admin.flash.test_webhook_sent", name: @partner.name, default: "Test webhook sent to %{name}. Check webhook logs for delivery status.")
       redirect_to federation_admin_partner_path(@partner)
     rescue => e
-      flash[:alert] = "Webhook test failed: #{e.message}"
+      flash[:alert] = t("federation_admin.flash.webhook_test_failed", error: e.message, default: "Webhook test failed: %{error}")
       redirect_to federation_admin_partner_path(@partner)
     end
 
@@ -127,7 +127,7 @@ module FederationAdmin
       @partner = FederationPartner.find(params[:id])
       @partner.rotate_webhook_secret!
       audit!("partner.secret_rotated", target: @partner)
-      flash[:notice] = "Secret rotation started for #{@partner.name}. Both old and new secrets are now accepted. Complete the rotation after the partner has updated their configuration."
+      flash[:notice] = t("federation_admin.flash.secret_rotation_started", name: @partner.name, default: "Secret rotation started for %{name}. Both old and new secrets are now accepted. Complete the rotation after the partner has updated their configuration.")
       redirect_to federation_admin_partner_path(@partner)
     end
 
@@ -137,7 +137,7 @@ module FederationAdmin
       @partner = FederationPartner.find(params[:id])
       @partner.complete_secret_rotation!
       audit!("partner.secret_rotation_completed", target: @partner)
-      flash[:notice] = "Secret rotation completed for #{@partner.name}. Only the new secret is accepted from now on."
+      flash[:notice] = t("federation_admin.flash.secret_rotation_completed", name: @partner.name, default: "Secret rotation completed for %{name}. Only the new secret is accepted from now on.")
       redirect_to federation_admin_partner_path(@partner)
     rescue RuntimeError => e
       flash[:alert] = e.message
@@ -150,13 +150,13 @@ module FederationAdmin
       client = Federation::PartnerApiClient.new(partner: @partner)
       result = client.health_check
       if result["success"] != false
-        flash[:notice] = "Health check passed for #{@partner.name}."
+        flash[:notice] = t("federation_admin.flash.health_check_passed", name: @partner.name, default: "Health check passed for %{name}.")
       else
-        flash[:alert] = "Health check failed for #{@partner.name}: #{result['error']}"
+        flash[:alert] = t("federation_admin.flash.health_check_failed", name: @partner.name, error: result['error'], default: "Health check failed for %{name}: %{error}")
       end
       redirect_to federation_admin_partner_path(@partner)
     rescue => e
-      flash[:alert] = "Health check failed: #{e.message}"
+      flash[:alert] = t("federation_admin.flash.health_check_error", error: e.message, default: "Health check failed: %{error}")
       redirect_to federation_admin_partner_path(@partner)
     end
   end

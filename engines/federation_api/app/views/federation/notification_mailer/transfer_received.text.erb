@@ -1,4 +1,4 @@
-Hello <%= @member.user&.username %>,
+Hello <%= @member.user&.username || "Federation Member" %>,
 
 You have received <%= @amount_hours %> hours of time credit from <%= @sender_name %> via the federation network.
 

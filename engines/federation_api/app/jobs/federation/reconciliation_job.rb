@@ -118,6 +118,14 @@ module Federation
               # processing the same transaction (double-reversal prevention).
               txn = FederationTransaction.lock.find_by(id: txn.id)
               next unless txn&.pending?  # skip if already processed by another worker
+
+              # Idempotency: skip if already reversed by a prior run
+              if txn.metadata&.dig("reversal_transfer_id").present?
+                Rails.logger.info("[Federation::Reconciliation] Already reversed for fed_txn #{txn.id}, skipping")
+                txn.cancel!(reason: "Auto-cancelled: already reversed")
+                next
+              end
+
               # For outbound transactions: the local Transfer was committed when the
               # transaction was created (member was debited). If the webhook delivery
               # failed and we're now cancelling, we must reverse that debit so the

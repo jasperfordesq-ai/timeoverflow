@@ -44,12 +44,18 @@ class FederationApiKey < ActiveRecord::Base
     expires_at.present? && expires_at < Time.current
   end
 
-  # Blank/empty permissions = unrestricted ("all"). Otherwise, only known
-  # keys (profiles, listings, transactions) mapping to booleans are accepted.
+  # Permission keys that the federation API recognises.
   KNOWN_PERMISSIONS = %w[profiles listings transactions].freeze
 
+  # Check whether this key grants a specific permission.
+  # Keys with explicit permissions: only the flagged ones are allowed.
+  # Keys with *empty* permissions created BEFORE the default-deny change
+  # are treated as unrestricted for backward compatibility — but new keys
+  # MUST specify at least one permission (see validate_permissions_schema).
   def has_permission?(permission)
-    permissions.blank? || permissions[permission.to_s] == true
+    return true if permissions.blank? && persisted? && created_at < Time.utc(2026, 4, 13)
+    return false if permissions.blank?
+    permissions[permission.to_s] == true
   end
 
   validate :validate_permissions_schema
@@ -57,6 +63,10 @@ class FederationApiKey < ActiveRecord::Base
   private
 
   def validate_permissions_schema
+    if permissions.blank? && new_record?
+      errors.add(:permissions, "must specify at least one permission (profiles, listings, transactions)")
+      return
+    end
     return if permissions.blank?
     unless permissions.is_a?(Hash)
       errors.add(:permissions, "must be a JSON object")

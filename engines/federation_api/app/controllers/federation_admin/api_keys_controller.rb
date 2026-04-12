@@ -27,7 +27,7 @@ module FederationAdmin
       )
 
       audit!("api_key.created", target: @api_key, changes_made: { name: @api_key.name, organization_id: @api_key.organization_id })
-      flash[:notice] = "API key generated successfully. Copy the raw key now — it cannot be retrieved later."
+      flash[:notice] = t("federation_admin.flash.api_key_created", default: "API key generated successfully. Copy the raw key now — it cannot be retrieved later.")
       render :show
     rescue ActiveRecord::RecordInvalid => e
       flash.now[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
@@ -48,7 +48,7 @@ module FederationAdmin
       key = FederationApiKey.find(params[:id])
       key.update!(active: false)
       audit!("api_key.revoked", target: key)
-      flash[:notice] = "API key '#{key.name}' has been deactivated."
+      flash[:notice] = t("federation_admin.flash.api_key_revoked", name: key.name, default: "API key '%{name}' has been deactivated.")
       redirect_to federation_admin_api_keys_path
     end
 
@@ -66,11 +66,11 @@ module FederationAdmin
       end
 
       audit!("api_key.rotated", target: @api_key, changes_made: { old_key_id: old_key.id })
-      flash[:notice] = "Key rotated successfully. The old key has been deactivated. Copy the new raw key now — it cannot be retrieved later."
+      flash[:notice] = t("federation_admin.flash.api_key_rotated", default: "Key rotated successfully. The old key has been deactivated. Copy the new raw key now — it cannot be retrieved later.")
       render :show
     rescue => e
       Rails.logger.error("[FederationAdmin] API key rotation failed: #{e.class}: #{e.message}")
-      flash[:alert] = "Key rotation failed: #{e.message}"
+      flash[:alert] = t("federation_admin.flash.api_key_rotation_failed", error: e.message, default: "Key rotation failed: %{error}")
       redirect_to federation_admin_api_key_path(params[:id])
     end
 
@@ -79,9 +79,9 @@ module FederationAdmin
       if ids.any?
         count = FederationApiKey.where(id: ids, active: true).update_all(active: false)
         audit!("api_key.bulk_revoked", changes_made: { revoked_ids: ids, count: count })
-        flash[:notice] = "#{count} API key(s) revoked."
+        flash[:notice] = t("federation_admin.flash.api_keys_bulk_revoked", count: count, default: "%{count} API key(s) revoked.")
       else
-        flash[:alert] = "No keys selected."
+        flash[:alert] = t("federation_admin.flash.no_keys_selected", default: "No keys selected.")
       end
       redirect_to federation_admin_api_keys_path
     end

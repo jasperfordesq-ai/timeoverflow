@@ -35,22 +35,21 @@ module Api
         all_ok = db_ok && cache_ok
         status = all_ok ? :ok : :service_unavailable
 
-        render json: {
-          success: all_ok,
-          data: {
-            status: all_ok ? "healthy" : "unhealthy",
-            platform: "timeoverflow",
-            version: FederationApi::VERSION,
-            timestamp: Time.current.iso8601,
-            checks: {
-              database: db_ok ? "ok" : "error",
-              cache: cache_ok ? "ok" : "error",
-              federation_api: "ok"
-            },
-            organizations_count: (Organization.count rescue 0),
-            federation_partners_count: (FederationPartner.active.count rescue 0)
-          }
-        }, status: status
+        health_data = {
+          status: all_ok ? "healthy" : "unhealthy",
+          platform: "timeoverflow",
+          version: FederationApi::VERSION,
+          timestamp: Time.current.iso8601,
+          checks: {
+            database: db_ok ? "ok" : "error",
+            cache: cache_ok ? "ok" : "error",
+            federation_api: "ok"
+          },
+          organizations_count: (Organization.count rescue 0),
+          federation_partners_count: (FederationPartner.active.count rescue 0)
+        }
+
+        respond_with_data(health_data, status: status)
       end
     end
   end

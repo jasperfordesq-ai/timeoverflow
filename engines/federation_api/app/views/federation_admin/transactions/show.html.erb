@@ -110,7 +110,7 @@
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.transactions.show.metadata') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <% if @transaction.metadata.present? %>
-          <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono"><%= JSON.pretty_generate(@transaction.metadata) %></pre>
+          <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono"><%= h(JSON.pretty_generate(@transaction.metadata)) %></pre>
         <% else %>
           <span class="text-gray-400"><%= t('federation_admin.transactions.show.no_metadata') %></span>
         <% end %>

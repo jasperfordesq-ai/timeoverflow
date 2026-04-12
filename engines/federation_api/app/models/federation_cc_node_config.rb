@@ -2,7 +2,7 @@ class FederationCcNodeConfig < ActiveRecord::Base
   belongs_to :organization, optional: true
 
   validates :node_slug, presence: true, uniqueness: true,
-            format: { with: /\A[0-9a-z][0-9a-z-]{1,13}[0-9a-z]\z/, message: "must be 3-15 lowercase alphanumeric characters, hyphens allowed in middle" }
+            format: { with: /\A[0-9a-z][0-9a-z-]{1,13}[0-9a-z]\z/, message: :invalid_node_slug }
   validates :exchange_rate, numericality: { greater_than: 0 }
   validates :validated_window, numericality: { greater_than: 0 }
 

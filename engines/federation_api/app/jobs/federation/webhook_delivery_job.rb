@@ -21,6 +21,10 @@ module Federation
         "Partner=#{partner_id} Event=#{event} FedTxn=#{fed_txn_id || 'n/a'} " \
         "Error=#{error.class}: #{error.message}"
       )
+      # Record the failure once after all retries are spent (not per-attempt)
+      # to avoid prematurely suspending partners.
+      partner = FederationPartner.find_by(id: partner_id)
+      partner&.record_failure! if partner
       if fed_txn_id.present?
         Rails.logger.error(
           "[Federation::WebhookDelivery][EXHAUSTED] FederationTransaction #{fed_txn_id} will " \
@@ -55,7 +59,7 @@ module Federation
 
       return unless partner.webhook_url.present?
 
-      WebhookSender.send_now(
+      response = WebhookSender.send_now(
         partner: partner,
         event: event,
         payload: payload
@@ -68,17 +72,41 @@ module Federation
       if fed_txn_id && event == "transaction.requested"
         fed_txn = FederationTransaction.find_by(id: fed_txn_id)
         if fed_txn&.pending?
+          # Check that the partner actually accepted the transaction.
+          # HTTP 2xx alone isn't enough — the response body may indicate rejection.
+          partner_accepted = true
           begin
-            fed_txn.complete!
-            Rails.logger.info("[Federation::WebhookDelivery] Completed fed_txn #{fed_txn_id} after confirmed delivery")
+            body = JSON.parse(response.body) rescue nil
+            if body.is_a?(Hash) && body.key?("success") && body["success"] == false
+              partner_accepted = false
+              Rails.logger.warn(
+                "[Federation::WebhookDelivery] Partner returned success=false for fed_txn #{fed_txn_id}: #{body["error"]}"
+              )
+              fed_txn.update!(
+                status: "disputed",
+                metadata: (fed_txn.metadata || {}).merge(
+                  "dispute_reason" => "Partner rejected transaction: #{body["error"]}",
+                  "disputed_at" => Time.current.iso8601
+                )
+              )
+            end
           rescue => e
-            # L2: Completing the federation record failed — log but don't re-raise.
-            # The webhook was delivered successfully; the record can be reconciled
-            # manually or via ReconciliationJob.
-            Rails.logger.error(
-              "[Federation::WebhookDelivery] Webhook delivered but failed to complete " \
-              "fed_txn #{fed_txn_id}: #{e.class}: #{e.message}"
-            )
+            Rails.logger.warn("[Federation::WebhookDelivery] Could not parse partner response body: #{e.message}")
+          end
+
+          if partner_accepted
+            begin
+              fed_txn.complete!
+              Rails.logger.info("[Federation::WebhookDelivery] Completed fed_txn #{fed_txn_id} after confirmed delivery")
+            rescue => e
+              # L2: Completing the federation record failed — log but don't re-raise.
+              # The webhook was delivered successfully; the record can be reconciled
+              # manually or via ReconciliationJob.
+              Rails.logger.error(
+                "[Federation::WebhookDelivery] Webhook delivered but failed to complete " \
+                "fed_txn #{fed_txn_id}: #{e.class}: #{e.message}"
+              )
+            end
           end
         end
       end

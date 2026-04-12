@@ -95,7 +95,9 @@ module Federation
         response
       rescue => e
         log.update!(status: "failed", response_body: e.message)
-        @partner.record_failure!
+        # Do NOT call record_failure! here — network errors will be retried by
+        # WebhookDeliveryJob and each retry would increment the counter. The job's
+        # exhaustion handler records the failure once after all retries are spent.
         raise
       end
     end

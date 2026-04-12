@@ -244,6 +244,16 @@ module Federation
         end
       end
 
+      # Check 5: Purge stale webhook nonces older than 1 hour.
+      # The nonce table prevents replay attacks but grows unbounded without cleanup.
+      nonce_cutoff = 1.hour.ago
+      stale_nonces = FederationWebhookLog.where.not(request_nonce: nil)
+                                          .where("created_at < ?", nonce_cutoff)
+      purged_count = stale_nonces.update_all(request_nonce: nil)
+      if purged_count > 0
+        Rails.logger.info("[Federation::Reconciliation] Cleared #{purged_count} stale webhook nonces older than #{nonce_cutoff}")
+      end
+
       # Log results
       critical_count = issues.count { |i| i[:severity] == "critical" }
       warning_count = issues.count { |i| i[:severity] == "warning" }

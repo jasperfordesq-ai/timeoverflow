@@ -61,12 +61,7 @@ module Api
       end
 
       def create_transaction
-        # Delegate to existing transfer handler, with CC format translation
-        adapter = Federation::Adapters::CreditCommonsAdapter.new(partner: nil)
-        # Parse CC transaction format into canonical TO format
-        payload = adapter.parse_cc_transaction(params)
-
-        respond_with_data({ status: "accepted", message: "Transaction support via CC protocol is in development" }, status: :accepted)
+        respond_with_error("Transaction creation via CC protocol is not yet implemented", status: :not_implemented)
       end
 
       def show_transaction
@@ -80,11 +75,11 @@ module Api
       end
 
       def transition_transaction
-        respond_with_data({ status: "acknowledged", message: "State transitions via CC protocol are in development" }, status: :accepted)
+        respond_with_error("State transitions via CC protocol are not yet implemented", status: :not_implemented)
       end
 
       def relay
-        respond_with_data({ status: "acknowledged", message: "Multi-hop relay via CC protocol is in development" }, status: :accepted)
+        respond_with_error("Multi-hop relay via CC protocol is not yet implemented", status: :not_implemented)
       end
 
       def entries

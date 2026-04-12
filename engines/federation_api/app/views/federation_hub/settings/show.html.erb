@@ -17,7 +17,7 @@
       <%= form_for :settings, url: federation_hub_settings_path, method: :patch do |f| %>
 
         <%# --- Opt-in card --- %>
-        <div class="card border-info mb-4">
+        <div class="card card-info border-info mb-4">
           <div class="card-header bg-info text-white">
             <strong><%= t("federation_hub.settings.opt_in_section") %></strong>
           </div>
@@ -40,7 +40,7 @@
         </div>
 
         <%# --- Privacy card --- %>
-        <div class="card border-info mb-4">
+        <div class="card card-info border-info mb-4">
           <div class="card-header bg-info text-white">
             <strong><%= t("federation_hub.settings.privacy_section") %></strong>
           </div>
@@ -78,7 +78,7 @@
         </div>
 
         <%# --- Transfers card --- %>
-        <div class="card border-info mb-4">
+        <div class="card card-info border-info mb-4">
           <div class="card-header bg-info text-white">
             <strong><%= t("federation_hub.settings.transfers_section") %></strong>
           </div>
@@ -107,7 +107,7 @@
 
         <%# --- Blocked partners card --- %>
         <% if @partners.any? %>
-          <div class="card border-info mb-4">
+          <div class="card card-info border-info mb-4">
             <div class="card-header bg-info text-white">
               <strong><%= t("federation_hub.settings.blocked_partners_section") %></strong>
             </div>
@@ -139,7 +139,7 @@
 
     <%# === Sidebar: current status === %>
     <div class="col-md-4">
-      <div class="card border-info">
+      <div class="card card-info border-info">
         <div class="card-header bg-info text-white">
           <strong><%= t("federation_hub.settings.current_status") %></strong>
         </div>

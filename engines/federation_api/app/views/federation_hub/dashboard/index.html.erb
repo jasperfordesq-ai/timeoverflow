@@ -15,14 +15,14 @@
     <%# === Welcome / CTA for non-opted-in members === %>
     <div class="row justify-content-center">
       <div class="col-md-8">
-        <div class="card border-info">
+        <div class="card card-info border-info">
           <div class="card-body text-center py-5">
             <h2 class="card-title mb-3"><%= t("federation_hub.dashboard.welcome_title") %></h2>
             <p class="card-text mb-4"><%= t("federation_hub.dashboard.welcome_description") %></p>
             <ul class="list-unstyled mb-4">
-              <li class="mb-2"><span class="text-success fw-bold">&#10148;</span> <%= t("federation_hub.dashboard.benefit_transfers") %></li>
-              <li class="mb-2"><span class="text-success fw-bold">&#10148;</span> <%= t("federation_hub.dashboard.benefit_discovery") %></li>
-              <li class="mb-2"><span class="text-success fw-bold">&#10148;</span> <%= t("federation_hub.dashboard.benefit_messaging") %></li>
+              <li class="mb-2"><%= t("federation_hub.dashboard.benefit_transfers") %></li>
+              <li class="mb-2"><%= t("federation_hub.dashboard.benefit_discovery") %></li>
+              <li class="mb-2"><%= t("federation_hub.dashboard.benefit_messaging") %></li>
             </ul>
             <% if @org_settings&.federation_enabled? %>
               <%= link_to t("federation_hub.dashboard.opt_in_cta"), federation_hub_settings_path, class: "btn btn-info btn-lg" %>
@@ -75,27 +75,27 @@
       <%# --- Main column: partners + quick links --- %>
       <div class="col-md-8 mb-4">
         <%# Quick links card %>
-        <div class="card border-info mb-4">
+        <div class="card card-info border-info mb-4">
           <div class="card-header bg-info text-white">
             <strong><%= t("federation_hub.dashboard.quick_links") %></strong>
           </div>
           <div class="card-body">
             <div class="d-flex flex-wrap gap-2">
               <%= link_to federation_hub_partners_path, class: "btn btn-outline-info" do %>
-                &#9733; <%= t("federation_hub.nav.partners") %>
+                <%= t("federation_hub.nav.partners") %>
               <% end %>
               <%= link_to federation_hub_settings_path, class: "btn btn-outline-info" do %>
-                &#9881; <%= t("federation_hub.nav.settings") %>
+                <%= t("federation_hub.nav.settings") %>
               <% end %>
-              <span class="btn btn-outline-secondary disabled">
-                &#9993; <%= t("federation_hub.dashboard.messages_coming_soon") %>
-              </span>
+              <button disabled class="btn btn-outline-secondary">
+                <%= t("federation_hub.dashboard.messages_coming_soon") %>
+              </button>
             </div>
           </div>
         </div>
 
         <%# Partner preview list %>
-        <div class="card border-info">
+        <div class="card card-info border-info">
           <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
             <strong><%= t("federation_hub.dashboard.partner_preview") %></strong>
             <%= link_to t("federation_hub.dashboard.view_all"), federation_hub_partners_path, class: "btn btn-sm btn-light" %>
@@ -121,7 +121,7 @@
 
       <%# --- Sidebar: status table --- %>
       <div class="col-md-4 mb-4">
-        <div class="card border-info">
+        <div class="card card-info border-info">
           <div class="card-header bg-info text-white">
             <strong><%= t("federation_hub.dashboard.your_status") %></strong>
           </div>

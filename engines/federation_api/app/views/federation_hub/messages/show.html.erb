@@ -6,7 +6,7 @@
   </div>
 </div>
 
-<div class="card border-info">
+<div class="card card-info border-info">
   <div class="card-header bg-info text-white d-flex justify-content-between">
     <span>
       <span class="badge <%= @message.inbound? ? 'bg-light text-dark' : 'bg-dark' %>">
@@ -26,7 +26,7 @@
     </p>
     <hr>
     <div class="mt-3">
-      <%= simple_format(@message.body) %>
+      <%= sanitize(simple_format(@message.body)) %>
     </div>
   </div>
 </div>

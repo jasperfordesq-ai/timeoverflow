@@ -10,7 +10,10 @@
     <div class="row">
       <% @partners.each do |partner| %>
         <div class="col-md-4 mb-4">
-          <div class="card border-info h-100">
+          <div class="card card-info border-info h-100">
+            <div class="card-header bg-info text-white">
+              <strong><%= partner.name %></strong>
+            </div>
             <div class="card-body">
               <h5 class="card-title"><%= partner.name %></h5>
               <div class="mb-3">

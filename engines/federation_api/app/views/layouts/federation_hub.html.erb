@@ -13,7 +13,12 @@
     <%= javascript_include_tag 'application' %>
   </head>
   <body>
-    <%# Self-contained navbar that mimics TimeOverflow's exactly %>
+    <%# ALPHA development notice %>
+    <div class="alert alert-warning text-center mb-0 rounded-0 py-1" role="alert">
+      <small class="fw-bold">ALPHA &mdash; Federation Hub &mdash; Development preview, not for production use</small>
+    </div>
+
+    <%# Navbar — matches TimeOverflow's structure %>
     <nav class="navbar navbar-expand-md navbar-static-top navbar-dark mb-4 p-0" role="navigation">
       <div class="container-fluid">
         <div class="container">
@@ -22,7 +27,7 @@
               <div class="navbar-header w-100 d-flex align-items-center">
                 <a class="navbar-brand align-content-center" href="/">TimeOverflow</a>
                 <button type="button" class="navbar-toggler collapsed ms-auto" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-expanded="false">
-                  <span class="visually-hidden">Toggle navigation</span>
+                  <span class="visually-hidden"><%= t("federation_hub.nav.toggle") %></span>
                   <span class="navbar-toggler-icon"></span>
                 </button>
               </div>
@@ -36,12 +41,12 @@
                     </li>
                     <li class="nav-item">
                       <a class="nav-link" href="/">
-                        &larr; Back to TimeOverflow
+                        &larr; <%= t("federation_hub.nav.back_to_app") %>
                       </a>
                     </li>
                   <% else %>
                     <li class="nav-item">
-                      <a class="nav-link" href="/login">Log in</a>
+                      <a class="nav-link" href="/login"><%= t("federation_hub.nav.login") %></a>
                     </li>
                   <% end %>
                 </ul>
@@ -52,7 +57,7 @@
       </div>
     </nav>
 
-    <%# Federation Hub navigation pills (matches TimeOverflow's actions-menu) %>
+    <%# Federation Hub navigation pills — matches TimeOverflow's actions-menu %>
     <% if current_user && current_member %>
       <nav role="navigation">
         <div class="container">
@@ -97,22 +102,29 @@
     <% end %>
 
     <div class="container content">
-      <%# Flash messages — same pattern as TimeOverflow %>
-      <% if flash[:notice] %>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-          <%= flash[:notice] %>
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      <% end %>
-      <% if flash[:alert] %>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-          <%= flash[:alert] %>
+      <%# Flash messages — matches TimeOverflow pattern %>
+      <% flash.each do |type, message| %>
+        <% alert_css = case type.to_s
+                       when "notice", "success" then "alert-success"
+                       when "alert", "error", "danger" then "alert-danger"
+                       when "warning" then "alert-warning"
+                       else "alert-info"
+                       end %>
+        <div class="alert <%= alert_css %> alert-dismissible fade show" role="alert">
+          <%= message %>
           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
       <% end %>
 
       <div class="container-fluid">
         <%= yield %>
+      </div>
+    </div>
+
+    <%# Modal — matches TimeOverflow's structure %>
+    <div class="modal fade" id="modal">
+      <div class="modal-dialog">
+        <div class="modal-content"></div>
       </div>
     </div>
 

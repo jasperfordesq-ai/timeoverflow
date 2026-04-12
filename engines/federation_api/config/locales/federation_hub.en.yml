@@ -6,6 +6,9 @@ en:
       dashboard: "Federation Hub"
       partners: "Partner Communities"
       settings: "Federation Settings"
+      toggle: "Toggle navigation"
+      back_to_app: "Back to TimeOverflow"
+      login: "Log in"
     dashboard:
       title: "Federation Hub"
       org_not_enabled: "Federation is not currently enabled for your organisation. Please contact your administrator."
@@ -76,6 +79,7 @@ en:
       fetch_error: "Could not fetch members from %{partner}: %{error}"
       none_found: "No members found on %{partner}."
       choose_partner: "Select a partner community above to browse their members."
+      member_fallback: "Member #%{id}"
     listings:
       title: "Partner Listings"
       subtitle: "Discover offers and inquiries from partner timebanking communities."
@@ -88,6 +92,7 @@ en:
       fetch_error: "Could not fetch listings from %{partner}: %{error}"
       none_found: "No listings found on %{partner}."
       choose_partner: "Select a partner community above to browse their listings."
+      listing_fallback: "Listing #%{id}"
     messages:
       title: "Federation Messages"
       compose: "New Message"
@@ -108,4 +113,5 @@ en:
       body_label: "Message"
       send_button: "Send Message"
       cancel: "Cancel"
+      time_ago: "%{time} ago"
       send_failed: "Failed to send message: %{error}"

@@ -34,22 +34,22 @@
       <div class="post mb-3 p-3 border rounded bg-white">
         <div class="d-flex justify-content-between">
           <h4>
-            <%= listing["title"] || listing["name"] || "Listing ##{listing["id"]}" %>
+            <%= sanitize(listing["title"].to_s.presence || listing["name"].to_s.presence || t("federation_hub.listings.listing_fallback", id: listing["id"])) %>
             <% if listing["type"] %>
               <span class="badge rounded-pill <%= listing["type"] == "offer" ? "bg-success" : "bg-warning text-dark" %>">
-                <%= listing["type"]&.capitalize %>
+                <%= sanitize(listing["type"].to_s.capitalize) %>
               </span>
             <% end %>
           </h4>
         </div>
         <% if listing["description"].present? %>
-          <p class="text-muted"><%= truncate(listing["description"].to_s, length: 200) %></p>
+          <p class="text-muted"><%= sanitize(truncate(listing["description"].to_s, length: 200)) %></p>
         <% end %>
         <% if listing["category"].present? %>
-          <span class="badge rounded-pill bg-info"><%= listing["category"] %></span>
+          <span class="badge rounded-pill bg-info"><%= sanitize(listing["category"].to_s) %></span>
         <% end %>
         <% Array(listing["tags"]).first(5).each do |tag| %>
-          <span class="badge rounded-pill bg-secondary"><%= tag %></span>
+          <span class="badge rounded-pill bg-secondary"><%= sanitize(tag.to_s) %></span>
         <% end %>
         <small class="text-muted float-end"><%= @selected_partner.name %></small>
       </div>

@@ -29,9 +29,9 @@
     <div class="row">
       <% @members.each do |member| %>
         <div class="col-md-4 mb-3">
-          <div class="card border-info h-100">
+          <div class="card card-info border-info h-100">
             <div class="card-body">
-              <h5 class="card-title"><%= member["username"] || member["name"] || "Member ##{member["id"]}" %></h5>
+              <h5 class="card-title"><%= sanitize(member["username"].to_s.presence || member["name"].to_s.presence || t("federation_hub.members.member_fallback", id: member["id"])) %></h5>
               <% if member["balance"] %>
                 <p class="card-text">
                   <span class="badge bg-info"><%= (member["balance"].to_f / 3600).round(1) %>h</span>
@@ -40,7 +40,7 @@
               <% if member["tags"].present? %>
                 <p>
                   <% Array(member["tags"]).first(3).each do |tag| %>
-                    <span class="badge rounded-pill bg-secondary"><%= tag %></span>
+                    <span class="badge rounded-pill bg-secondary"><%= sanitize(tag.to_s) %></span>
                   <% end %>
                 </p>
               <% end %>

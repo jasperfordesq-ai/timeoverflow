@@ -93,6 +93,7 @@ es:
       no_browse_method: "No browsing method available for this partner."
       choose_partner: "Select a partner community above to browse their members."
       member_fallback: "Member #%{id}"
+      send_time: "Enviar Tiempo"
     listings:
       title: "Partner Listings"
       subtitle: "Discover offers and inquiries from partner timebanking communities."

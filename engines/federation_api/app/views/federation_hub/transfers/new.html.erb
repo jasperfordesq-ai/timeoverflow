@@ -52,7 +52,7 @@
               <select name="destination_member_id" id="destination_member_id" class="form-control" required>
                 <option value=""><%= t("federation_hub.transfers.select_recipient") %></option>
                 <% @destination_members.each do |m| %>
-                  <option value="<%= m["id"] %>"><%= m["username"] %></option>
+                  <option value="<%= m["id"] %>" <%= 'selected' if @pre_selected_member_id.to_s == m["id"].to_s %>><%= m["username"] %></option>
                 <% end %>
               </select>
             </div>

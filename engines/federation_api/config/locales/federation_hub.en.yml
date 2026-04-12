@@ -91,6 +91,7 @@ en:
       none_found: "No federation members found on %{partner}."
       choose_partner: "Select a partner community above to browse their members."
       member_fallback: "Member #%{id}"
+      send_time: "Send Time"
       browse_unavailable: "Direct member browsing is not yet available for this partner. Members from this community will appear here once the feature is enabled."
       no_browse_method: "No browsing method available for this partner."
     listings:

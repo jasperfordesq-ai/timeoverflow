@@ -15,6 +15,7 @@ module FederationHub
       @external_partners = FederationPartner.active.order(name: :asc)
 
       @selected_org_id = params[:org_id]
+      @pre_selected_member_id = params[:member_id]
       @destination_members = []
 
       if @selected_org_id.present?

@@ -12,7 +12,7 @@
 module FederationHub
   class BaseController < ActionController::Base
     before_action :authenticate_member!
-    layout "application"
+    layout "federation_hub"
     helper FederationHub::ApplicationHelper
 
     helper_method :current_user, :current_organization, :current_member,

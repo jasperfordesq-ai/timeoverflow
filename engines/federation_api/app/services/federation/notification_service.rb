@@ -50,7 +50,7 @@ module Federation
         Rails.logger.warn("[Federation::NotificationService] Invalid or missing amount (#{raw_amount.inspect}) for transfer_received notification — defaulting to 0")
         raw_amount = 0
       end
-      hours = (raw_amount.to_i / 3600.0).round(1)
+      hours = (raw_amount.to_f / 3600.0).round(1)
       sender = data[:remote_user_identifier] || I18n.t("federation_mailer.common.default_name")
 
       Federation::NotificationMailer.transfer_received(
@@ -75,7 +75,7 @@ module Federation
         Rails.logger.warn("[Federation::NotificationService] Invalid or missing amount (#{raw_amount.inspect}) for transfer_sent notification — defaulting to 0")
         raw_amount = 0
       end
-      hours = (raw_amount.to_i / 3600.0).round(1)
+      hours = (raw_amount.to_f / 3600.0).round(1)
       recipient = data[:remote_user_identifier] || I18n.t("federation_mailer.common.default_name")
 
       Federation::NotificationMailer.transfer_sent(

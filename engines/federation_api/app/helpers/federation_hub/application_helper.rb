@@ -46,7 +46,7 @@ module FederationHub
 
     def format_federation_hours(seconds)
       suffix = t("federation_hub.transfers.hours_short", default: "h")
-      return "0#{suffix}" unless seconds && seconds > 0
+      return "0.0#{suffix}" unless seconds.is_a?(Numeric) && seconds > 0
       "#{(seconds.to_f / 3600).round(1)}#{suffix}"
     end
   end

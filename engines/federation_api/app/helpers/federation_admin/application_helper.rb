@@ -58,8 +58,9 @@ module FederationAdmin
     # Convert seconds to hours with 1 decimal place.
     # Replaces duplicated (amount.to_f / 3600).round(N) logic in views.
     def format_federation_hours(amount_seconds)
-      return "0.0" unless amount_seconds
-      (amount_seconds.to_f / 3600).round(1)
+      suffix = t("federation_admin.common.hours_short", default: "h")
+      return "0.0#{suffix}" unless amount_seconds.is_a?(Numeric) && amount_seconds > 0
+      "#{(amount_seconds.to_f / 3600).round(1)}#{suffix}"
     end
 
     def sort_link(label, column, current_sort, current_dir)

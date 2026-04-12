@@ -31,7 +31,7 @@
             </tr>
             <tr>
               <td class="fw-bold"><%= t("federation_hub.partners.platform") %></td>
-              <td class="text-end"><span class="badge bg-secondary"><%= @partner.platform_type.capitalize %></span></td>
+              <td class="text-end"><span class="badge bg-secondary"><%= @partner.platform_type&.capitalize || "N/A" %></span></td>
             </tr>
           </tbody>
         </table>

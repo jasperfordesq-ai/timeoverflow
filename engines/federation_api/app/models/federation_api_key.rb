@@ -82,7 +82,6 @@ class FederationApiKey < ActiveRecord::Base
       errors.add(:permissions, "must specify at least one permission (profiles, listings, transactions)")
       return
     end
-    return if permissions.blank?
     unless permissions.is_a?(Hash)
       errors.add(:permissions, "must be a JSON object")
       return

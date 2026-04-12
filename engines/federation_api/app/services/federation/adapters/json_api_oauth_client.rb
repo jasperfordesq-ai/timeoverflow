@@ -46,6 +46,7 @@ module Federation
         uri = URI(token_url)
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = uri.scheme == "https"
+        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
         http.open_timeout = 10
         http.read_timeout = 10
 

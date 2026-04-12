@@ -70,15 +70,15 @@ class FederationPartner < ActiveRecord::Base
   end
 
   def can_transact?
-    active? && partnership_level >= 3 && feature_gates.dig("transactions_enabled")
+    active? && partnership_level >= 3 && feature_gates&.dig("transactions_enabled") == true
   end
 
   def can_share_profiles?
-    active? && partnership_level >= 2 && feature_gates.dig("profiles_enabled")
+    active? && partnership_level >= 2 && feature_gates&.dig("profiles_enabled") == true
   end
 
   def can_share_listings?
-    active? && partnership_level >= 1 && feature_gates.dig("listings_enabled")
+    active? && partnership_level >= 1 && feature_gates&.dig("listings_enabled") == true
   end
 
   def record_failure!
@@ -87,8 +87,8 @@ class FederationPartner < ActiveRecord::Base
     # Fully atomic: increment + conditional suspension in a single SQL statement
     # to eliminate race windows under concurrent webhook deliveries.
     self.class.where(id: id).update_all([
-      "consecutive_failures = consecutive_failures + 1, status = CASE WHEN consecutive_failures + 1 >= #{FAILURE_THRESHOLD} THEN 'suspended' ELSE status END, updated_at = ?",
-      Time.current
+      "consecutive_failures = consecutive_failures + 1, status = CASE WHEN consecutive_failures + 1 >= ? THEN 'suspended' ELSE status END, updated_at = ?",
+      FAILURE_THRESHOLD, Time.current
     ])
     reload
   end

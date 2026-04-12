@@ -37,14 +37,14 @@ module FederationApi
       # Master toggle: set to "true" to activate all federation features.
       app.config.federation.enabled       = ENV.fetch("FEDERATION_ENABLED", "false") == "true"
 
-      # Timeout for outbound webhook HTTP requests (seconds). Minimum 1.
-      app.config.federation.webhook_timeout    = [ENV.fetch("FEDERATION_WEBHOOK_TIMEOUT", "10").to_i, 1].max
+      # Timeout for outbound webhook HTTP requests (seconds). Clamped to 1..300.
+      app.config.federation.webhook_timeout    = [[ENV.fetch("FEDERATION_WEBHOOK_TIMEOUT", "10").to_i, 1].max, 300].min
 
-      # Maximum allowed transfer amount in seconds. 360000 = 100 hours. Minimum 0 (disabled).
-      app.config.federation.max_transfer_amount = [ENV.fetch("FEDERATION_MAX_TRANSFER_AMOUNT", "360000").to_i, 0].max
+      # Maximum allowed transfer amount in seconds. 360000 = 100 hours. Clamped to 0..1_000_000.
+      app.config.federation.max_transfer_amount = [[ENV.fetch("FEDERATION_MAX_TRANSFER_AMOUNT", "360000").to_i, 0].max, 1_000_000].min
 
-      # API rate limit: max requests per minute per API key. Minimum 1.
-      app.config.federation.rate_limit          = [ENV.fetch("FEDERATION_RATE_LIMIT", "100").to_i, 1].max
+      # API rate limit: max requests per minute per API key. Clamped to 1..10_000.
+      app.config.federation.rate_limit          = [[ENV.fetch("FEDERATION_RATE_LIMIT", "100").to_i, 1].max, 10_000].min
 
       # Startup validation: warn about misconfigured ENV vars so ops can
       # catch issues at deploy time rather than at runtime.
@@ -215,7 +215,7 @@ module FederationApi
       next unless defined?(Sidekiq)
 
       Sidekiq.configure_server do |_config|
-        queues = begin; Sidekiq[:queues]; rescue; nil; end
+        queues = begin; Sidekiq[:queues]; rescue => e; Rails.logger.warn("[FederationApi] Could not read Sidekiq queues: #{e.message}"); nil; end
         if queues.is_a?(Array) && !queues.include?("federation")
           queues.unshift("federation")
         end
@@ -232,7 +232,7 @@ module FederationApi
         if ENV.fetch("FEDERATION_ENABLED", "false") == "true"
           # Upsert: destroy any stale entry before creating to prevent duplicates
           # on server restart or multiple initializer runs.
-          Sidekiq::Cron::Job.destroy("federation_reconciliation") rescue nil
+          begin; Sidekiq::Cron::Job.destroy("federation_reconciliation"); rescue => e; Rails.logger.warn("[FederationApi] Could not destroy stale cron entry: #{e.message}"); end
           Sidekiq::Cron::Job.create(
             name:  "federation_reconciliation",
             cron:  "0 3 * * *",  # daily at 3 AM

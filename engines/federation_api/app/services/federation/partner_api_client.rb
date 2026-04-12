@@ -122,6 +122,7 @@ module Federation
 
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = uri.scheme == "https"
+      http.verify_mode = OpenSSL::SSL::VERIFY_PEER
       http.open_timeout = TIMEOUT
       http.read_timeout = TIMEOUT
       response = http.request(request)
@@ -202,6 +203,7 @@ module Federation
 
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = uri.scheme == "https"
+      http.verify_mode = OpenSSL::SSL::VERIFY_PEER
       http.open_timeout = TIMEOUT
       http.read_timeout = TIMEOUT
 

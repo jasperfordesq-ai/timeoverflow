@@ -41,7 +41,7 @@ class FederationOrganizationSetting < ActiveRecord::Base
     (blocked_partner_ids || []).include?(partner_id)
   end
 
-  validate :sanitize_blocked_partner_ids
+  before_validation :sanitize_blocked_partner_ids
 
   def internal_federation_enabled?
     enable_internal_federation

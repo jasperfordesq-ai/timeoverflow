@@ -57,7 +57,7 @@ module FederationAdmin
     # Prevent CSV formula injection: values starting with =, +, -, @, or tab
     # are treated as formulas by Excel/Sheets. Prefix with a single quote.
     def csv_safe(value)
-      return value unless value.is_a?(String) && value.match?(/\A[=+\-@\t]/)
+      return value unless value.is_a?(String) && value.match?(/\A[=+\-@\t\r;]/)
       "'#{value}"
     end
   end

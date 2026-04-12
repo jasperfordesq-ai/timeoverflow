@@ -66,6 +66,7 @@ module Federation
         uri = URI(@partner.webhook_url)
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = uri.scheme == "https"
+        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
         timeout = self.class.timeout
         http.open_timeout = timeout
         http.read_timeout = timeout

@@ -11,7 +11,7 @@ class FederationReconciliationRun < ActiveRecord::Base
 
   def duration
     return nil unless started_at && finished_at
-    finished_at - started_at
+    (finished_at - started_at).round(2)
   end
 
   # Warnings are expected during normal operation (e.g. stale pending transactions

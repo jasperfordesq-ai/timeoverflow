@@ -12,9 +12,9 @@
   <div class="col-md-8">
     <form method="get" action="<%= federation_hub_listings_path %>" class="d-flex gap-2">
       <select name="partner_id" class="form-control" onchange="this.form.submit()">
-        <option value=""><%= t("federation_hub.listings.select_partner") %></option>
+        <option value=""><%= t("federation_hub.listings.local_listings", org: current_organization.name) %></option>
         <% @partners.each do |p| %>
-          <option value="<%= p.id %>" <%= 'selected' if @selected_partner&.id == p.id %>><%= p.name %></option>
+          <option value="<%= p.id %>" <%= 'selected' if @selected_partner_id.to_s == p.id.to_s %>><%= p.name %></option>
         <% end %>
       </select>
       <select name="type" class="form-control" onchange="this.form.submit()">
@@ -28,43 +28,44 @@
   </div>
 </div>
 
-<% if @selected_partner %>
-  <% if @partner_browse_unavailable %>
-    <div class="alert alert-info">
-      <strong><%= @selected_partner.name %></strong> &mdash; <%= t("federation_hub.listings.browse_unavailable") %>
-    </div>
-  <% elsif @listings.any? %>
-    <% @listings.each do |listing| %>
-      <div class="post mb-3 p-3 border rounded bg-white">
-        <div class="d-flex justify-content-between">
-          <h4>
-            <%= sanitize(listing["title"].to_s.presence || listing["name"].to_s.presence || t("federation_hub.listings.listing_fallback", id: listing["id"])) %>
-            <% if listing["type"] %>
-              <span class="badge rounded-pill <%= listing["type"] == "offer" ? "bg-success" : "bg-warning text-dark" %>">
-                <%= sanitize(listing["type"].to_s.capitalize) %>
-              </span>
-            <% end %>
-          </h4>
+<div class="row">
+  <div class="col-md-12">
+    <h4 class="mb-3"><%= t("federation_hub.listings.source_label", source: @source_name) %></h4>
+
+    <% if @listings.any? %>
+      <% @listings.each do |listing| %>
+        <div class="post mb-3 p-3 border rounded bg-white">
+          <div class="d-flex justify-content-between">
+            <h4>
+              <%= sanitize(listing["title"].to_s.presence || listing["name"].to_s.presence || t("federation_hub.listings.listing_fallback", id: listing["id"])) %>
+              <% if listing["type"] %>
+                <span class="badge rounded-pill <%= listing["type"].to_s.downcase == "offer" ? "bg-success" : "bg-warning text-dark" %>">
+                  <%= sanitize(listing["type"].to_s.capitalize) %>
+                </span>
+              <% end %>
+            </h4>
+          </div>
+          <% if listing["description"].present? %>
+            <p class="text-muted"><%= sanitize(truncate(listing["description"].to_s, length: 200)) %></p>
+          <% end %>
+          <% if listing["category"].present? %>
+            <span class="badge rounded-pill bg-info"><%= sanitize(listing["category"].to_s) %></span>
+          <% end %>
+          <% tags = listing["tags"] %>
+          <% tags = tags.split(",").map(&:strip) if tags.is_a?(String) %>
+          <% Array(tags).first(5).each do |tag| %>
+            <% next if tag.blank? %>
+            <span class="badge rounded-pill bg-secondary"><%= sanitize(tag.to_s) %></span>
+          <% end %>
+          <% if listing["user"].present? %>
+            <small class="text-muted float-end"><%= sanitize(listing["user"].to_s) %></small>
+          <% end %>
         </div>
-        <% if listing["description"].present? %>
-          <p class="text-muted"><%= sanitize(truncate(listing["description"].to_s, length: 200)) %></p>
-        <% end %>
-        <% if listing["category"].present? %>
-          <span class="badge rounded-pill bg-info"><%= sanitize(listing["category"].to_s) %></span>
-        <% end %>
-        <% Array(listing["tags"]).first(5).each do |tag| %>
-          <span class="badge rounded-pill bg-secondary"><%= sanitize(tag.to_s) %></span>
-        <% end %>
-        <small class="text-muted float-end"><%= @selected_partner.name %></small>
+      <% end %>
+    <% else %>
+      <div class="alert alert-info">
+        <%= t("federation_hub.listings.none_found", partner: @source_name) %>
       </div>
     <% end %>
-  <% else %>
-    <div class="alert alert-info">
-      <%= t("federation_hub.listings.none_found", partner: @selected_partner.name) %>
-    </div>
-  <% end %>
-<% else %>
-  <div class="alert alert-info">
-    <%= t("federation_hub.listings.choose_partner") %>
   </div>
-<% end %>
+</div>

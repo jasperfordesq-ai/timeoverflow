@@ -113,7 +113,15 @@ module Federation
             # Check if a reversal has already occurred (e.g. ReconciliationJob
             # reversed the transfer while this webhook was in flight). If so,
             # mark as disputed instead of completing.
-            if fed_txn.metadata&.dig("reversal_transfer_id").present?
+            # Reload to get fresh state and metadata — the record was loaded
+            # before the HTTP call, so ReconciliationJob may have cancelled or
+            # reversed it in the meantime.
+            fed_txn.reload
+            unless fed_txn.pending?
+              Rails.logger.info(
+                "[Federation::WebhookDelivery] Fed_txn #{fed_txn_id} is now #{fed_txn.status} (changed during delivery) — skipping completion"
+              )
+            elsif fed_txn.metadata&.dig("reversal_transfer_id").present?
               Rails.logger.warn(
                 "[Federation::WebhookDelivery] Fed_txn #{fed_txn_id} was reversed while webhook was in flight — marking disputed"
               )

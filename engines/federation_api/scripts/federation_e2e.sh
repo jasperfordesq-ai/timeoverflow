@@ -95,7 +95,7 @@ echo -e "${CYAN}Step 4: Generate Federation API Key${NC}"
 
 # Generate key via Rails console
 API_KEY=$(docker compose exec -T app bin/rails runner '
-key, raw = FederationApiKey.generate!(name: "E2E Test Key")
+key, raw = FederationApiKey.generate!(name: "E2E Test Key", permissions: { "profiles" => true, "listings" => true, "transactions" => true })
 puts raw
 ' 2>/dev/null | tr -d '\r\n')
 

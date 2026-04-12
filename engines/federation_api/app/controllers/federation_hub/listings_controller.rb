@@ -60,16 +60,11 @@ module FederationHub
 
       if partner.api_key_hash.present?
         begin
-          result = client.send(:post, "/receive", {
-            event: "listings.list",
-            timestamp: Time.current.iso8601,
-            platform: "timeoverflow",
-            data: {
+          result = client.send_event("listings.list", {
               organization_id: params[:organization_id],
               type: params[:type],
               search: params[:q]
-            }
-          })
+            })
           if result["success"] != false
             data = result["data"] || result
             listings = data.dig("result", "listings") || data["listings"] || []

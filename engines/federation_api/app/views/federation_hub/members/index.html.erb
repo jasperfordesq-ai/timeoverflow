@@ -10,7 +10,7 @@
 <%# Partner selector with grouped options %>
 <div class="row mb-4">
   <div class="col-md-6">
-    <form method="get" action="<%= federation_hub_members_path %>">
+    <form method="get" action="<%= federation_hub_members_path %>" aria-label="<%= t('federation_hub.members.select_partner') %>">
       <div class="input-group">
         <label for="partner_select" class="visually-hidden"><%= t("federation_hub.members.select_partner") %></label>
         <select name="partner_id" id="partner_select" class="form-control" aria-label="<%= t("federation_hub.members.select_partner") %>" onchange="
@@ -69,9 +69,9 @@
       <div class="col-12 col-sm-6 col-md-4 mb-3">
         <div class="card card-info border-info h-100">
           <div class="card-body">
-            <h5 class="card-title">
+            <h2 class="h5 card-title">
               <%= sanitize(member["username"].to_s.presence || member["name"].to_s.presence || t("federation_hub.members.member_fallback", id: member["id"])) %>
-            </h5>
+            </h2>
             <% if member["balance"] %>
               <p class="card-text">
                 <span class="badge rounded-pill bg-info">

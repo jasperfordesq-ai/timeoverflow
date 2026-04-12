@@ -29,8 +29,12 @@ module FederationUi
       if amount_seconds <= 0
         return respond_with_error("Amount must be positive", status: :unprocessable_entity)
       end
-      max_amount = Rails.application.config.federation.max_transfer_amount
-      max_amount = 360_000 if max_amount <= 0
+      max_amount = begin
+        v = Rails.application.config.federation.max_transfer_amount
+        v.to_i > 0 ? v.to_i : 360_000
+      rescue NoMethodError, StandardError
+        360_000
+      end
       if amount_seconds > max_amount
         return respond_with_error("Amount exceeds maximum (#{max_amount} seconds / #{(max_amount / 3600.0).round(1)} hours)", status: :unprocessable_entity)
       end

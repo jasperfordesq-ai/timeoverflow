@@ -92,7 +92,11 @@ module Api
       def enforce_rate_limit!
         return unless @current_api_key # skip if auth failed (will 401 anyway)
 
-        limit = [Rails.application.config.federation.rate_limit, 1].max rescue 100
+        limit = begin
+          [Rails.application.config.federation.rate_limit, 1].max
+        rescue NoMethodError, StandardError
+          100
+        end
         now = Time.current.to_i
         current_window = now / 60
         previous_window = current_window - 1
@@ -108,11 +112,9 @@ module Api
         # Weighted estimate: previous window's remainder + current window's count
         estimated = (previous_count * (1 - elapsed_fraction)) + current_count
 
-        # Only expose rate limit headers after successful authentication
-        if @current_api_key
-          response.set_header("X-RateLimit-Limit", limit.to_s)
-          response.set_header("X-RateLimit-Remaining", [limit - estimated.ceil, 0].max.to_s)
-        end
+        # Expose rate limit headers (auth is already guaranteed by the early return above).
+        response.set_header("X-RateLimit-Limit", limit.to_s)
+        response.set_header("X-RateLimit-Remaining", [limit - estimated.ceil, 0].max.to_s)
 
         if estimated > limit
           response.set_header("Retry-After", "60")
@@ -128,7 +130,7 @@ module Api
       # on the Accept header. JSON:API clients (Komunitin) send
       # "application/vnd.api+json"; all others get the standard REST envelope.
       def current_response_adapter
-        @current_response_adapter ||= if request.headers["Accept"]&.match?(/\Aapplication\/vnd\.api\+json/)
+        @current_response_adapter ||= if request.headers["Accept"]&.match?(/\Aapplication\/vnd\.api\+json(\z|[;\s,])/)
           Federation::Adapters::JsonApiAdapter.new(partner: nil)
         else
           Federation::Adapters::RestAdapter.new(partner: nil)

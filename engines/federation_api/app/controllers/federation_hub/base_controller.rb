@@ -75,7 +75,7 @@ module FederationHub
           local_member_id: current_member.id,
           direction: "inbound"
         ).where(read_at: nil).count
-      rescue
+      rescue StandardError
         0
       end
     end

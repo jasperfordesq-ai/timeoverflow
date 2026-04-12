@@ -10,7 +10,7 @@
 <%# Filters %>
 <div class="row mb-4">
   <div class="col-md-8">
-    <form method="get" action="<%= federation_hub_listings_path %>" class="d-flex gap-2">
+    <form method="get" action="<%= federation_hub_listings_path %>" class="d-flex gap-2" aria-label="<%= t('federation_hub.listings.filter_listings', default: 'Filter listings') %>">
       <label for="listings_partner_select" class="visually-hidden"><%= t("federation_hub.listings.select_partner") %></label>
       <select name="partner_id" id="listings_partner_select" class="form-control" aria-label="<%= t("federation_hub.listings.select_partner") %>" onchange="
         var opt = this.options[this.selectedIndex];
@@ -68,7 +68,7 @@
   <div class="row">
     <div class="col-md-12">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0"><%= t("federation_hub.listings.source_label", source: @source_name) %></h4>
+        <h2 class="h4 mb-0"><%= t("federation_hub.listings.source_label", source: @source_name) %></h2>
         <div class="d-flex gap-2 align-items-center">
           <small class="text-muted"><%= t("federation_hub.listings.sort_by", default: "Sort:") %></small>
           <% sort_base = request.query_parameters.except("sort", "dir", "page") %>
@@ -90,9 +90,9 @@
         <div class="post mb-3 p-3 border rounded bg-white">
           <div class="d-flex justify-content-between align-items-start">
             <div>
-              <h4 class="mb-1">
+              <h3 class="h4 mb-1">
                 <%= sanitize(listing["title"].to_s.presence || listing["name"].to_s.presence || t("federation_hub.listings.listing_fallback", id: listing["id"]), tags: []) %>
-              </h4>
+              </h3>
               <% if listing["description"].present? %>
                 <% desc = listing["description"].to_s %>
                 <% if desc.length > 200 %>

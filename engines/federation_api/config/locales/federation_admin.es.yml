@@ -19,6 +19,8 @@ es:
       pending_count: "%{count} pendiente(s)"
       toggle_dark_mode: "Alternar modo oscuro"
       footer: "Motor de Federación v%{version} · Módulo autónomo · No modifica el núcleo de TimeOverflow"
+      menu: "Menú"
+      primary_navigation: "Navegación principal"
       nav:
         dashboard: "Panel"
         partners: "Socios"
@@ -98,6 +100,7 @@ es:
           actions: "Acciones"
         view: "Ver"
         edit: "Editar"
+        n_failures: "%{count} fallos"
         empty: "Aún no se han registrado socios de federación."
         register_first: "Registre su primer socio"
       new:
@@ -179,6 +182,7 @@ es:
         webhook_url: "URL de Webhook"
         not_configured: "No configurado"
         webhook_secret: "Secreto de Webhook"
+        secret_note: "El secreto completo solo se muestra al crear o rotar."
         reveal: "Mostrar"
         hide: "Ocultar"
         rotation_in_progress: "Rotación en curso desde %{date}"
@@ -285,6 +289,7 @@ es:
         export_csv: "Exportar CSV"
         search_placeholder: "ID de transacción externo..."
         search: "Buscar"
+        filter_transactions: "Filtrar transacciones"
         clear_filters: "Borrar filtros"
         table:
           id: "ID"
@@ -337,6 +342,7 @@ es:
       index:
         title: "Registros de Webhooks"
         total: "registro(s) en total"
+        filter_webhooks: "Filtrar registros de webhooks"
         status: "Estado"
         all_statuses: "Todos los Estados"
         pending: "Pendiente"
@@ -386,6 +392,7 @@ es:
       index:
         title: "Mensajes de Federación"
         total: "mensaje(s) en total"
+        filter_messages: "Filtrar mensajes"
         direction: "Dirección"
         all: "Todos"
         inbound: "Entrante"
@@ -497,6 +504,7 @@ es:
         active_members: "miembros activos"
         opt_in_all: "Inscribir a Todos"
         opt_in_all_confirm: "¿Inscribir a TODOS los miembros en la federación? Se podrán desinscribir individualmente después."
+        filter_members: "Filtrar miembros"
         organization: "Organización"
         all_organizations: "Todas las Organizaciones"
         status: "Estado"
@@ -658,6 +666,7 @@ es:
       partner_update_failed: "Error al actualizar el socio. Consulte los registros del servidor para más detalles."
 
     common:
+      close: "Cerrar"
       page: "Página"
       of: "de"
       previous: "Anterior"

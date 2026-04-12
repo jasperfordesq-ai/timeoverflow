@@ -19,6 +19,8 @@ en:
       pending_count: "%{count} pending"
       toggle_dark_mode: "Toggle dark mode"
       footer: "Federation Engine v%{version} · Self-contained module · Does not modify TimeOverflow core"
+      menu: "Menu"
+      primary_navigation: "Primary navigation"
       nav:
         dashboard: "Dashboard"
         partners: "Partners"
@@ -98,6 +100,7 @@ en:
           actions: "Actions"
         view: "View"
         edit: "Edit"
+        n_failures: "%{count} failures"
         empty: "No federation partners have been registered yet."
         register_first: "Register your first partner"
       new:
@@ -179,6 +182,7 @@ en:
         webhook_url: "Webhook URL"
         not_configured: "Not configured"
         webhook_secret: "Webhook Secret"
+        secret_note: "Full secret shown only at creation/rotation."
         reveal: "Reveal"
         hide: "Hide"
         rotation_in_progress: "Rotation in progress since %{date}"
@@ -285,6 +289,7 @@ en:
         export_csv: "Export CSV"
         search_placeholder: "External transaction ID..."
         search: "Search"
+        filter_transactions: "Filter transactions"
         clear_filters: "Clear filters"
         table:
           id: "ID"
@@ -337,6 +342,7 @@ en:
       index:
         title: "Webhook Logs"
         total: "total log(s)"
+        filter_webhooks: "Filter webhook logs"
         status: "Status"
         all_statuses: "All Statuses"
         pending: "Pending"
@@ -386,6 +392,7 @@ en:
       index:
         title: "Federation Messages"
         total: "message(s) total"
+        filter_messages: "Filter messages"
         direction: "Direction"
         all: "All"
         inbound: "Inbound"
@@ -497,6 +504,7 @@ en:
         active_members: "active members"
         opt_in_all: "Opt In All"
         opt_in_all_confirm: "Opt in ALL members to federation? They can be individually opted out later."
+        filter_members: "Filter members"
         organization: "Organization"
         all_organizations: "All Organizations"
         status: "Status"
@@ -658,6 +666,7 @@ en:
       partner_update_failed: "Failed to update partner. Check the server logs for details."
 
     common:
+      close: "Close"
       page: "Page"
       of: "of"
       previous: "Previous"

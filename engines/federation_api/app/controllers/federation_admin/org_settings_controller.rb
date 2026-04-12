@@ -1,12 +1,21 @@
 module FederationAdmin
   class OrgSettingsController < BaseController
+    PER_PAGE = 25
+
     def index
       @organizations = Organization.includes(:account).order(:name)
-      @settings_map = FederationOrganizationSetting.all.index_by(&:organization_id)
+      @total_count = @organizations.count
+      page = [(params[:page] || 1).to_i, 1].max
+      @total_pages = @total_count.zero? ? 0 : (@total_count.to_f / PER_PAGE).ceil
+      @current_page = [page, [@total_pages, 1].max].min
+      @organizations = @organizations.offset((@current_page - 1) * PER_PAGE).limit(PER_PAGE)
+
+      visible_org_ids = @organizations.map(&:id)
+      @settings_map = FederationOrganizationSetting.where(organization_id: visible_org_ids).index_by(&:organization_id)
       @opted_in_counts = FederationMemberPreference.opted_in
-        .group(:organization_id).count
+        .where(organization_id: visible_org_ids).group(:organization_id).count
       @total_member_counts = Member.where(active: true)
-        .group(:organization_id).count
+        .where(organization_id: visible_org_ids).group(:organization_id).count
     end
 
     def edit

@@ -1,7 +1,7 @@
 module FederationHub
   class MessagesController < BaseController
     def index
-      @messages = FederationMessage.where(
+      @messages = FederationMessage.includes(:federation_partner).where(
         organization_id: current_organization.id,
         local_member_id: current_member.id
       ).order(created_at: :desc).limit(100)
@@ -40,8 +40,10 @@ module FederationHub
         remote_user_identifier: @message.remote_user_identifier
       ).order(created_at: :asc)
 
-      # Mark all unread inbound messages in this thread as read
-      @thread.each { |m| m.mark_read! if m.inbound? && !m.read_at }
+      # Bulk-mark all unread inbound messages in this thread as read
+      # (single UPDATE instead of N individual updates).
+      @thread.where(direction: "inbound", read_at: nil)
+             .update_all(status: "read", read_at: Time.current)
     end
 
     def new
@@ -114,12 +116,7 @@ module FederationHub
     def fetch_partner_members(partner)
       client = Federation::PartnerApiClient.new(partner: partner)
       if partner.api_key_hash.present?
-        result = client.send(:post, "/receive", {
-          event: "members.list",
-          timestamp: Time.current.iso8601,
-          platform: "timeoverflow",
-          data: {}
-        })
+        result = client.send_event("members.list")
         if result["success"] != false
           data = result["data"] || result
           members = data.dig("result", "members") || data["members"] || []

@@ -11,7 +11,9 @@ module FederationUi
 
       org_settings = org ? FederationOrganizationSetting.for(org) : nil
       member_prefs = member ? FederationMemberPreference.for(member) : nil
-      active_partners = FederationPartner.active
+      # Single query: fetch names (up to 11 to detect "more"), derive count.
+      partner_names = FederationPartner.active.order(:name).limit(11).pluck(:name)
+      partner_count = partner_names.length > 10 ? FederationPartner.active.count : partner_names.length
 
       respond_with_data({
         federation_available: true,
@@ -27,8 +29,8 @@ module FederationUi
           discoverable: member_prefs&.discoverable? || false
         } : nil,
         effective_status: member ? Federation::AccessControl.effective_status(member) : nil,
-        active_partners_count: active_partners.count,
-        partner_names: active_partners.limit(10).pluck(:name)
+        active_partners_count: partner_count,
+        partner_names: partner_names.first(10)
       })
     end
   end

@@ -41,12 +41,7 @@ module FederationHub
       # Method 1: Webhook event (preferred — works with all partners)
       if partner.api_key_hash.present?
         begin
-          result = client.send(:post, "/receive", {
-            event: "members.list",
-            timestamp: Time.current.iso8601,
-            platform: "timeoverflow",
-            data: { organization_id: params[:organization_id] }
-          })
+          result = client.send_event("members.list", { organization_id: params[:organization_id] })
           if result["success"] != false
             data = result["data"] || result
             members = data.dig("result", "members") || data["members"] || []

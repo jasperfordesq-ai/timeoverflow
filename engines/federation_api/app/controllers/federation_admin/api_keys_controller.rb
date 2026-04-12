@@ -1,10 +1,17 @@
 module FederationAdmin
   class ApiKeysController < BaseController
+    PER_PAGE = 50
+
     def index
       @api_keys = FederationApiKey.all
       sort_col = %w[id name active created_at expires_at].include?(params[:sort]) ? params[:sort] : "created_at"
       sort_dir = params[:dir] == "asc" ? :asc : :desc
       @api_keys = @api_keys.order(sort_col => sort_dir)
+      @total_count = @api_keys.count
+      page = [(params[:page] || 1).to_i, 1].max
+      @total_pages = @total_count.zero? ? 0 : (@total_count.to_f / PER_PAGE).ceil
+      @current_page = [page, [@total_pages, 1].max].min
+      @api_keys = @api_keys.offset((@current_page - 1) * PER_PAGE).limit(PER_PAGE)
     end
 
     def new
@@ -25,7 +32,7 @@ module FederationAdmin
         name: params[:name],
         organization: org,
         permissions: permissions,
-        expires_at: params[:expires_at].present? ? Time.parse(params[:expires_at]) : nil
+        expires_at: params[:expires_at].present? ? Time.zone.parse(params[:expires_at]) : nil
       )
       # Set permitted_organization_ids after creation (generate! doesn't accept it)
       @api_key.update!(permitted_organization_ids: permitted_org_ids) if permitted_org_ids.any?

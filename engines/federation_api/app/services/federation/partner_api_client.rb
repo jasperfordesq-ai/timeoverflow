@@ -71,6 +71,19 @@ module Federation
       end
     end
 
+    # Send a generic webhook event to the partner's receiver endpoint.
+    # Used by Hub controllers that need to query partner data via events
+    # (e.g., members.list, listings.list) without going through WebhookSender.
+    def send_event(event, data = {})
+      endpoint = @adapter.map_endpoint("receive")
+      post(endpoint, {
+        event: event,
+        timestamp: Time.current.iso8601,
+        platform: "timeoverflow",
+        data: data
+      })
+    end
+
     # Send a message to the partner's API.
     def post_message(payload)
       transformed = @adapter.transform_outbound_message(payload)

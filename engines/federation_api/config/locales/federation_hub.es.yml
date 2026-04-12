@@ -9,12 +9,15 @@ es:
       not_found: "El recurso solicitado no se encontró."
       unexpected: "Ocurrió un error inesperado. Por favor, inténtelo de nuevo."
     common:
+      close: "Cerrar"
       internal_orgs: "Comunidades TimeOverflow"
       external_partners: "Socios Externos"
+      pagination: "Paginación"
       platform_label: "TimeOverflow"
       page: "Página"
       previous: "Anterior"
       next_page: "Siguiente"
+      required: "obligatorio"
     nav:
       dashboard: "Centro de Federación"
       partners: "Comunidades"

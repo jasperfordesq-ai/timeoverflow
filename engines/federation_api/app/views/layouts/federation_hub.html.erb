@@ -71,7 +71,7 @@
 
     <%# Federation Hub navigation pills — matches TimeOverflow's actions-menu %>
     <% if current_user && current_member %>
-      <nav role="navigation">
+      <nav role="navigation" aria-label="<%= t('federation_hub.nav.hub_navigation', default: 'Federation Hub navigation') %>">
         <div class="container">
           <div class="row">
             <div class="col-12">

@@ -113,12 +113,18 @@ module Federation
         very_stale = stale.where("created_at < ?", Time.current - REVERSAL_TIMEOUT)
         very_stale.find_each do |txn|
           begin
+            # Track outcome across the transaction block boundary.
+            # `next` inside the transaction block exits to this scope, so
+            # these flags prevent NoMethodError on nil and incorrect logging.
+            txn_cancelled = false
+            original_txn_id = txn.id
+
             ActiveRecord::Base.transaction do
               # Lock the row with FOR UPDATE SKIP LOCKED to prevent concurrent
               # reconciliation runs from processing the same transaction (double-
               # reversal prevention). SKIP LOCKED avoids blocking if another
               # worker already holds the lock — the row is simply skipped.
-              txn = FederationTransaction.where(id: txn.id, status: "pending")
+              txn = FederationTransaction.where(id: original_txn_id, status: "pending")
                                          .lock("FOR UPDATE SKIP LOCKED").first
               next unless txn  # skip if already processed or locked by another worker
 
@@ -126,6 +132,7 @@ module Federation
               if txn.metadata&.dig("reversal_transfer_id").present?
                 Rails.logger.info("[Federation::Reconciliation] Already reversed for fed_txn #{txn.id}, skipping")
                 txn.cancel!(reason: "Auto-cancelled: already reversed")
+                txn_cancelled = true
                 next
               end
 
@@ -176,7 +183,12 @@ module Federation
               # Inbound with no transfer: no local balance was moved, safe to just cancel.
 
               txn.cancel!(reason: "Auto-cancelled: pending for over #{REVERSAL_TIMEOUT.inspect}")
+              txn_cancelled = true
             end
+
+            # Only log and notify if the transaction was actually cancelled
+            # (not skipped via SKIP LOCKED, not moved to disputed).
+            next unless txn_cancelled && txn
 
             Rails.logger.warn("[Federation::Reconciliation] Auto-cancelled stale #{txn.direction} transaction #{txn.id}")
 
@@ -192,7 +204,7 @@ module Federation
               }
             )
           rescue => e
-            Rails.logger.error("[Federation::Reconciliation] Failed to cancel/reverse stale fed_txn #{txn.id}: #{e.class}: #{e.message}")
+            Rails.logger.error("[Federation::Reconciliation] Failed to cancel/reverse stale fed_txn #{original_txn_id}: #{e.class}: #{e.message}")
           end
         end
       end
@@ -293,18 +305,39 @@ module Federation
       Rails.logger.info("[Federation::Reconciliation] Complete. #{issues.count} total findings (#{critical_count} critical, #{warning_count} warnings)")
 
       # Persist run results for admin visibility
-      FederationReconciliationRun.create!(
-        status: critical_count > 0 ? "critical" : "completed",
-        critical_count: critical_count,
-        warning_count: warning_count,
-        total_findings: issues.count,
-        issues: issues,
-        started_at: started_at,
-        finished_at: Time.current
-      )
+      begin
+        FederationReconciliationRun.create!(
+          status: critical_count > 0 ? "critical" : "completed",
+          critical_count: critical_count,
+          warning_count: warning_count,
+          total_findings: issues.count,
+          issues: issues,
+          started_at: started_at,
+          finished_at: Time.current
+        )
+      rescue => persist_err
+        Rails.logger.error("[Federation::Reconciliation] Failed to persist run record: #{persist_err.class}: #{persist_err.message}")
+        # Non-fatal: the reconciliation checks themselves succeeded; only the
+        # result record failed to save. Log and continue rather than retrying
+        # the entire job (which would re-run all checks).
+      end
     rescue => e
-      Rails.logger.error("[Federation::Reconciliation] Failed to persist run: #{e.message}")
-      raise # Let Sidekiq retry rather than silently swallowing
+      # Record the failed run so admins can see it in the dashboard.
+      begin
+        FederationReconciliationRun.create!(
+          status: "failed",
+          critical_count: 0,
+          warning_count: 0,
+          total_findings: 0,
+          issues: [{ type: "job_error", severity: "critical", message: "#{e.class}: #{e.message}" }],
+          started_at: started_at,
+          finished_at: Time.current
+        )
+      rescue => persist_err
+        Rails.logger.error("[Federation::Reconciliation] Could not persist failed run record: #{persist_err.message}")
+      end
+      Rails.logger.error("[Federation::Reconciliation] Job failed: #{e.class}: #{e.message}\n#{e.backtrace&.first(10)&.join("\n")}")
+      raise # Let Sidekiq retry
     end
 
     private

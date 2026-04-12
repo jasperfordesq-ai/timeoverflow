@@ -112,9 +112,12 @@ module Api
 
       # Sliding-window rate limit for webhooks by IP (not by API key since webhooks skip auth).
       # Default: 200 requests per minute per IP. Override via FEDERATION_WEBHOOK_IP_RATE_LIMIT env var.
+      # Increments the counter here (not in verify_webhook_signature!) so the
+      # read-then-check is atomic with the increment — prevents off-by-one.
       def enforce_webhook_rate_limit!
         ip = request.remote_ip
         limit = ENV.fetch("FEDERATION_WEBHOOK_IP_RATE_LIMIT", "200").to_i
+        sliding_window_increment("federation_webhook_rate:#{ip}")
         estimated = sliding_window_read("federation_webhook_rate:#{ip}")
 
         if estimated > limit
@@ -124,9 +127,6 @@ module Api
       end
 
       def verify_webhook_signature!
-        # Increment rate limit counter immediately upon receipt — invalid
-        # signatures still consume rate limit budget to prevent brute-force.
-        sliding_window_increment("federation_webhook_rate:#{request.remote_ip}")
 
         # Accept either Nexus-style (X-Federation-Signature) or simple (X-Webhook-Signature)
         signature = request.headers["X-Federation-Signature"] || request.headers["X-Webhook-Signature"]

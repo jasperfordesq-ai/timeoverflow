@@ -2,10 +2,11 @@ module FederationAdmin
   class CcConfigController < BaseController
     def index
       @organizations = Organization.order(:name)
-      @configs = {}
-      @organizations.each do |org|
-        @configs[org.id] = FederationCcNodeConfig.for(org)
-      end
+      # Preload all existing configs in a single query instead of N+1 .for() calls.
+      # Organizations without a config will show default values in the view.
+      @configs = FederationCcNodeConfig.where(
+        organization_id: @organizations.select(:id)
+      ).index_by(&:organization_id)
     end
 
     def update

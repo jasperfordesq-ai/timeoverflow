@@ -21,7 +21,7 @@ class FederationTransaction < ActiveRecord::Base
       begin
         v = Rails.application.config.federation.max_transfer_amount
         v.to_i > 0 ? v.to_i : 360_000
-      rescue
+      rescue NoMethodError, StandardError
         360_000
       end
     }

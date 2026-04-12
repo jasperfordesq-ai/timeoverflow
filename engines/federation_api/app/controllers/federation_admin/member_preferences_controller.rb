@@ -77,6 +77,17 @@ module FederationAdmin
       members = Member.where(active: true)
       members = members.where(organization_id: params[:organization_id]) if params[:organization_id].present?
 
+      # Safety cap: refuse to bulk-opt-in more than 5,000 members at once
+      # to prevent unbounded memory usage and excessively long transactions.
+      total = members.count
+      if total > 5_000
+        flash[:alert] = t("federation_admin.flash.bulk_opt_in_too_many",
+          count: total, max: 5_000,
+          default: "Cannot bulk opt-in %{count} members (maximum %{max}). Filter by organization first.")
+        redirect_to federation_admin_member_preferences_path
+        return
+      end
+
       count = 0
       ActiveRecord::Base.transaction do
         # Use .each (not find_each) inside transaction — find_each batching

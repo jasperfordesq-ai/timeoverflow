@@ -44,7 +44,7 @@ module FederationHub
       max_amount = begin
         v = Rails.application.config.federation.max_transfer_amount
         v.to_i > 0 ? v.to_i : 360_000
-      rescue
+      rescue NoMethodError, StandardError
         360_000
       end
       if amount <= 0
@@ -177,12 +177,7 @@ module FederationHub
     def fetch_external_members(partner)
       client = Federation::PartnerApiClient.new(partner: partner)
       if partner.api_key_hash.present?
-        result = client.send(:post, "/receive", {
-          event: "members.list",
-          timestamp: Time.current.iso8601,
-          platform: "timeoverflow",
-          data: {}
-        })
+        result = client.send_event("members.list")
         if result["success"] != false
           data = result["data"] || result
           members = data.dig("result", "members") || data["members"] || []

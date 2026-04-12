@@ -13,12 +13,12 @@
 <%# Conversation header %>
 <div class="row mb-3">
   <div class="col-md-12">
-    <h4>
+    <h1 class="h4">
       <%= @message.metadata&.dig("sender_username") || @message.remote_user_identifier %>
       <small class="text-muted">
         &mdash; <%= @message.federation_partner&.name %>
       </small>
-    </h4>
+    </h1>
   </div>
 </div>
 
@@ -63,7 +63,7 @@
 <%# Reply form %>
 <div class="card border-info">
   <div class="card-body">
-    <form action="<%= federation_hub_messages_path %>" method="post">
+    <form action="<%= federation_hub_messages_path %>" method="post" aria-label="<%= t('federation_hub.messages.reply_label', default: 'Reply message') %>">
       <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
       <input type="hidden" name="partner_id" value="<%= @message.federation_partner_id %>">
       <input type="hidden" name="recipient_id" value="<%= @message.remote_user_identifier %>">
@@ -72,9 +72,11 @@
       <input type="hidden" name="subject" value="<%= reply_subject %>">
 
       <div class="mb-2">
-        <textarea name="body" rows="3" class="form-control" required aria-required="true" maxlength="10000"
-                  placeholder="<%= t("federation_hub.messages.reply_placeholder") %>" data-char-counter="true"></textarea>
-        <small class="text-muted char-counter" aria-live="polite"></small>
+        <label for="reply_body" class="form-label visually-hidden"><%= t("federation_hub.messages.reply_label", default: "Reply message") %></label>
+        <textarea name="body" id="reply_body" rows="3" class="form-control" required aria-required="true" maxlength="10000"
+                  placeholder="<%= t("federation_hub.messages.reply_placeholder") %>" data-char-counter="true"
+                  aria-describedby="reply-counter"></textarea>
+        <small id="reply-counter" class="text-muted char-counter" aria-live="polite"></small>
       </div>
       <button type="submit" class="btn btn-info">
         <%= t("federation_hub.messages.reply_button") %>

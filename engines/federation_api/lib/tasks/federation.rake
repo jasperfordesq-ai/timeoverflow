@@ -19,7 +19,10 @@ namespace :federation do
     key_name = ($stdin.gets || '').chomp
     key_name = "Nexus Partner" if key_name.blank?
 
-    api_key, raw_key = FederationApiKey.generate!(name: key_name)
+    api_key, raw_key = FederationApiKey.generate!(
+      name: key_name,
+      permissions: { "profiles" => true, "listings" => true, "transactions" => true }
+    )
     puts "\n✓ API key generated!"
     puts "  Name:    #{api_key.name}"
     puts "  Prefix:  #{api_key.key_prefix}"
@@ -77,7 +80,8 @@ namespace :federation do
 
     api_key, raw_key = FederationApiKey.generate!(
       name: name,
-      organization: org
+      organization: org,
+      permissions: { "profiles" => true, "listings" => true, "transactions" => true }
     )
 
     puts "\n✓ API key generated"

@@ -16,9 +16,14 @@ module Api
 
       # GET /api/v1/komunitin/currencies
       def currencies
-        # Only show federation-enabled orgs, capped at 100 for safety
+        # Only show federation-enabled orgs, capped at 100 for safety.
+        # Preload federation settings to avoid N+1 AccessControl.org_enabled? calls.
+        fed_enabled_org_ids = FederationOrganizationSetting
+          .where(federation_enabled: true).pluck(:organization_id)
+
         orgs = Organization.order(:name).limit(100)
         orgs = orgs.where(id: @current_api_key.organization_id) if @current_api_key&.organization_id
+
         data = orgs.map do |org|
           {
             type: "currencies",
@@ -34,7 +39,7 @@ module Api
               rate: { n: 1, d: 1 },
               settings: {
                 defaultAllowPayments: true,
-                enableExternalPayments: Federation::AccessControl.org_enabled?(org)
+                enableExternalPayments: fed_enabled_org_ids.include?(org.id)
               }
             }
           }

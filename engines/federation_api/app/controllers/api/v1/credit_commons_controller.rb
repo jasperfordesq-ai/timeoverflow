@@ -50,13 +50,22 @@ module Api
         balance = member.account.balance.to_i / 3600.0
         completed = FederationTransaction.completed.where(local_account_id: member.account.id)
 
+        # Aggregate stats in a single query instead of 5 separate ones.
+        stats = completed.pick(
+          Arel.sql("COALESCE(SUM(amount), 0)"),
+          Arel.sql("COALESCE(SUM(CASE WHEN direction = 'inbound' THEN amount ELSE 0 END), 0)"),
+          Arel.sql("COALESCE(SUM(CASE WHEN direction = 'outbound' THEN amount ELSE 0 END), 0)"),
+          Arel.sql("COUNT(*)"),
+          Arel.sql("COUNT(DISTINCT remote_user_identifier)")
+        ) || [0, 0, 0, 0, 0]
+
         respond_with_data({
           balance: balance,
-          volume: completed.sum(:amount) / 3600.0,
-          gross_in: completed.inbound.sum(:amount) / 3600.0,
-          gross_out: completed.outbound.sum(:amount) / 3600.0,
-          trades: completed.count,
-          partners: completed.select(:remote_user_identifier).distinct.count
+          volume: stats[0].to_f / 3600.0,
+          gross_in: stats[1].to_f / 3600.0,
+          gross_out: stats[2].to_f / 3600.0,
+          trades: stats[3],
+          partners: stats[4]
         })
       end
 

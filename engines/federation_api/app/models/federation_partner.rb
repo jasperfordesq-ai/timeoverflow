@@ -1,5 +1,6 @@
 require "ipaddr"
 require "resolv"
+require "timeout"
 
 # Represents an external timebanking platform that this TimeOverflow
 # instance federates with (e.g., a Nexus tenant).
@@ -210,8 +211,9 @@ class FederationPartner < ActiveRecord::Base
         end
       rescue IPAddr::InvalidAddressError
         # Host is a hostname, not an IP literal — resolve it.
+        # Wrap in a timeout to prevent slow DNS from blocking model saves.
         begin
-          addrs = Resolv.getaddresses(host)
+          addrs = Timeout.timeout(3) { Resolv.getaddresses(host) }
           addrs.each do |addr|
             ip = IPAddr.new(addr)
             if PRIVATE_IP_RANGES.any? { |range| range.include?(ip) }
@@ -219,8 +221,9 @@ class FederationPartner < ActiveRecord::Base
               break
             end
           end
-        rescue Resolv::ResolvError
-          # DNS resolution failed — allow the URL (connectivity check happens later)
+        rescue Resolv::ResolvError, Timeout::Error
+          # DNS resolution failed or timed out — allow the URL
+          # (real-time SSRF blocking happens at request time)
         end
       rescue URI::InvalidURIError
         errors.add(attr, "is not a valid URL")

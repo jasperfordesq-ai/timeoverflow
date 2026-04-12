@@ -56,12 +56,12 @@ module FederationUi
       end
     end
 
-    def respond_with_data(data, status: :ok)
-      render json: { success: true, data: data }, status: status
+    def respond_with_data(data, status: :ok, meta: {})
+      render json: { success: true, data: data, meta: meta }, status: status
     end
 
-    def respond_with_error(message, status: :unprocessable_entity)
-      render json: { success: false, error: message }, status: status
+    def respond_with_error(message, status: :unprocessable_entity, meta: {})
+      render json: { success: false, error: message, meta: meta }, status: status
     end
   end
 end

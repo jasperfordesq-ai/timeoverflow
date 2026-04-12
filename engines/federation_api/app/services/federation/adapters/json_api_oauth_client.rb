@@ -27,7 +27,7 @@ module Federation
         cached = @partner.metadata&.dig("oauth_access_token")
         expires = @partner.metadata&.dig("oauth_token_expires_at")
 
-        if cached.present? && expires.present? && Time.parse(expires) > Time.current
+        if cached.present? && expires.present? && Time.zone.parse(expires) > Time.current
           return cached
         end
 

@@ -24,14 +24,23 @@ class FederationCcNodeConfig < ActiveRecord::Base
 
   def build_about_response
     org = Organization.find_by(id: organization_id)
+
+    # Fetch aggregate stats in a single query instead of 3 separate ones.
+    completed_scope = FederationTransaction.where(organization_id: organization_id).completed
+    stats = completed_scope.pick(
+      Arel.sql("COUNT(*)"),
+      Arel.sql("COUNT(DISTINCT remote_user_identifier)"),
+      Arel.sql("COALESCE(SUM(amount), 0)")
+    ) || [0, 0, 0]
+
     {
       format: currency_format,
       rate: exchange_rate.to_f,
       absolute_path: [node_slug],
       validated_window: validated_window,
-      trades: FederationTransaction.where(organization_id: organization_id).completed.count,
-      traders: FederationTransaction.where(organization_id: organization_id).completed.select(:remote_user_identifier).distinct.count,
-      volume: (FederationTransaction.where(organization_id: organization_id).completed.sum(:amount).to_f / 3600.0 * exchange_rate.to_f).round(2),
+      trades: stats[0],
+      traders: stats[1],
+      volume: (stats[2].to_f / 3600.0 * exchange_rate.to_f).round(2),
       accounts: (org ? org.members.active.count : 0)
     }
   end

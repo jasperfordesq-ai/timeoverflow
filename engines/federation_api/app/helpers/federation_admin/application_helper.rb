@@ -29,7 +29,7 @@ module FederationAdmin
     def format_date(datetime)
       return "—" unless datetime
       l(datetime, format: :long, default: datetime.in_time_zone.strftime("%Y-%m-%d %H:%M %Z"))
-    rescue
+    rescue I18n::ArgumentError, StandardError
       datetime.in_time_zone.strftime("%Y-%m-%d %H:%M %Z")
     end
 

@@ -29,16 +29,18 @@ module FederationHub
 
     def federation_feature_icon(enabled)
       if enabled
-        content_tag(:span, "\u2713", class: "text-success fw-bold", title: "Enabled")
+        label = t("federation_hub.common.enabled", default: "Enabled")
+        content_tag(:span, "\u2713", class: "text-success fw-bold", title: label, role: "img", "aria-label": label)
       else
-        content_tag(:span, "\u2717", class: "text-muted", title: "Disabled")
+        label = t("federation_hub.common.disabled", default: "Disabled")
+        content_tag(:span, "\u2717", class: "text-muted", title: label, role: "img", "aria-label": label)
       end
     end
 
     def format_date(datetime)
       return "\u2014" unless datetime
       l(datetime, format: :long, default: datetime.in_time_zone.strftime("%Y-%m-%d %H:%M %Z"))
-    rescue
+    rescue I18n::ArgumentError, StandardError
       datetime.in_time_zone.strftime("%Y-%m-%d %H:%M %Z")
     end
 

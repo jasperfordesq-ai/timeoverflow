@@ -1,10 +1,14 @@
 // Federation form helpers — disable-on-submit with spinner feedback,
 // character counters, auto-submit selects, and listing expand/collapse.
 // Included in both admin and hub layouts.
+// Compatible with both plain page loads and Turbo/Turbolinks navigation.
 (function() {
-  document.addEventListener('DOMContentLoaded', function() {
+  // --- Delegated listeners (register once, never duplicate) ---
+  function installGlobalListeners() {
+    if (window._federationGlobalListenersInstalled) return;
+    window._federationGlobalListenersInstalled = true;
 
-    // --- Double-submit prevention ---
+    // Double-submit prevention (delegated on document)
     document.addEventListener('submit', function(e) {
       var form = e.target;
       if (!form || form.tagName !== 'FORM') return;
@@ -39,40 +43,7 @@
       }
     });
 
-    // --- Character counters ---
-    // Any input/textarea with data-char-counter="true" and a maxlength attribute
-    // will show a live character count in the next sibling .char-counter element.
-    document.querySelectorAll('[data-char-counter="true"]').forEach(function(field) {
-      var max = parseInt(field.getAttribute('maxlength'), 10);
-      if (!max) return;
-
-      var counter = field.parentElement.querySelector('.char-counter');
-      if (!counter) return;
-
-      function updateCounter() {
-        var remaining = max - field.value.length;
-        counter.textContent = remaining + ' / ' + max + ' characters remaining';
-        counter.style.color = remaining < max * 0.1 ? '#dc3545' : '';
-      }
-
-      field.addEventListener('input', updateCounter);
-      updateCounter();
-    });
-
-    // --- Auto-submit selects (with debounce to prevent accidental taps) ---
-    // Any select with data-auto-submit will submit its parent form on change.
-    document.querySelectorAll('select[data-auto-submit]').forEach(function(sel) {
-      var debounceTimer = null;
-      sel.addEventListener('change', function() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(function() {
-          var form = sel.closest('form');
-          if (form) form.submit();
-        }, 300);
-      });
-    });
-
-    // --- Listing expand/collapse (delegated, replaces inline onclick) ---
+    // Listing expand/collapse (delegated on document)
     document.addEventListener('click', function(e) {
       var expand = e.target.closest('.listing-expand');
       if (expand) {
@@ -94,5 +65,61 @@
         }
       }
     });
-  });
+  }
+
+  // --- Per-page initializers (safe to run on every navigation) ---
+  function initPageHelpers() {
+
+    // Character counters — skip already-initialized fields
+    document.querySelectorAll('[data-char-counter="true"]').forEach(function(field) {
+      if (field.dataset.charCounterInit) return;
+      field.dataset.charCounterInit = '1';
+
+      var max = parseInt(field.getAttribute('maxlength'), 10);
+      if (!max) return;
+
+      var counter = field.parentElement.querySelector('.char-counter');
+      if (!counter) return;
+
+      function updateCounter() {
+        var remaining = max - field.value.length;
+        counter.textContent = remaining + ' / ' + max + ' characters remaining';
+        counter.style.color = remaining < max * 0.1 ? '#dc3545' : '';
+      }
+
+      field.addEventListener('input', updateCounter);
+      updateCounter();
+    });
+
+    // Auto-submit selects — skip already-initialized selects
+    document.querySelectorAll('select[data-auto-submit]').forEach(function(sel) {
+      if (sel.dataset.autoSubmitInit) return;
+      sel.dataset.autoSubmitInit = '1';
+
+      var debounceTimer = null;
+      sel.addEventListener('change', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+          var form = sel.closest('form');
+          if (form) form.submit();
+        }, 300);
+      });
+    });
+  }
+
+  function boot() {
+    installGlobalListeners();
+    initPageHelpers();
+  }
+
+  // Support both standard page loads and Turbo/Turbolinks navigation.
+  // DOMContentLoaded fires on initial load; turbo:load fires on Turbo navigations;
+  // turbolinks:load fires on legacy Turbolinks navigations.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+  document.addEventListener('turbo:load', boot);
+  document.addEventListener('turbolinks:load', boot);
 })();

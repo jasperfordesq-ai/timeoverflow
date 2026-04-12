@@ -30,7 +30,7 @@ module Federation
       max_amount = begin
         v = Rails.application.config.federation.max_transfer_amount
         v.to_i > 0 ? v.to_i : 360_000
-      rescue
+      rescue NoMethodError, StandardError
         360_000
       end
       if amount > max_amount
@@ -113,9 +113,13 @@ module Federation
 
           # Synchronous double-entry validation: verify the transfer
           # created exactly 2 movements summing to zero before proceeding.
+          # NOTE: Must raise a real exception (not ActiveRecord::Rollback) so the
+          # error propagates outside the transaction block. Rollback is silently
+          # swallowed by the transaction block and execution would continue with
+          # a rolled-back fed_txn — corrupting state.
           movements = transfer.movements.reload
           unless movements.size == 2 && movements.sum(&:amount) == 0
-            raise ActiveRecord::Rollback, "Double-entry violation: #{movements.size} movements, sum=#{movements.sum(&:amount)}"
+            raise StandardError, "Double-entry violation: #{movements.size} movements, sum=#{movements.sum(&:amount)}"
           end
 
           fed_txn.complete!(local_transfer: transfer)

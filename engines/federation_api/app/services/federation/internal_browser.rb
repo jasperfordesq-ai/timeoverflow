@@ -74,17 +74,21 @@ module Federation
         .where(id: member_ids)
         .pluck(:user_id)
 
+      # Cap results to prevent unbounded memory usage on large orgs.
+      # Each type is individually limited; combined max is 2 * MAX_LISTINGS_PER_TYPE.
+      max_per_type = 500
+
       posts = []
       sanitized_search = search.present? ? "%#{sanitize_sql_like(search)}%" : nil
 
       if type.blank? || type == "offer"
-        offers = target_organization.offers.active.where(user_id: user_ids)
+        offers = target_organization.offers.active.where(user_id: user_ids).limit(max_per_type)
         offers = offers.where("title ILIKE ? OR description ILIKE ?", sanitized_search, sanitized_search) if sanitized_search
         posts.concat(offers.to_a)
       end
 
       if type.blank? || type == "inquiry"
-        inquiries = target_organization.inquiries.active.where(user_id: user_ids)
+        inquiries = target_organization.inquiries.active.where(user_id: user_ids).limit(max_per_type)
         inquiries = inquiries.where("title ILIKE ? OR description ILIKE ?", sanitized_search, sanitized_search) if sanitized_search
         posts.concat(inquiries.to_a)
       end

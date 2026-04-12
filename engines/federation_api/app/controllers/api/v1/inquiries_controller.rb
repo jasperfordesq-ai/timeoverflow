@@ -32,8 +32,10 @@ module Api
       def show
         inquiry = current_organization.inquiries.active.of_active_members.find_by!(id: params[:id])
 
+        # Posts belong to users, not members. Resolve the member from user_id + org.
         opted_in_ids = Federation::AccessControl.opted_in_member_ids(current_organization)
-        unless opted_in_ids.include?(inquiry.member_id)
+        member = current_organization.members.find_by(user_id: inquiry.user_id)
+        unless member && opted_in_ids.include?(member.id)
           return respond_with_error(I18n.t("federation_api.errors.resource_not_found", default: "Resource not found"), status: :not_found)
         end
 

@@ -12,7 +12,7 @@ module Federation
     # Falls back to 10 seconds if config is unavailable.
     def self.timeout
       Rails.application.config.federation.webhook_timeout
-    rescue
+    rescue NoMethodError, StandardError
       10
     end
 

@@ -9,7 +9,7 @@
   </div>
 
   <% if @internal_orgs.any? %>
-    <h4 class="mb-3"><%= t("federation_hub.common.internal_orgs") %></h4>
+    <h2 class="h4 mb-3"><%= t("federation_hub.common.internal_orgs") %></h2>
     <div class="row mb-4">
       <% @internal_orgs.each do |org| %>
         <div class="col-md-4 mb-4">
@@ -24,6 +24,7 @@
               </div>
               <p class="text-muted mb-3"><%= t("federation_hub.partners.internal_desc", org: org.name) %></p>
               <table class="table table-sm table-borderless mb-0">
+                <caption class="visually-hidden"><%= t("federation_hub.partners.capabilities", default: "Partner capabilities") %></caption>
                 <tbody>
                   <tr>
                     <td><%= t("federation_hub.partners.feature_profiles") %></td>
@@ -52,7 +53,7 @@
   <% end %>
 
   <% if @external_partners.any? %>
-    <h4 class="mb-3"><%= t("federation_hub.common.external_partners") %></h4>
+    <h2 class="h4 mb-3"><%= t("federation_hub.common.external_partners") %></h2>
     <div class="row">
       <% @external_partners.each do |partner| %>
         <div class="col-md-4 mb-4">
@@ -66,6 +67,7 @@
                 <%= partnership_level_badge(partner.partnership_level, partner.level_name) %>
               </div>
               <table class="table table-sm table-borderless mb-3">
+                <caption class="visually-hidden"><%= t("federation_hub.partners.capabilities", default: "Partner capabilities") %></caption>
                 <tbody>
                   <tr>
                     <td><%= t("federation_hub.partners.feature_profiles") %></td>

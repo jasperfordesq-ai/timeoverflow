@@ -14,6 +14,11 @@ module FederationHub
     before_action :set_locale
     before_action :authenticate_member!
     layout "federation_hub"
+
+    rescue_from ActiveRecord::RecordNotFound do
+      flash[:alert] = t("federation_hub.errors.not_found", default: "The requested resource could not be found.")
+      redirect_to federation_hub_root_path
+    end
     helper FederationHub::ApplicationHelper
 
     helper_method :current_user, :current_organization, :current_member,

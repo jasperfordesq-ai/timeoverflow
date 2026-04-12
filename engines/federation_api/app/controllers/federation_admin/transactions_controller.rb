@@ -36,7 +36,7 @@ module FederationAdmin
       transactions = transactions.where(direction: params[:direction]) if params[:direction].present?
       transactions = transactions.where(federation_partner_id: params[:partner_id]) if params[:partner_id].present?
       transactions = transactions.where(organization_id: params[:organization_id]) if params[:organization_id].present?
-      transactions = transactions.where("external_transaction_id ILIKE ?", "%#{params[:search]}%") if params[:search].present?
+      transactions = transactions.where("external_transaction_id ILIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(params[:search])}%") if params[:search].present?
 
       # Cap export at 10,000 rows to prevent memory issues.
       # Order by ID desc (chronological) since find_each overrides order.

@@ -36,8 +36,16 @@ module FederationHub
       reason = params[:reason].to_s.strip
 
       # Validate amount
+      max_amount = 360_000 # 100 hours in seconds
       if amount <= 0
         flash[:alert] = t("federation_hub.transfers.invalid_amount")
+        redirect_to new_federation_hub_transfer_path(org_id: org_id)
+        return
+      end
+
+      if amount > max_amount
+        flash[:alert] = t("federation_hub.transfers.amount_too_large",
+          max: "#{max_amount / 3600}h", default: "Transfer amount exceeds the maximum of #{max_amount / 3600} hours.")
         redirect_to new_federation_hub_transfer_path(org_id: org_id)
         return
       end

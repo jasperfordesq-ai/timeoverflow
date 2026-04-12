@@ -11,6 +11,11 @@ module FederationAdmin
     before_action :set_locale
     before_action :authenticate_federation_admin!
     layout "federation_admin"
+
+    rescue_from ActiveRecord::RecordNotFound do
+      flash[:alert] = "The requested resource could not be found."
+      redirect_to federation_admin_root_path
+    end
     helper FederationAdmin::ApplicationHelper
 
     helper_method :current_user, :federation_stats

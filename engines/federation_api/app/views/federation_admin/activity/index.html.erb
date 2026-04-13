@@ -7,6 +7,10 @@
   </div>
 </div>
 
+<div aria-live="polite" aria-atomic="true" class="sr-only" id="activity-status">
+  <%= t('federation_admin.activity.showing_count', count: @events.size, default: 'Showing %{count} events') %>
+</div>
+
 <% if @events.any? %>
   <div class="relative">
     <!-- Vertical timeline line -->

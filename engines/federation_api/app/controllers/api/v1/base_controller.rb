@@ -17,6 +17,7 @@ module Api
       rescue_from ActiveRecord::RecordNotFound, with: :not_found
       rescue_from ActiveRecord::RecordInvalid, with: :unprocessable_entity
       rescue_from ActionController::ParameterMissing, with: :bad_request
+      rescue_from JSON::ParserError, with: :bad_json
       rescue_from StandardError, with: :handle_unexpected_error
 
       private
@@ -206,6 +207,10 @@ module Api
 
       def bad_request(_exception)
         respond_with_error(I18n.t("federation_api.errors.bad_request", default: "Bad request"), status: :bad_request)
+      end
+
+      def bad_json(_exception)
+        respond_with_error(I18n.t("federation_api.errors.invalid_json", default: "Invalid JSON in request body"), status: :bad_request)
       end
 
       def handle_unexpected_error(exception)

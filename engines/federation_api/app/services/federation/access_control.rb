@@ -71,7 +71,7 @@ module Federation
     # Can this member receive cross-platform messages?
     def self.member_can_receive_messages?(member, partner: nil)
       return false unless org_enabled?(member.organization)
-      return false if partner && !partner.feature_gates&.dig("messaging_enabled")
+      return false if partner && partner.feature_gates&.dig("messaging_enabled") != true
       return false if partner && FederationOrganizationSetting.for(member.organization).blocks_partner?(partner.id)
       prefs = FederationMemberPreference.for(member)
       return false unless prefs.opted_in?

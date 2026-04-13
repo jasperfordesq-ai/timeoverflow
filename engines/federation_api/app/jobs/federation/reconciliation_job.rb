@@ -292,18 +292,26 @@ module Federation
 
       # Check 5: Purge stale webhook nonces older than 1 hour.
       # The nonce table prevents replay attacks but grows unbounded without cleanup.
+      # Delete the nonce value (not the log row) to free the unique index slot
+      # while preserving the audit trail. Old logs are cleaned separately.
       nonce_cutoff = 1.hour.ago
       stale_nonces = FederationWebhookLog.where.not(request_nonce: nil)
                                           .where("created_at < ?", nonce_cutoff)
-      purged_count = stale_nonces.update_all(request_nonce: nil)
+      purged_count = stale_nonces.update_all(request_nonce: nil, updated_at: Time.current)
+
+      # Clean up very old log rows (>30 days) to prevent unbounded table growth.
+      old_log_cutoff = 30.days.ago
+      deleted_count = FederationWebhookLog.where("created_at < ?", old_log_cutoff).delete_all
+
       issues << {
         type: "nonce_purge",
         severity: "info",
         count: purged_count,
-        message: "Purged #{purged_count} stale webhook nonce(s) older than #{nonce_cutoff}"
+        deleted_logs: deleted_count,
+        message: "Purged #{purged_count} stale nonce(s), deleted #{deleted_count} old log row(s)"
       }
-      if purged_count > 0
-        Rails.logger.info("[Federation::Reconciliation] Cleared #{purged_count} stale webhook nonces older than #{nonce_cutoff}")
+      if purged_count > 0 || deleted_count > 0
+        Rails.logger.info("[Federation::Reconciliation] Cleared #{purged_count} stale nonces, deleted #{deleted_count} old log rows")
       end
 
       # Log results

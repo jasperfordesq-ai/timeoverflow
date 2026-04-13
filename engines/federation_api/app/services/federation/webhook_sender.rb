@@ -8,10 +8,13 @@ require "ipaddr"
 
 module Federation
   class WebhookSender
+    MAX_TIMEOUT = 30 # Hard cap: never wait longer than 30 seconds
+
     # Read timeout from engine config (set via FEDERATION_WEBHOOK_TIMEOUT env var).
-    # Falls back to 10 seconds if config is unavailable.
+    # Falls back to 10 seconds if config is unavailable. Capped at MAX_TIMEOUT.
     def self.timeout
-      Rails.application.config.federation.webhook_timeout
+      val = Rails.application.config.federation.webhook_timeout.to_i
+      val > 0 ? [val, MAX_TIMEOUT].min : 10
     rescue NoMethodError, StandardError
       10
     end
@@ -146,7 +149,16 @@ module Federation
       uri = URI.parse(url)
       raise ArgumentError, "Webhook URL has no host" unless uri.host
 
-      addresses = Timeout.timeout(3, nil, "DNS resolution timed out for #{uri.host}") { Resolv.getaddresses(uri.host) }
+      begin
+        addresses = Timeout.timeout(3) { Resolv.getaddresses(uri.host) }
+      rescue Timeout::Error
+        Rails.logger.warn("[Federation::WebhookSender] DNS resolution timed out for #{uri.host}")
+        raise ArgumentError, "DNS resolution timed out for #{uri.host}"
+      rescue Resolv::ResolvError => e
+        Rails.logger.error("[Federation::WebhookSender] DNS resolution failed for #{uri.host}: #{e.message}")
+        raise ArgumentError, "Cannot resolve webhook host: #{uri.host}"
+      end
+
       raise ArgumentError, "Cannot resolve webhook host: #{uri.host}" if addresses.empty?
 
       addresses.each do |addr|

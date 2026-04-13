@@ -138,31 +138,28 @@ module Federation
           end
 
           if partner_accepted
-            # Check if a reversal has already occurred (e.g. ReconciliationJob
-            # reversed the transfer while this webhook was in flight). If so,
-            # mark as disputed instead of completing.
-            # Reload to get fresh state and metadata — the record was loaded
-            # before the HTTP call, so ReconciliationJob may have cancelled or
-            # reversed it in the meantime.
-            fed_txn.reload
-            if !fed_txn.pending?
-              Rails.logger.info(
-                "[Federation::WebhookDelivery] Fed_txn #{fed_txn_id} is now #{fed_txn.status} (changed during delivery) — skipping completion"
-              )
-            elsif fed_txn.metadata&.dig("reversal_transfer_id").present?
-              Rails.logger.warn(
-                "[Federation::WebhookDelivery] Fed_txn #{fed_txn_id} was reversed while webhook was in flight — marking disputed"
-              )
-              fed_txn.update!(
-                status: "disputed",
-                metadata: (fed_txn.metadata || {}).merge(
-                  "dispute_reason" => "Reversal occurred before webhook delivery completed",
-                  "disputed_at" => Time.current.iso8601
+            # Lock the row to prevent ReconciliationJob from concurrently
+            # modifying state between our reload and update.
+            fed_txn.with_lock do
+              if !fed_txn.pending?
+                Rails.logger.info(
+                  "[Federation::WebhookDelivery] Fed_txn #{fed_txn_id} is now #{fed_txn.status} (changed during delivery) — skipping completion"
                 )
-              )
-            else
-              fed_txn.complete!
-              Rails.logger.info("[Federation::WebhookDelivery] Completed fed_txn #{fed_txn_id} after confirmed delivery")
+              elsif fed_txn.metadata&.dig("reversal_transfer_id").present?
+                Rails.logger.warn(
+                  "[Federation::WebhookDelivery] Fed_txn #{fed_txn_id} was reversed while webhook was in flight — marking disputed"
+                )
+                fed_txn.update!(
+                  status: "disputed",
+                  metadata: (fed_txn.metadata || {}).merge(
+                    "dispute_reason" => "Reversal occurred before webhook delivery completed",
+                    "disputed_at" => Time.current.iso8601
+                  )
+                )
+              else
+                fed_txn.complete!
+                Rails.logger.info("[Federation::WebhookDelivery] Completed fed_txn #{fed_txn_id} after confirmed delivery")
+              end
             end
           end
         end

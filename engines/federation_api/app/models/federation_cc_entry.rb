@@ -20,8 +20,32 @@ class FederationCcEntry < ActiveRecord::Base
   scope :involving, ->(account_path) { where("payer = ? OR payee = ?", account_path, account_path) }
 
   validate :payer_differs_from_payee
+  validate :valid_state_transition, if: :state_changed?
+
+  # Valid state transitions per Credit Commons protocol:
+  #   P (Pending) -> V (Validated), E (Error), X (eXpunged)
+  #   V (Validated) -> C (Completed), E (Error), X (eXpunged)
+  #   C (Completed) -> X (eXpunged)
+  #   E (Error) -> P (Pending), X (eXpunged)
+  #   X (eXpunged) -> [] (terminal)
+  VALID_TRANSITIONS = {
+    "P" => %w[V E X],
+    "V" => %w[C E X],
+    "C" => %w[X],
+    "E" => %w[P X],
+    "X" => []
+  }.freeze
 
   private
+
+  def valid_state_transition
+    return if new_record?
+    old_state = state_was
+    allowed = VALID_TRANSITIONS[old_state] || []
+    unless allowed.include?(state)
+      errors.add(:state, "cannot transition from '#{old_state}' to '#{state}'")
+    end
+  end
 
   def payer_differs_from_payee
     if payer.present? && payee.present? && payer == payee

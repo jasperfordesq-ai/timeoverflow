@@ -104,8 +104,12 @@ class FederationPartner < ActiveRecord::Base
 
   # Returns all currently valid webhook secrets (supports zero-downtime rotation).
   # During a rotation window both the current and next secret are accepted.
+  # Stale rotations (>7 days) are excluded — the old next_webhook_secret is
+  # no longer valid, forcing completion or restart of the rotation.
   def valid_webhook_secrets
-    [webhook_secret, next_webhook_secret].compact.reject(&:blank?)
+    secrets = [webhook_secret]
+    secrets << next_webhook_secret unless rotation_stale?
+    secrets.compact.reject(&:blank?)
   end
 
   # Start a secret rotation: generate a new secret and store it as next_webhook_secret.

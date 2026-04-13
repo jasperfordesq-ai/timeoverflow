@@ -90,10 +90,11 @@
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
               <a href="<%= federation_admin_api_key_path(key) %>" class="text-federation-600 hover:text-federation-800"><%= t('federation_admin.api_keys.index.view') %></a>
               <% if key.active && !key.expired? %>
-                <a href="<%= federation_admin_api_key_path(key) %>"
-                   data-method="delete"
-                   data-confirm="<%= t('federation_admin.api_keys.index.revoke_confirm') %>"
-                   class="text-red-600 hover:text-red-800"><%= t('federation_admin.api_keys.index.revoke') %></a>
+                <form action="<%= federation_admin_api_key_path(key) %>" method="post" class="inline" onsubmit="return confirm('<%= j t('federation_admin.api_keys.index.revoke_confirm') %>')">
+                  <input type="hidden" name="_method" value="delete">
+                  <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+                  <button type="submit" class="text-red-600 hover:text-red-800 bg-transparent border-0 cursor-pointer p-0 text-sm font-medium"><%= t('federation_admin.api_keys.index.revoke') %></button>
+                </form>
               <% end %>
             </td>
           </tr>

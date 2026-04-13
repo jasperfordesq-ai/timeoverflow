@@ -40,10 +40,12 @@ module FederationAdmin
         attrs[key] = params[key] == "1" if params.key?(key)
       end
 
-      if params[:blocked_partner_ids].present?
-        attrs[:blocked_partner_ids] = params[:blocked_partner_ids].reject(&:blank?).map(&:to_i)
-      else
-        attrs[:blocked_partner_ids] = []
+      if params.key?(:blocked_partners_rendered)
+        if params[:blocked_partner_ids].present?
+          attrs[:blocked_partner_ids] = params[:blocked_partner_ids].reject(&:blank?).map(&:to_i)
+        else
+          attrs[:blocked_partner_ids] = []
+        end
       end
 
       @settings.update!(attrs)

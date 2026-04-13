@@ -22,7 +22,7 @@ module Api
         fed_enabled_org_ids = FederationOrganizationSetting
           .where(federation_enabled: true).pluck(:organization_id)
 
-        orgs = Organization.order(:name).limit(100)
+        orgs = Organization.where(id: fed_enabled_org_ids).order(:name).limit(100)
         orgs = orgs.where(id: @current_api_key.organization_id) if @current_api_key&.organization_id
 
         data = orgs.map do |org|
@@ -57,7 +57,7 @@ module Api
         members = members.where(id: discoverable_ids)
 
         # Pagination
-        page_size = [(params.dig(:page, :size) || 25).to_i, 100].min
+        page_size = [[(params.dig(:page, :size) || 25).to_i, 1].max, 100].min
         offset = [(params.dig(:page, :after) || 0).to_i, 0].max
         total = members.count
         members = members.offset(offset).limit(page_size)
@@ -74,6 +74,10 @@ module Api
       # GET /api/v1/komunitin/:code/accounts/:id
       def account
         member = current_organization.members.active.find_by!(id: params[:id])
+        discoverable_ids = Federation::AccessControl.discoverable_member_ids(current_organization)
+        unless discoverable_ids.include?(member.id)
+          raise ActiveRecord::RecordNotFound, "Account not found"
+        end
         render json: { data: serialize_account(member) },
                status: :ok, content_type: "application/vnd.api+json"
       end
@@ -83,7 +87,7 @@ module Api
         txns = FederationTransaction.where(organization_id: current_organization.id)
           .order(created_at: :desc)
 
-        page_size = [(params.dig(:page, :size) || 25).to_i, 100].min
+        page_size = [[(params.dig(:page, :size) || 25).to_i, 1].max, 100].min
         offset = [(params.dig(:page, :after) || 0).to_i, 0].max
         total = txns.count
         txns = txns.offset(offset).limit(page_size)

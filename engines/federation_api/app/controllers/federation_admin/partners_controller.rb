@@ -92,7 +92,7 @@ module FederationAdmin
         browse_base_url: params[:browse_base_url],
         webhook_url: params[:webhook_url],
         status: params[:status],
-        partnership_level: params[:partnership_level].to_i,
+        partnership_level: (params[:partnership_level].presence || @partner.partnership_level).to_i.clamp(1, 4),
         feature_gates: feature_gates,
         permitted_organization_ids: permitted_org_ids
       )

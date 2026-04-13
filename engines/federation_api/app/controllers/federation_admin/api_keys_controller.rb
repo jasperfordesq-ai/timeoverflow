@@ -41,12 +41,12 @@ module FederationAdmin
       flash[:notice] = t("federation_admin.flash.api_key_created", default: "API key generated successfully. Copy the raw key now — it cannot be retrieved later.")
       render :show
     rescue ActiveRecord::RecordInvalid => e
-      flash.now[:alert] = "Validation failed: #{e.record.errors.full_messages.join(', ')}"
+      flash.now[:alert] = t("federation_admin.flash.validation_failed", errors: e.record.errors.full_messages.join(', '), default: "Validation failed: %{errors}")
       @organizations = Organization.order(:name)
       render :new
     rescue => e
       Rails.logger.error("[FederationAdmin] API key creation failed: #{e.class}: #{e.message}")
-      flash.now[:alert] = "Failed to create API key. Check the server logs for details."
+      flash.now[:alert] = t("federation_admin.flash.create_failed", default: "Failed to create API key. Check the server logs for details.")
       @organizations = Organization.order(:name)
       render :new
     end

@@ -36,7 +36,7 @@
                 <% if log.changes_made.present? && log.changes_made.any? %>
                   <details>
                     <summary class="cursor-pointer text-federation-600 hover:text-federation-800" aria-label="<%= t("federation_admin.audit_logs.table.changes") %>"><%= t("federation_admin.audit_logs.fields", count: log.changes_made.keys.count) %></summary>
-                    <pre class="mt-1 text-xs bg-gray-50 p-2 rounded overflow-x-auto"><%= JSON.pretty_generate(log.changes_made) %></pre>
+                    <pre class="mt-1 text-xs bg-gray-50 p-2 rounded overflow-x-auto"><%= begin; JSON.pretty_generate(log.changes_made); rescue; log.changes_made.inspect; end %></pre>
                   </details>
                 <% else %>
                   -

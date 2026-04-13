@@ -57,6 +57,9 @@ module Api
         # Transfer amount validation: check before dispatching to TransferHandler
         # to reject obviously invalid amounts at the webhook layer.
         if %w[transaction.requested transaction.created].include?(event_type)
+          unless payload["amount"].to_s.match?(/\A\d+\z/)
+            return respond_with_error(I18n.t("federation_api.errors.invalid_amount", default: "amount must be a positive integer (seconds)"), status: :bad_request)
+          end
           amount = payload["amount"].to_i
           max_amount = (Rails.application.config.federation.max_transfer_amount.then { |v| v > 0 ? v : 360_000 } rescue 360_000)
           if amount <= 0
@@ -121,8 +124,10 @@ module Api
       def enforce_webhook_rate_limit!
         ip = request.remote_ip
         limit = ENV.fetch("FEDERATION_WEBHOOK_IP_RATE_LIMIT", "200").to_i
-        sliding_window_increment("federation_webhook_rate:#{ip}")
-        estimated = sliding_window_read("federation_webhook_rate:#{ip}")
+        now = Time.current.to_i
+        cache_key = "federation_webhook_rate:#{ip}"
+        sliding_window_increment(cache_key, 60, now)
+        estimated = sliding_window_read(cache_key, 60, now)
 
         if estimated > limit
           response.set_header("Retry-After", "60")
@@ -168,6 +173,11 @@ module Api
         # Try Nexus HMAC format first: METHOD\nPATH\nTIMESTAMP\nBODY
         timestamp = request.headers["X-Federation-Timestamp"]
         if timestamp.present?
+          if (Time.current.to_i - timestamp.to_i).abs > 300
+            respond_with_error(I18n.t("federation_api.errors.webhook_timestamp_expired", default: "Webhook timestamp expired"), status: :unauthorized)
+            return
+          end
+
           string_to_sign = [
             request.method.upcase,
             request.fullpath,
@@ -181,11 +191,6 @@ module Api
           end
 
           if matched
-            # Check timestamp freshness (5 minute window)
-            if (Time.current.to_i - timestamp.to_i).abs > 300
-              respond_with_error(I18n.t("federation_api.errors.webhook_timestamp_expired", default: "Webhook timestamp expired"), status: :unauthorized)
-              return
-            end
             @verified_partner = partner
             return # signature valid, timestamp fresh
           end
@@ -242,8 +247,10 @@ module Api
       # Default: 100 requests per minute per partner. Override via FEDERATION_WEBHOOK_PARTNER_RATE_LIMIT env var.
       def enforce_partner_rate_limit!(partner)
         limit = ENV.fetch("FEDERATION_WEBHOOK_PARTNER_RATE_LIMIT", "100").to_i
-        sliding_window_increment("federation_webhook_partner:#{partner.id}")
-        estimated = sliding_window_read("federation_webhook_partner:#{partner.id}")
+        now = Time.current.to_i
+        cache_key = "federation_webhook_partner:#{partner.id}"
+        sliding_window_increment(cache_key, 60, now)
+        estimated = sliding_window_read(cache_key, 60, now)
 
         if estimated > limit
           response.set_header("Retry-After", "60")
@@ -252,11 +259,11 @@ module Api
       end
 
       # Read-only sliding-window estimate (does not increment the counter).
-      def sliding_window_read(prefix)
-        now = Time.current.to_i
-        current_window = now / 60
+      # Accepts a `now` timestamp to ensure consistency with increment calls.
+      def sliding_window_read(prefix, window_seconds = 60, now = Time.current.to_i)
+        current_window = now / window_seconds
         previous_window = current_window - 1
-        elapsed_fraction = (now % 60) / 60.0
+        elapsed_fraction = (now % window_seconds) / window_seconds.to_f
 
         current_key  = "#{prefix}:#{current_window}"
         previous_key = "#{prefix}:#{previous_window}"
@@ -268,11 +275,11 @@ module Api
       end
 
       # Increment-and-read sliding-window counter.
-      def sliding_window_increment(prefix)
-        now = Time.current.to_i
-        current_window = now / 60
+      # Accepts a `now` timestamp to ensure consistency with read calls.
+      def sliding_window_increment(prefix, window_seconds = 60, now = Time.current.to_i)
+        current_window = now / window_seconds
         current_key = "#{prefix}:#{current_window}"
-        Rails.cache.increment(current_key, 1, expires_in: 2.minutes)
+        Rails.cache.increment(current_key, 1, expires_in: (window_seconds * 2).seconds)
       end
 
       def handle_event(event_type, payload, partner)
@@ -281,6 +288,8 @@ module Api
           # Nexus sends "partnership.approved"; TO also accepts "partnership.activated".
           if partner.status == "terminated"
             Rails.logger.warn("[Federation] Rejected reactivation of terminated partner #{partner.id}")
+          elsif partner.status == "pending"
+            raise ArgumentError, "Pending partners cannot self-activate; admin approval required"
           else
             old_status = partner.status
             partner.update!(status: "active")
@@ -296,7 +305,7 @@ module Api
               Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
             end
           end
-        when "partnership.suspended", "partnership.rejected"
+        when "partnership.suspended"
           old_status = partner.status
           partner.update!(status: "suspended")
           begin
@@ -310,7 +319,7 @@ module Api
           rescue => e
             Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
           end
-        when "partnership.terminated"
+        when "partnership.rejected", "partnership.terminated"
           old_status = partner.status
           partner.update!(status: "terminated")
           begin
@@ -417,6 +426,18 @@ module Api
 
         unless member && org
           raise ArgumentError, "Could not resolve message recipient for webhook payload (org_id=#{org_id}, recipient_id=#{payload['recipient_id']}, local_member_id=#{payload['local_member_id']})"
+        end
+
+        unless Federation::AccessControl.org_enabled?(org)
+          raise ArgumentError, "Federation is not enabled for this organization"
+        end
+
+        unless partner.can_access_organization?(org)
+          raise ArgumentError, "Partner is not authorized for this organization"
+        end
+
+        unless Federation::AccessControl.member_can_receive_messages?(member, partner: partner)
+          raise ArgumentError, "Recipient has not opted in to federation messaging"
         end
 
         msg = FederationMessage.create!(

@@ -67,12 +67,22 @@ module FederationHub
         return
       end
 
-      # Server-side balance validation — client-side check is UX only
-      if source_account.balance.to_i < amount
-        flash[:alert] = t("federation_hub.transfers.exceeds_balance")
-        redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type)
-        return
+      # Lock the account row and validate balance atomically to prevent TOCTOU race.
+      # External calls (HTTP) must NOT be inside the transaction to avoid holding
+      # the row lock during slow network I/O.
+      valid_balance = false
+      ActiveRecord::Base.transaction do
+        source_account.lock!
+
+        if source_account.balance.to_i < amount
+          flash[:alert] = t("federation_hub.transfers.exceeds_balance")
+          redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type)
+          return
+        end
+
+        valid_balance = true
       end
+      return unless valid_balance
 
       if source_type == "external"
         partner = FederationPartner.active.find_by(id: selected_id)
@@ -98,28 +108,24 @@ module FederationHub
       target_org = Organization.find_by(id: org_id)
       unless target_org && Federation::InternalBrowser.can_browse?(current_organization, target_org)
         flash[:alert] = t("federation_hub.transfers.org_not_available")
-        redirect_to new_federation_hub_transfer_path
-        return
+        redirect_to new_federation_hub_transfer_path and return
       end
 
       dest_member = target_org.members.active.find_by(id: dest_member_id)
       unless dest_member
         flash[:alert] = t("federation_hub.transfers.member_not_found")
-        redirect_to new_federation_hub_transfer_path(org_id: org_id)
-        return
+        redirect_to new_federation_hub_transfer_path(org_id: org_id) and return
       end
 
       dest_account = dest_member.account
       unless dest_account
         flash[:alert] = t("federation_hub.transfers.no_dest_account")
-        redirect_to new_federation_hub_transfer_path(org_id: org_id)
-        return
+        redirect_to new_federation_hub_transfer_path(org_id: org_id) and return
       end
 
       unless Federation::AccessControl.member_can_receive?(dest_member)
         flash[:alert] = t("federation_hub.transfers.recipient_not_opted_in")
-        redirect_to new_federation_hub_transfer_path(org_id: org_id)
-        return
+        redirect_to new_federation_hub_transfer_path(org_id: org_id) and return
       end
 
       transfer = Transfer.new(
@@ -138,11 +144,11 @@ module FederationHub
           amount: "#{hours}h #{minutes}m",
           recipient: dest_member.user&.username,
           org: target_org.name)
-        redirect_to federation_hub_root_path
+        redirect_to federation_hub_root_path and return
       else
-        flash[:alert] = t("federation_hub.transfers.failed",
-          error: transfer.errors.full_messages.join(", "))
-        redirect_to new_federation_hub_transfer_path(org_id: org_id)
+        flash[:alert] = t("federation_hub.transfers.transfer_failed",
+          default: "Transfer could not be completed. Please try again.")
+        redirect_to new_federation_hub_transfer_path(org_id: org_id) and return
       end
     end
 
@@ -170,7 +176,8 @@ module FederationHub
       redirect_to federation_hub_root_path
     rescue => e
       Rails.logger.error("[FederationHub::Transfer] External transfer failed: #{e.class}: #{e.message}")
-      flash[:alert] = t("federation_hub.transfers.failed", error: e.message)
+      flash[:alert] = t("federation_hub.transfers.external_failed",
+        default: "External transfer could not be completed. Please try again later.")
       redirect_to new_federation_hub_transfer_path(org_id: partner_id, source_type: "external")
     end
 

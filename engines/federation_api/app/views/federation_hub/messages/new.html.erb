@@ -74,7 +74,7 @@
                 <option value=""><%= t("federation_hub.messages.select_recipient", default: "Choose a member...") %></option>
                 <% @recipient_members.each do |m| %>
                   <option value="<%= m["id"] %>" <%= 'selected' if @pre_recipient.to_s == m["id"].to_s %>>
-                    <%= m["username"] %>
+                    <%= h(m["username"].to_s) %>
                   </option>
                 <% end %>
               </select>

@@ -9,6 +9,8 @@
 #
 # Phase 2 implementation — full CC protocol support.
 #
+require "bigdecimal"
+
 module Federation
   module Adapters
     class CreditCommonsAdapter < BaseAdapter
@@ -91,13 +93,13 @@ module Federation
       # --- Amount conversion ---
 
       def to_cc_amount(seconds)
-        rate = exchange_rate
-        (seconds.to_f / SECONDS_PER_UNIT * rate).round(4)
+        rate = BigDecimal(exchange_rate.to_s)
+        (BigDecimal(seconds.to_s) / 3600 * rate).round(4).to_f
       end
 
       def from_cc_amount(cc_units)
-        rate = exchange_rate
-        (cc_units.to_f / rate * SECONDS_PER_UNIT).round
+        rate = BigDecimal(exchange_rate.to_s)
+        (BigDecimal(cc_units.to_s) / rate * 3600).round.to_i
       end
 
       # --- Entry generation ---
@@ -296,8 +298,23 @@ module Federation
       # Each new transaction includes the hash of the previous one.
 
       def compute_hash(transaction_data, previous_hash)
-        payload = "#{previous_hash}:#{transaction_data.to_json}"
+        payload = "#{previous_hash}:#{canonical_json(transaction_data)}"
         Digest::SHA256.hexdigest(payload)
+      end
+
+      def canonical_json(data)
+        JSON.generate(deep_sort_keys(data))
+      end
+
+      def deep_sort_keys(obj)
+        case obj
+        when Hash
+          obj.sort.to_h.transform_values { |v| deep_sort_keys(v) }
+        when Array
+          obj.map { |v| deep_sort_keys(v) }
+        else
+          obj
+        end
       end
 
       def last_hash
@@ -306,8 +323,11 @@ module Federation
 
       def store_hash!(new_hash)
         return unless @partner
-        meta = (@partner.metadata || {}).merge("cc_last_hash" => new_hash)
-        @partner.update!(metadata: meta)
+        @partner.with_lock do
+          @partner.reload
+          meta = (@partner.metadata || {}).merge("cc_last_hash" => new_hash)
+          @partner.update!(metadata: meta)
+        end
       end
 
       def verify_hashchain(inbound_hash, transaction_data)

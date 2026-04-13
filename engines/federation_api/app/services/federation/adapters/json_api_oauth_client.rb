@@ -27,8 +27,13 @@ module Federation
         cached = @partner.metadata&.dig("oauth_access_token")
         expires = @partner.metadata&.dig("oauth_token_expires_at")
 
-        if cached.present? && expires.present? && Time.zone.parse(expires) > Time.current
-          return cached
+        if cached.present? && expires.present?
+          parsed_expiry = begin
+            Time.zone.parse(expires)
+          rescue ArgumentError
+            nil  # treat as expired, will trigger refresh
+          end
+          return cached if parsed_expiry && parsed_expiry > Time.current
         end
 
         refresh_token
@@ -70,10 +75,14 @@ module Federation
         expires_in = data["expires_in"] || 3600
 
         # Cache token and expiry in partner metadata
-        @partner.update(metadata: (@partner.metadata || {}).merge(
-          "oauth_access_token" => token,
-          "oauth_token_expires_at" => (Time.current + expires_in.to_i.seconds).iso8601
-        ))
+        begin
+          @partner.update!(metadata: (@partner.metadata || {}).merge(
+            "oauth_access_token" => token,
+            "oauth_token_expires_at" => (Time.current + expires_in.to_i.seconds).iso8601
+          ))
+        rescue StandardError => update_err
+          Rails.logger.error("[Federation::OAuth2] Failed to cache token in partner metadata: #{update_err.class}: #{update_err.message}")
+        end
 
         token
       rescue StandardError => e

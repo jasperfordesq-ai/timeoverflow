@@ -97,7 +97,20 @@ module Federation
               Rails.logger.warn("[Federation::WebhookDelivery] Failed to parse response body as JSON: #{json_err.message}")
               body = nil
             end
-            if body.is_a?(Hash) && body.key?("success") && body["success"] == false
+            if body.nil?
+              # Non-JSON response (e.g., HTML error page) — treat as rejection
+              partner_accepted = false
+              Rails.logger.warn(
+                "[Federation::WebhookDelivery] Partner returned non-JSON response for fed_txn #{fed_txn_id} — treating as rejection"
+              )
+              fed_txn.update!(
+                status: "disputed",
+                metadata: (fed_txn.metadata || {}).merge(
+                  "dispute_reason" => "Partner returned non-JSON response",
+                  "disputed_at" => Time.current.iso8601
+                )
+              )
+            elsif body.is_a?(Hash) && body.key?("success") && body["success"] == false
               partner_accepted = false
               Rails.logger.warn(
                 "[Federation::WebhookDelivery] Partner returned success=false for fed_txn #{fed_txn_id}: #{body["error"]}"

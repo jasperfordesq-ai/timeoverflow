@@ -17,7 +17,6 @@ es:
       brand: "Administración de Federación"
       back_to_timeoverflow: "TimeOverflow"
       pending_count: "%{count} pendiente(s)"
-      toggle_dark_mode: "Alternar modo oscuro"
       footer: "Motor de Federación v%{version} · Módulo autónomo · No modifica el núcleo de TimeOverflow"
       menu: "Menú"
       primary_navigation: "Navegación principal"

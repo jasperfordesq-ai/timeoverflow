@@ -35,7 +35,9 @@ module FederationHub
       prefs.update!(attrs)
       redirect_to federation_hub_settings_path, notice: t("federation_hub.settings.updated")
     rescue => e
-      redirect_to federation_hub_settings_path, alert: t("federation_hub.settings.update_failed", error: e.message)
+      Rails.logger.error("[FederationHub::Settings] Update failed: #{e.class}: #{e.message}")
+      redirect_to federation_hub_settings_path,
+        alert: t("federation_hub.settings.update_failed_generic", default: "Settings could not be saved. Please try again.")
     end
   end
 end

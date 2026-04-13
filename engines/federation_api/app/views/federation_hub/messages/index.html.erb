@@ -21,8 +21,8 @@
               <% if convo[:unread_count] > 0 %>
                 <span class="badge bg-warning text-dark me-1"><%= convo[:unread_count] %></span>
               <% end %>
-              <strong class="text-dark"><%= convo[:remote_user_name] %></strong>
-              <small class="text-muted ms-2"><%= convo[:partner_name] %></small>
+              <strong class="text-dark"><%= h(convo[:remote_user_name].to_s) %></strong>
+              <small class="text-muted ms-2"><%= h(convo[:partner_name].to_s) %></small>
             </div>
             <div>
               <small class="text-muted"><%= t("federation_hub.messages.time_ago", time: time_ago_in_words(convo[:last_activity])) %></small>

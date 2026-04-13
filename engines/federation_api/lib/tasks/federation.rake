@@ -38,10 +38,13 @@ namespace :federation do
       print "Enter the Nexus webhook URL (or press Enter to skip): "
       webhook_url = ($stdin.gets || '').chomp
 
+      partner_api_key = SecureRandom.hex(32)
       partner = FederationPartner.create!(
         name: "Nexus - #{key_name}",
         platform_type: "nexus",
+        protocol_type: "rest",
         api_endpoint: api_endpoint,
+        api_key_hash: partner_api_key,
         webhook_url: webhook_url.presence,
         webhook_secret: SecureRandom.hex(32),
         status: "pending",
@@ -58,7 +61,9 @@ namespace :federation do
       puts "  ID:              #{partner.id}"
       puts "  Status:          #{partner.status}"
       puts "  Partnership:     Level #{partner.partnership_level} (#{partner.level_name})"
+      puts "  Partner API key: #{partner_api_key}"
       puts "  Webhook secret:  #{partner.webhook_secret}"
+      puts "\n  ⚠️  Save the partner API key now — it cannot be retrieved later!"
     end
 
     puts "\n=== Setup Complete ==="
@@ -102,10 +107,13 @@ namespace :federation do
 
     abort "API_ENDPOINT is required" if api_endpoint.blank?
 
+    partner_api_key = SecureRandom.hex(32)
     partner = FederationPartner.create!(
       name: name,
       platform_type: ENV["PLATFORM_TYPE"] || "nexus",
+      protocol_type: ENV.fetch("PROTOCOL_TYPE", "rest"),
       api_endpoint: api_endpoint,
+      api_key_hash: partner_api_key,
       webhook_url: webhook_url,
       webhook_secret: SecureRandom.hex(32),
       status: "pending",
@@ -119,7 +127,9 @@ namespace :federation do
     )
 
     puts "✓ Partner registered: #{partner.name} (ID: #{partner.id})"
+    puts "  Partner API key: #{partner_api_key}"
     puts "  Webhook secret: #{partner.webhook_secret}"
+    puts "\n  ⚠️  Save the partner API key now — it cannot be retrieved later!"
   end
 
   desc "Show federation status"

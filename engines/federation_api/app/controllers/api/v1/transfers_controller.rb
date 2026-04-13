@@ -174,7 +174,10 @@ module Api
         params[:partner_id] = partner_id
         params[:direction] = "inbound"
         params[:local_account_id] = recipient.account.id
-        params[:remote_user_identifier] = params[:sender_id] || "unknown_remote_user"
+        if params[:sender_id].blank?
+          return respond_with_error(I18n.t("federation_api.errors.sender_id_required", default: "sender_id is required for Nexus transfers"), status: :unprocessable_entity)
+        end
+        params[:remote_user_identifier] = params[:sender_id]
         params[:amount] = amount_seconds.to_s
         params[:reason] = params[:description] if params[:reason].blank?
         params[:external_transaction_id] ||= "nexus_#{Digest::SHA256.hexdigest("#{partner_id}:#{params[:sender_id]}:#{params[:recipient_id]}:#{params[:amount]}:#{params[:description]}")[0..31]}"
@@ -253,7 +256,10 @@ module Api
           FederationTransaction.where(organization_id: @current_api_key.organization_id).find(id)
         else
           txn = FederationTransaction.find(id)
-          if txn.organization_id && !@current_api_key.can_access_organization?(txn.organization_id)
+          if txn.organization_id.nil?
+            raise ActiveRecord::RecordNotFound, "Transaction not found"
+          end
+          unless @current_api_key.can_access_organization?(txn.organization_id)
             raise ActiveRecord::RecordNotFound, "Transaction not found"
           end
           txn

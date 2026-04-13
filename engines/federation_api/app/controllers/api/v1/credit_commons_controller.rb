@@ -4,6 +4,7 @@ module Api
       # Most CC endpoints need auth but use the standard API key mechanism
       skip_before_action :authenticate_api_key!, only: [:about, :forms]
       skip_before_action :enforce_rate_limit!, only: [:about, :forms]
+      before_action -> { require_permission!(:transactions) }, only: [:show_transaction, :transaction_entries]
       before_action :require_json_content_type!, only: [:create_transaction, :transition_transaction]
 
       def about
@@ -12,7 +13,16 @@ module Api
           return respond_with_error(I18n.t("federation_api.errors.cc_no_organizations", default: "No organizations configured"), status: :service_unavailable)
         end
         config = FederationCcNodeConfig.for(org)
-        respond_with_data(config.build_about_response)
+        if @current_api_key.present?
+          respond_with_data(config.build_about_response)
+        else
+          response = config.build_about_response
+          response.delete(:accounts)
+          response.delete(:traders)
+          response.delete(:trades)
+          response.delete(:volume)
+          respond_with_data(response)
+        end
       end
 
       def accounts
@@ -91,6 +101,14 @@ module Api
           return respond_with_error(I18n.t("federation_api.errors.transaction_not_found", default: "Transaction not found"), status: :not_found)
         end
 
+        # Verify the transaction's organization has federation enabled
+        if txn.organization_id
+          org = Organization.find_by(id: txn.organization_id)
+          unless org && Federation::AccessControl.org_enabled?(org)
+            return respond_with_error("Not found", status: :not_found)
+          end
+        end
+
         adapter = Federation::Adapters::CreditCommonsAdapter.new(partner: txn.federation_partner)
         respond_with_data(adapter.to_cc_transaction(txn))
       end
@@ -127,6 +145,14 @@ module Api
         # Enforce org access for global API keys
         if current_organization.nil? && txn.organization_id.present? && !@current_api_key.can_access_organization?(txn.organization_id)
           return respond_with_error(I18n.t("federation_api.errors.transaction_not_found", default: "Transaction not found"), status: :not_found)
+        end
+
+        # Verify the transaction's organization has federation enabled
+        if txn.organization_id
+          org = Organization.find_by(id: txn.organization_id)
+          unless org && Federation::AccessControl.org_enabled?(org)
+            return respond_with_error("Not found", status: :not_found)
+          end
         end
 
         adapter = Federation::Adapters::CreditCommonsAdapter.new(partner: txn.federation_partner)

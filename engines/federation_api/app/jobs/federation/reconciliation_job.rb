@@ -14,10 +14,9 @@ module Federation
     queue_as :federation
 
     # M4: Two distinct timeouts with different semantics.
-    # STALE_WARNING_TIMEOUT — pending transactions older than this are flagged in the report.
-    # REVERSAL_TIMEOUT — pending transactions older than this are auto-cancelled and reversed.
-    STALE_WARNING_TIMEOUT = ENV.fetch("FEDERATION_STALE_WARNING_TIMEOUT", "3600").to_i.seconds
-    REVERSAL_TIMEOUT      = ENV.fetch("FEDERATION_REVERSAL_TIMEOUT", "86400").to_i.seconds
+    # stale_warning_timeout — pending transactions older than this are flagged in the report.
+    # reversal_timeout — pending transactions older than this are auto-cancelled and reversed.
+    # Evaluated at runtime (not class load time) so ENV changes take effect without restart.
 
     def perform
       Rails.logger.info("[Federation::Reconciliation] Starting reconciliation run")
@@ -98,7 +97,7 @@ module Federation
       end
 
       # Check 3: Stale pending transactions (two thresholds — see constants above)
-      stale = FederationTransaction.pending.where("created_at < ?", Time.current - STALE_WARNING_TIMEOUT)
+      stale = FederationTransaction.pending.where("created_at < ?", Time.current - stale_warning_timeout)
       if stale.any?
         issues << {
           type: "stale_pending",
@@ -106,11 +105,11 @@ module Federation
           count: stale.count,
           ids: stale.pluck(:id),
           oldest: stale.minimum(:created_at),
-          message: "#{stale.count} transaction(s) pending longer than #{STALE_WARNING_TIMEOUT.inspect}"
+          message: "#{stale.count} transaction(s) pending longer than #{stale_warning_timeout.inspect}"
         }
 
-        # Auto-cancel and reverse transactions older than REVERSAL_TIMEOUT
-        very_stale = stale.where("created_at < ?", Time.current - REVERSAL_TIMEOUT)
+        # Auto-cancel and reverse transactions older than reversal_timeout
+        very_stale = stale.where("created_at < ?", Time.current - reversal_timeout)
         very_stale.find_each do |txn|
           begin
             # Track outcome across the transaction block boundary.
@@ -182,7 +181,7 @@ module Federation
               end
               # Inbound with no transfer: no local balance was moved, safe to just cancel.
 
-              txn.cancel!(reason: "Auto-cancelled: pending for over #{REVERSAL_TIMEOUT.inspect}")
+              txn.cancel!(reason: "Auto-cancelled: pending for over #{reversal_timeout.inspect}")
               txn_cancelled = true
             end
 
@@ -199,7 +198,7 @@ module Federation
               payload: {
                 external_transaction_id: txn.external_transaction_id,
                 federation_transaction_id: txn.id,
-                reason: "Auto-cancelled: pending for over #{REVERSAL_TIMEOUT.inspect}",
+                reason: "Auto-cancelled: pending for over #{reversal_timeout.inspect}",
                 cancelled_at: txn.cancelled_at&.iso8601
               }
             )
@@ -362,6 +361,14 @@ module Federation
     end
 
     private
+
+    def stale_warning_timeout
+      ENV.fetch("FEDERATION_STALE_WARNING_TIMEOUT", "3600").to_i.seconds
+    end
+
+    def reversal_timeout
+      ENV.fetch("FEDERATION_REVERSAL_TIMEOUT", "86400").to_i.seconds
+    end
 
     # M7: Alerting hook for critical reconciliation findings.
     # Logs at FATAL level so log aggregators (CloudWatch, Datadog, etc.) can filter

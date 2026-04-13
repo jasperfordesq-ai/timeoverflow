@@ -14,4 +14,15 @@ class FederationWebhookLog < ActiveRecord::Base
   scope :recent, -> { order(created_at: :desc).limit(100) }
   scope :failed, -> { where(status: "failed") }
   scope :retryable, -> { failed.where("created_at > ?", 24.hours.ago).limit(50) }
+
+  validate :payload_size_limit
+
+  private
+
+  def payload_size_limit
+    return if payload.blank?
+    if payload.to_json.bytesize > 500.kilobytes
+      errors.add(:payload, "is too large (max 500KB)")
+    end
+  end
 end

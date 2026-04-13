@@ -18,4 +18,14 @@ class FederationCcEntry < ActiveRecord::Base
   scope :validated, -> { where(state: "V") }
   scope :for_organization, ->(org_id) { where(organization_id: org_id) }
   scope :involving, ->(account_path) { where("payer = ? OR payee = ?", account_path, account_path) }
+
+  validate :payer_differs_from_payee
+
+  private
+
+  def payer_differs_from_payee
+    if payer.present? && payee.present? && payer == payee
+      errors.add(:payee, "cannot be the same as payer")
+    end
+  end
 end

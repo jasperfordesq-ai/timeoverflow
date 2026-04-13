@@ -29,6 +29,7 @@ module FederationHub
     def show
       @message = FederationMessage.find_by!(
         id: params[:id],
+        organization_id: current_organization.id,
         local_member_id: current_member.id
       )
 
@@ -105,10 +106,13 @@ module FederationHub
         redirect_to federation_hub_messages_path, notice: t("federation_hub.messages.sent")
       end
     rescue ArgumentError => e
-      redirect_to new_federation_hub_message_path(partner_id: partner_id, source_type: source_type), alert: e.message
-    rescue => e
+      Rails.logger.error("[FederationHub::Messages] Validation error: #{e.class}: #{e.message}")
       redirect_to new_federation_hub_message_path(partner_id: partner_id, source_type: source_type),
-        alert: t("federation_hub.messages.send_failed", error: e.message)
+        alert: t("federation_hub.messages.validation_error", default: "Invalid message parameters. Please check your input and try again.")
+    rescue => e
+      Rails.logger.error("[FederationHub::Messages] Send failed: #{e.class}: #{e.message}")
+      redirect_to new_federation_hub_message_path(partner_id: partner_id, source_type: source_type),
+        alert: t("federation_hub.messages.send_failed_generic", default: "Message could not be sent. Please try again later.")
     end
 
     private

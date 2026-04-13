@@ -34,16 +34,25 @@ module Api
       # GET /api/v1/organizations/:id
       def show
         org = scoped_organizations.find(params[:id])
+        # Double-check federation-enabled status (scoped_organizations already filters,
+        # but this guards against race conditions where settings change between queries).
+        unless Federation::AccessControl.org_enabled?(org)
+          return respond_with_error("Not found", status: :not_found)
+        end
         respond_with_data(serialize_organization(org, detailed: true))
       end
 
       private
 
       # Scope organizations based on API key and partner permissions.
+      # Only returns organizations that have federation enabled.
       def scoped_organizations
+        # Only include orgs that have explicitly enabled federation.
+        fed_enabled_ids = FederationOrganizationSetting.where(federation_enabled: true).pluck(:organization_id)
+
         if @current_api_key.organization
-          # Org-scoped key: only their org
-          Organization.where(id: @current_api_key.organization_id)
+          # Org-scoped key: only their org (if federation-enabled)
+          Organization.where(id: @current_api_key.organization_id).where(id: fed_enabled_ids)
         else
           # Global key: respect permitted_organization_ids on the key itself.
           orgs = if @current_api_key.permitted_organization_ids.present? && @current_api_key.permitted_organization_ids.any?
@@ -51,6 +60,8 @@ module Api
                  else
                    Organization.all
                  end
+          # Filter to only federation-enabled orgs
+          orgs = orgs.where(id: fed_enabled_ids)
           # Further filter by partner's permitted orgs if a partner_id is given
           if params[:partner_id].present?
             partner = FederationPartner.find_by(id: params[:partner_id])

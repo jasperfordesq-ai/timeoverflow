@@ -10,6 +10,8 @@
 class FederationTransaction < ActiveRecord::Base
   belongs_to :federation_partner
   belongs_to :transfer, optional: true
+  belongs_to :organization, optional: true
+  belongs_to :local_account, class_name: "Account", foreign_key: :local_account_id, optional: true
 
   STATUSES = %w[pending completed cancelled disputed].freeze
   DIRECTIONS = %w[inbound outbound].freeze

@@ -14,9 +14,9 @@ module FederationAdmin
 
       page = [(params[:page] || 1).to_i, 1].max
       per_page = 25
-      @logs = @logs.limit(per_page).offset((page - 1) * per_page)
-      @current_page = page
       @total_pages = (@total_count.to_f / per_page).ceil
+      @current_page = [page, [@total_pages, 1].max].min
+      @logs = @logs.limit(per_page).offset((@current_page - 1) * per_page)
 
       @partners = FederationPartner.order(:name)
     end

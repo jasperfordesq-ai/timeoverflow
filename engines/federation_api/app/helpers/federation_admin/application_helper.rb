@@ -33,27 +33,8 @@ module FederationAdmin
       datetime.in_time_zone.strftime("%Y-%m-%d %H:%M %Z")
     end
 
-    def format_hours(seconds)
-      return "0h" unless seconds
-      "#{(seconds.to_f / 3600).round(1)}h"
-    end
-
-    # Centralized badge class lookup with fallback for unknown statuses.
-    # Use this instead of inline case/when in views.
-    def federation_status_badge_class(status)
-      case status.to_s
-      when "active", "completed", "success", "delivered", "read"
-        "bg-green-100 text-green-800"
-      when "pending"
-        "bg-yellow-100 text-yellow-800"
-      when "suspended", "cancelled"
-        "bg-gray-100 text-gray-800"
-      when "terminated", "failed", "disputed"
-        "bg-red-100 text-red-800"
-      else
-        "bg-gray-100 text-gray-600"
-      end
-    end
+    # Alias for backward compatibility — views use status_badge_class.
+    alias_method :federation_status_badge_class, :status_badge_class
 
     # Convert seconds to hours with 1 decimal place.
     # Replaces duplicated (amount.to_f / 3600).round(N) logic in views.
@@ -64,13 +45,13 @@ module FederationAdmin
     end
 
     def sort_link(label, column, current_sort, current_dir)
-      new_dir = (current_sort == column.to_s && current_dir != "asc") ? "asc" : "desc"
+      new_dir = (current_sort.to_s == column.to_s && current_dir == "asc") ? "desc" : "asc"
       arrow = if current_sort == column.to_s
         current_dir == "asc" ? " \u2191" : " \u2193"
       else
         ""
       end
-      safe_params = { sort: column, dir: new_dir, page: request.query_parameters[:page] }.compact
+      safe_params = request.query_parameters.except("sort", "dir", "page").merge(sort: column, dir: new_dir)
       link_to "#{label}#{arrow}", "?#{safe_params.to_query}", class: "hover:text-federation-600"
     end
   end

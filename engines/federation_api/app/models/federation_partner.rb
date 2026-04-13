@@ -86,7 +86,7 @@ class FederationPartner < ActiveRecord::Base
 
     # Fully atomic: increment + conditional suspension in a single SQL statement
     # to eliminate race windows under concurrent webhook deliveries.
-    self.class.where(id: id).update_all([
+    self.class.where(id: id).where.not(status: "terminated").update_all([
       "consecutive_failures = consecutive_failures + 1, status = CASE WHEN consecutive_failures + 1 >= ? THEN 'suspended' ELSE status END, updated_at = ?",
       FAILURE_THRESHOLD, Time.current
     ])

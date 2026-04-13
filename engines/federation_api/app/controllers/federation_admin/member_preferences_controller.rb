@@ -23,9 +23,10 @@ module FederationAdmin
       @total_count = @members.count
       page = [(params[:page] || 1).to_i, 1].max
       per_page = 25
-      @members = @members.order(:organization_id, :id).limit(per_page).offset((page - 1) * per_page)
-      @current_page = page
       @total_pages = @total_count.zero? ? 0 : (@total_count.to_f / per_page).ceil
+      page = [page, [@total_pages, 1].max].min
+      @current_page = page
+      @members = @members.order(:organization_id, :id).limit(per_page).offset((page - 1) * per_page)
 
       @organizations = Organization.order(:name)
       @opted_in_count = FederationMemberPreference.opted_in.count

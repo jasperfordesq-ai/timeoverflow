@@ -1,7 +1,7 @@
 <% content_for(:title) { t("federation_hub.messages.conversation_with", name: @message.remote_user_identifier) } %>
 <% content_for(:breadcrumbs) do %>
   <li class="breadcrumb-item"><a href="<%= federation_hub_messages_path %>"><%= t("federation_hub.nav.messages") %></a></li>
-  <li class="breadcrumb-item active" aria-current="page"><%= @message.remote_user_identifier %></li>
+  <li class="breadcrumb-item active" aria-current="page"><%= h(@message.remote_user_identifier.to_s) %></li>
 <% end %>
 
 <div class="row mb-3">
@@ -14,9 +14,9 @@
 <div class="row mb-3">
   <div class="col-md-12">
     <h1 class="h4">
-      <%= @message.metadata&.dig("sender_username") || @message.remote_user_identifier %>
+      <%= h((@message.metadata&.dig("sender_username") || @message.remote_user_identifier).to_s) %>
       <small class="text-muted">
-        &mdash; <%= @message.federation_partner&.name %>
+        &mdash; <%= h(@message.federation_partner&.name.to_s) %>
       </small>
     </h1>
   </div>
@@ -30,12 +30,12 @@
         <div class="d-flex justify-content-between mb-1">
           <div>
             <% if msg.inbound? %>
-              <strong><%= msg.metadata&.dig("sender_username") || msg.remote_user_identifier %></strong>
+              <strong><%= h((msg.metadata&.dig("sender_username") || msg.remote_user_identifier).to_s) %></strong>
             <% else %>
               <strong class="text-info"><%= t("federation_hub.messages.you") %></strong>
             <% end %>
             <% if msg.subject.present? %>
-              <span class="text-muted ms-2">&mdash; <%= msg.subject %></span>
+              <span class="text-muted ms-2">&mdash; <%= h(msg.subject.to_s) %></span>
             <% end %>
           </div>
           <small class="text-muted"><%= format_date(msg.created_at) %></small>

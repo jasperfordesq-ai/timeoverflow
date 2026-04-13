@@ -107,11 +107,11 @@
     <div class="space-y-1">
       <div class="flex items-center justify-between text-sm">
         <span class="text-green-600 font-medium"><%= t("federation_admin.dashboard.stats.in") %></span>
-        <span class="font-semibold text-gray-700"><%= (@stats[:total_inbound] / 3600.0).round(1) %>h</span>
+        <span class="font-semibold text-gray-700"><%= ((@stats[:total_inbound] || 0) / 3600.0).round(1) %>h</span>
       </div>
       <div class="flex items-center justify-between text-sm">
         <span class="text-red-500 font-medium"><%= t("federation_admin.dashboard.stats.out") %></span>
-        <span class="font-semibold text-gray-700"><%= (@stats[:total_outbound] / 3600.0).round(1) %>h</span>
+        <span class="font-semibold text-gray-700"><%= ((@stats[:total_outbound] || 0) / 3600.0).round(1) %>h</span>
       </div>
       <div class="border-t border-gray-100 pt-1 flex items-center justify-between text-sm">
         <span class="text-gray-500 font-medium"><%= t("federation_admin.dashboard.stats.net") %></span>

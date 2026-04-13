@@ -278,7 +278,7 @@ module Federation
       # Minor-unit scale for the partner's Komunitin currency.
       # Default 100 = centihours.
       def komunitin_scale
-        (@partner&.metadata&.dig("komunitin_scale") || 100).to_i
+        [(@partner&.metadata&.dig("komunitin_scale") || 100).to_i, 1].max
       end
 
       # Convert TimeOverflow seconds to Komunitin minor units (centihours).

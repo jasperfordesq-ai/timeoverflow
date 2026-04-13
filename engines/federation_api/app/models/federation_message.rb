@@ -8,7 +8,8 @@
 #
 class FederationMessage < ActiveRecord::Base
   belongs_to :federation_partner
-  belongs_to :member, foreign_key: :local_member_id, optional: true
+  belongs_to :local_member, class_name: "Member", foreign_key: :local_member_id, optional: true
+  belongs_to :organization, optional: true
 
   STATUSES = %w[pending delivered read failed].freeze
   DIRECTIONS = %w[inbound outbound].freeze
@@ -48,11 +49,14 @@ class FederationMessage < ActiveRecord::Base
     direction == "outbound"
   end
 
-  # Safe accessor: returns the associated member or nil.
-  # Inbound messages may not have a local member initially, so the
-  # belongs_to is optional. This avoids raising on missing associations.
-  def local_member
-    return nil if local_member_id.blank?
-    @local_member ||= Member.find_by(id: local_member_id)
+  validate :metadata_size_limit
+
+  private
+
+  def metadata_size_limit
+    return if metadata.blank?
+    if metadata.to_json.bytesize > 100.kilobytes
+      errors.add(:metadata, "is too large (max 100KB)")
+    end
   end
 end

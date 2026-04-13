@@ -20,7 +20,7 @@ module FederationUi
 
     def authenticate_user!
       unless current_user
-        render json: { success: false, error: "Not authenticated" }, status: :unauthorized
+        render json: { success: false, error: "Not authenticated" }, status: :unauthorized and return
       end
     end
 
@@ -46,13 +46,13 @@ module FederationUi
 
     def require_manager!
       unless current_member&.manager?
-        render json: { success: false, error: "Manager access required" }, status: :forbidden
+        render json: { success: false, error: "Manager access required" }, status: :forbidden and return
       end
     end
 
     def require_active_member!
       unless current_member
-        render json: { success: false, error: "Active membership in current organization required" }, status: :forbidden
+        render json: { success: false, error: "Active membership in current organization required" }, status: :forbidden and return
       end
     end
 

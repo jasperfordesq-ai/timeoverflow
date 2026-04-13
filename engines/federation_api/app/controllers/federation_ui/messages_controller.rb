@@ -10,7 +10,7 @@ module FederationUi
     # GET /federation/messages
     def index
       messages = FederationMessage
-        .where(local_member_id: current_member.id)
+        .where(organization_id: current_organization.id, local_member_id: current_member.id)
         .order(created_at: :desc)
         .limit(50)
 

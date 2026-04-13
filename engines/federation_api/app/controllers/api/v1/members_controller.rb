@@ -44,6 +44,10 @@ module Api
         member = current_organization.members.active
                    .includes(:user, :account, :offers, :inquiries)
                    .find_by!(id: params[:id])
+        discoverable_ids = Federation::AccessControl.discoverable_member_ids(current_organization)
+        unless discoverable_ids.include?(member.id)
+          raise ActiveRecord::RecordNotFound, "Member not found"
+        end
         respond_with_data(serialize_member(member, detailed: true))
       end
 

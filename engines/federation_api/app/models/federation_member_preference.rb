@@ -36,14 +36,14 @@ class FederationMemberPreference < ActiveRecord::Base
   end
 
   def discoverable?
-    opted_in && discoverable
+    opted_in? && discoverable
   end
 
   def blocks_partner?(partner_id)
     (blocked_partner_ids || []).include?(partner_id)
   end
 
-  validate :sanitize_blocked_partner_ids
+  before_validation :sanitize_blocked_partner_ids
 
   private def sanitize_blocked_partner_ids
     return if blocked_partner_ids.blank?

@@ -57,6 +57,7 @@
 
   <!-- Blocked partners -->
   <% if @partners.any? %>
+    <input type="hidden" name="blocked_partners_rendered" value="1">
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
       <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
         <h2 class="text-lg font-semibold text-gray-900"><%= t('federation_admin.org_settings.edit.blocked_partners') %></h2>

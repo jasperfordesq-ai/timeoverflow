@@ -1,3 +1,5 @@
+require "bigdecimal"
+
 # POST /federation/transfers
 #
 # Allows a logged-in member to initiate a cross-platform time transfer
@@ -20,7 +22,7 @@ module FederationUi
       end
 
       amount_seconds = if params[:amount_hours].present?
-        (params[:amount_hours].to_f * 3600).to_i
+        (BigDecimal(params[:amount_hours].to_s) * 3600).to_i
       else
         params[:amount].to_i
       end
@@ -37,6 +39,15 @@ module FederationUi
       end
       if amount_seconds > max_amount
         return respond_with_error("Amount exceeds maximum (#{max_amount} seconds / #{(max_amount / 3600.0).round(1)} hours)", status: :unprocessable_entity)
+      end
+
+      # Validate sufficient balance before initiating transfer
+      source_account = current_member.account
+      unless source_account
+        return respond_with_error("No account found for current member", status: :unprocessable_entity)
+      end
+      if source_account.balance.to_i < amount_seconds
+        return respond_with_error("Insufficient balance", status: :unprocessable_entity)
       end
 
       handler = Federation::TransferHandler.new(partner: partner)

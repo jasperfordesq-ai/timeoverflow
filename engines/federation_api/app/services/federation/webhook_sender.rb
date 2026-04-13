@@ -81,7 +81,7 @@ module Federation
         request["X-Webhook-Timestamp"] = timestamp
         request["X-Federation-Timestamp"] = timestamp
         request["X-Webhook-Event"] = @event
-        request["User-Agent"] = "TimeOverflow-Federation/1.0"
+        request["User-Agent"] = "TimeOverflow-Federation/#{FederationApi::VERSION}"
         request.body = body
 
         response = http.request(request)

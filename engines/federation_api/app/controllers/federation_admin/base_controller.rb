@@ -43,7 +43,7 @@ module FederationAdmin
     def authenticate_federation_admin!
       unless current_user&.superadmin?
         if current_user
-          render json: { success: false, error: t("federation_admin.errors.forbidden", default: "Federation admin requires superadmin privileges.") }, status: :forbidden
+          redirect_to main_app.root_path, alert: t("federation_admin.errors.forbidden", default: "Federation admin access requires superadmin privileges.")
         else
           redirect_to "/login"
         end

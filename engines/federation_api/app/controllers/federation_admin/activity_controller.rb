@@ -18,16 +18,20 @@ module FederationAdmin
       end
 
       # Recent messages
-      FederationMessage.includes(:federation_partner).order(created_at: :desc).limit(20).each do |msg|
-        @events << {
-          timestamp: msg.created_at,
-          type: "message",
-          icon: msg.direction == "inbound" ? "mail-in" : "mail-out",
-          title: "#{msg.direction.capitalize} message#{msg.subject.present? ? ": #{msg.subject.truncate(50)}" : ""}",
-          subtitle: "Partner: #{msg.federation_partner&.name} | To: #{msg.remote_user_identifier}",
-          status: msg.status,
-          link: federation_admin_message_path(msg)
-        }
+      begin
+        FederationMessage.includes(:federation_partner).order(created_at: :desc).limit(20).each do |msg|
+          @events << {
+            timestamp: msg.created_at,
+            type: "message",
+            icon: msg.direction == "inbound" ? "mail-in" : "mail-out",
+            title: "#{msg.direction.capitalize} message#{msg.subject.present? ? ": #{msg.subject.truncate(50)}" : ""}",
+            subtitle: "Partner: #{msg.federation_partner&.name} | To: #{msg.remote_user_identifier}",
+            status: msg.status,
+            link: federation_admin_message_path(msg)
+          }
+        end
+      rescue ActiveRecord::StatementInvalid => e
+        Rails.logger.warn("[FederationAdmin] FederationMessage query failed (table may not exist): #{e.message}")
       end
 
       # Recent webhook logs

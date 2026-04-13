@@ -19,7 +19,7 @@
       <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
       <div class="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-3">
         <button type="submit" class="inline-flex items-center gap-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium py-1.5 px-3 text-sm transition-colors disabled:opacity-50"
-                onclick="return confirm('<%= t('federation_admin.api_keys.index.revoke_confirm') %>')">
+                onclick="return confirm('<%= j t('federation_admin.api_keys.index.revoke_confirm') %>')">
           <%= t('federation_admin.api_keys.index.revoke_selected') %>
         </button>
         <span class="text-xs text-gray-500"><%= t('federation_admin.api_keys.index.select_hint') %></span>

@@ -24,7 +24,7 @@
 <% if @api_key.active && !@api_key.expired? %>
   <div class="mb-6 flex gap-2">
     <form method="post" action="<%= rotate_federation_admin_api_key_path(@api_key) %>" class="inline"
-          onsubmit="return confirm('<%= t('federation_admin.api_keys.show.rotate_confirm') %>');">
+          onsubmit="return confirm('<%= j t('federation_admin.api_keys.show.rotate_confirm') %>');">
       <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
       <button type="submit"
               class="inline-flex items-center bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm">

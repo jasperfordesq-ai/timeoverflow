@@ -70,7 +70,7 @@
         <div class="card card-info border-info h-100">
           <div class="card-body">
             <h2 class="h5 card-title">
-              <%= sanitize(member["username"].to_s.presence || member["name"].to_s.presence || t("federation_hub.members.member_fallback", id: member["id"])) %>
+              <%= sanitize(member["username"].to_s.presence || member["name"].to_s.presence || t("federation_hub.members.member_fallback", id: member["id"]), tags: []) %>
             </h2>
             <% if member["balance"] %>
               <p class="card-text">
@@ -85,7 +85,7 @@
                 <% tag_list = tags.is_a?(Array) ? tags : tags.to_s.split(",").map(&:strip) %>
                 <% tag_list.first(5).each do |tag| %>
                   <% next if tag.blank? %>
-                  <span class="badge rounded-pill bg-secondary"><%= sanitize(tag.to_s) %></span>
+                  <span class="badge rounded-pill bg-secondary"><%= sanitize(tag.to_s, tags: []) %></span>
                 <% end %>
               </p>
             <% end %>

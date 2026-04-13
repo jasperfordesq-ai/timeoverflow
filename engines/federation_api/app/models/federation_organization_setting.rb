@@ -51,6 +51,9 @@ class FederationOrganizationSetting < ActiveRecord::Base
 
   def sanitize_blocked_partner_ids
     return if blocked_partner_ids.blank?
+    # Coerce to integers first — form submissions may store strings (e.g. ["3", "7"])
+    # which causes blocks_partner?(3) to return false because "3" != 3.
+    self.blocked_partner_ids = blocked_partner_ids.map(&:to_i)
     valid_ids = FederationPartner.where(id: blocked_partner_ids).pluck(:id)
     orphaned = blocked_partner_ids - valid_ids
     if orphaned.any?

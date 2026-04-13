@@ -78,6 +78,18 @@ module FederationHub
       partner_id = params[:partner_id]
       source_type = params[:source_type]
 
+      # Body length validation (matches API-level 10,000-char limit)
+      if params[:body].present? && params[:body].to_s.length > 10_000
+        flash[:alert] = t("federation_hub.messages.body_too_long", default: "Message body must be 10,000 characters or less")
+        redirect_to new_federation_hub_message_path(partner_id: partner_id, source_type: source_type) and return
+      end
+
+      # Org-level federation gate
+      unless Federation::AccessControl.org_enabled?(current_organization)
+        flash[:alert] = t("federation_hub.messages.federation_disabled", default: "Federation is not enabled for your organization")
+        redirect_to federation_hub_messages_path and return
+      end
+
       # For external partners, use FederationPartner
       # For internal orgs, we need to find the partner or handle differently
       if source_type == "internal"

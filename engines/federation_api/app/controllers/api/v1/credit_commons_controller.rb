@@ -4,7 +4,7 @@ module Api
       # Most CC endpoints need auth but use the standard API key mechanism
       skip_before_action :authenticate_api_key!, only: [:about, :forms]
       skip_before_action :enforce_rate_limit!, only: [:about, :forms]
-      before_action -> { require_permission!(:transactions) }, only: [:show_transaction, :transaction_entries]
+      before_action -> { require_permission!(:transactions) }, only: [:show_transaction, :transaction_entries, :accounts, :account, :entries]
       before_action :require_json_content_type!, only: [:create_transaction, :transition_transaction]
 
       def about
@@ -62,6 +62,13 @@ module Api
                  current_organization.members.active.find_by(id: username)
 
         return respond_with_error(I18n.t("federation_api.errors.cc_account_not_found", default: "Account not found"), status: :not_found) unless member
+
+        # Enforce discoverability: only show accounts for members who have opted in
+        discoverable_ids = Federation::AccessControl.discoverable_member_ids(current_organization)
+        unless discoverable_ids.include?(member.id)
+          return respond_with_error("Not found", status: :not_found)
+        end
+
         return respond_with_error(I18n.t("federation_api.errors.cc_no_balance", default: "Account has no balance record"), status: :not_found) unless member.account
 
         balance = member.account.balance.to_i / 3600.0

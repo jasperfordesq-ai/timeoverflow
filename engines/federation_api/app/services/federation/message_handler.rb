@@ -26,6 +26,14 @@ module Federation
       end
       raise ArgumentError, "Federation is not enabled for this organization" unless Federation::AccessControl.org_enabled?(org)
 
+      unless @partner.can_access_organization?(org)
+        raise ArgumentError, "Partner is not authorized for this organization"
+      end
+
+      unless Federation::AccessControl.member_can_send?(member, partner: @partner)
+        raise ArgumentError, "Member has not opted in to federation messaging"
+      end
+
       message = FederationMessage.create!(
         federation_partner: @partner,
         organization_id: org.id,

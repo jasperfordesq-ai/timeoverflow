@@ -11,6 +11,12 @@ module FederationUi
 
     # POST /federation/transfers
     def create
+      # Reason length validation (matches API-level 500-char limit)
+      reason_param = params[:reason] || params[:description]
+      if reason_param.present? && reason_param.to_s.length > 500
+        return respond_with_error("Reason must be 500 characters or less", status: :unprocessable_entity)
+      end
+
       partner = FederationPartner.active.find(params[:partner_id])
 
       unless partner.can_transact?
@@ -41,13 +47,11 @@ module FederationUi
         return respond_with_error("Amount exceeds maximum (#{max_amount} seconds / #{(max_amount / 3600.0).round(1)} hours)", status: :unprocessable_entity)
       end
 
-      # Validate sufficient balance before initiating transfer
+      # Verify the member has an account (balance check is now atomic
+      # inside TransferHandler#initiate_outbound to prevent TOCTOU races).
       source_account = current_member.account
       unless source_account
         return respond_with_error("No account found for current member", status: :unprocessable_entity)
-      end
-      if source_account.balance.to_i < amount_seconds
-        return respond_with_error("Insufficient balance", status: :unprocessable_entity)
       end
 
       handler = Federation::TransferHandler.new(partner: partner)

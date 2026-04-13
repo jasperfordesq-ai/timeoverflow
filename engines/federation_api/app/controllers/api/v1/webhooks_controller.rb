@@ -122,7 +122,7 @@ module Api
       # Increments the counter here (not in verify_webhook_signature!) so the
       # read-then-check is atomic with the increment — prevents off-by-one.
       def enforce_webhook_rate_limit!
-        ip = request.remote_ip
+        ip = request.remote_ip || request.ip || "unknown"
         limit = ENV.fetch("FEDERATION_WEBHOOK_IP_RATE_LIMIT", "200").to_i
         now = Time.current.to_i
         cache_key = "federation_webhook_rate:#{ip}"
@@ -212,8 +212,11 @@ module Api
           return
         end
 
+        # Bind the timestamp into the signed material to prevent replay attacks
+        # (attacker cannot reuse a captured body+signature with a fresh timestamp).
+        string_to_sign = "#{simple_ts}\n#{body}"
         matched_simple = valid_secrets.any? do |secret|
-          expected_simple = OpenSSL::HMAC.hexdigest("SHA256", secret, body)
+          expected_simple = OpenSSL::HMAC.hexdigest("SHA256", secret, string_to_sign)
           ActiveSupport::SecurityUtils.secure_compare(signature, expected_simple)
         end
 
@@ -379,6 +382,39 @@ module Api
           # on a bare &.cancel! to silently corrupt accounting.
           if fed_txn&.pending?
             fed_txn.cancel!(reason: payload["reason"])
+
+            # Reverse the local debit for outbound transfers.
+            # When an outbound transfer is cancelled by the partner, the local
+            # member was already debited. We must reverse that debit to restore
+            # their balance. Follows the same pattern as ReconciliationJob.
+            if fed_txn.direction == "outbound" && fed_txn.transfer_id.present?
+              begin
+                original = Transfer.find(fed_txn.transfer_id)
+                # Transfer#source/#destination are attr_accessors, nil when loaded
+                # from DB. Use movements to find the actual accounts (same pattern
+                # as ReconciliationJob).
+                debit_movement  = original.movements.find_by("amount < 0") # source (member)
+                credit_movement = original.movements.find_by("amount > 0") # destination (org pool)
+                if debit_movement && credit_movement
+                  reversal = Transfer.new
+                  reversal.source      = credit_movement.account_id  # org pool -> now source
+                  reversal.destination = debit_movement.account_id   # member -> now destination
+                  reversal.amount      = fed_txn.amount
+                  reversal.reason      = "[Federation Reversal] Partner cancelled transaction #{fed_txn.external_transaction_id}"
+                  reversal.save!
+
+                  fed_txn.update(metadata: (fed_txn.metadata || {}).merge(
+                    "reversal_transfer_id" => reversal.id,
+                    "reversed_at" => Time.current.iso8601
+                  ))
+                  Rails.logger.info("[Federation::Webhook] Reversed outbound transfer #{original.id} via reversal #{reversal.id} for cancelled fed_txn #{fed_txn.id}")
+                else
+                  Rails.logger.error("[Federation::Webhook] Cannot reverse cancelled outbound transfer #{fed_txn.id}: missing movements on transfer #{original.id}")
+                end
+              rescue => e
+                Rails.logger.error("[Federation::Webhook] Failed to reverse cancelled outbound transfer #{fed_txn.id}: #{e.class}: #{e.message}")
+              end
+            end
           elsif fed_txn
             Rails.logger.warn("[Federation::Webhook] Ignoring cancellation for #{fed_txn.status} transaction #{fed_txn.id}")
           end
@@ -420,8 +456,13 @@ module Api
           member = org.members.active.find_by(id: payload["recipient_id"]) ||
                    org.members.active.find_by(member_uid: payload["recipient_id"])
         elsif payload["local_member_id"].present?
-          member = Member.find_by(id: payload["local_member_id"], active: true)
-          org ||= member&.organization
+          # Scope to org when available to prevent cross-org member lookups
+          if org
+            member = org.members.active.find_by(id: payload["local_member_id"])
+          else
+            member = Member.find_by(id: payload["local_member_id"], active: true)
+            org ||= member&.organization
+          end
         end
 
         unless member && org

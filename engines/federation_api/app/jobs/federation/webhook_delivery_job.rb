@@ -80,6 +80,16 @@ module Federation
         payload: payload
       )
 
+      # Handle nil response (partner has no webhook_url configured or deliver returned nil)
+      if response.nil?
+        Rails.logger.error("[Federation::WebhookDelivery] No response from webhook delivery — partner may have no webhook_url")
+        if fed_txn_id
+          fed_txn = FederationTransaction.find_by(id: fed_txn_id)
+          fed_txn&.update(status: "disputed", metadata: (fed_txn.metadata || {}).merge("disputed_reason" => "Partner has no webhook_url"))
+        end
+        return
+      end
+
       # For outbound transactions: mark complete only after confirmed delivery.
       # The local Transfer was committed and linked in initiate_outbound;
       # complete! called with no args will NOT overwrite transfer_id (idempotency

@@ -40,6 +40,12 @@ module FederationHub
       amount = (hours * 3600) + (minutes * 60)
       reason = params[:reason].to_s.strip
 
+      # Reason length validation (matches API-level 500-char limit)
+      if params[:reason].present? && params[:reason].to_s.length > 500
+        flash[:alert] = t("federation_hub.transfers.reason_too_long", default: "Reason must be 500 characters or less")
+        redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type) and return
+      end
+
       # Validate amount — use same config as API controller for consistency
       max_amount = begin
         v = Rails.application.config.federation.max_transfer_amount
@@ -67,22 +73,15 @@ module FederationHub
         return
       end
 
-      # Lock the account row and validate balance atomically to prevent TOCTOU race.
-      # External calls (HTTP) must NOT be inside the transaction to avoid holding
-      # the row lock during slow network I/O.
-      valid_balance = false
-      ActiveRecord::Base.transaction do
-        source_account.lock!
-
-        if source_account.balance.to_i < amount
-          flash[:alert] = t("federation_hub.transfers.exceeds_balance")
-          redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type)
-          return
-        end
-
-        valid_balance = true
+      # Balance validation for external transfers is now atomic inside
+      # TransferHandler#initiate_outbound (lock! + check in the same transaction
+      # as the debit). For internal transfers, we still do a quick pre-check
+      # below but the real guard is the DB transaction in create_internal_transfer.
+      if source_type != "external" && source_account.balance.to_i < amount
+        flash[:alert] = t("federation_hub.transfers.exceeds_balance")
+        redirect_to new_federation_hub_transfer_path(org_id: selected_id, source_type: source_type)
+        return
       end
-      return unless valid_balance
 
       if source_type == "external"
         partner = FederationPartner.active.find_by(id: selected_id)
@@ -174,6 +173,11 @@ module FederationHub
         partner: partner.name,
         default: "Transfer of #{hours}h #{minutes}m sent to #{partner.name}. It will be completed once the partner confirms.")
       redirect_to federation_hub_root_path
+    rescue ArgumentError => e
+      Rails.logger.warn("[FederationHub::Transfer] External transfer rejected: #{e.message}")
+      # Surface balance / validation errors to the user (e.g. "Insufficient balance")
+      flash[:alert] = e.message.include?("Insufficient balance") ? t("federation_hub.transfers.exceeds_balance") : e.message
+      redirect_to new_federation_hub_transfer_path(org_id: partner_id, source_type: "external")
     rescue => e
       Rails.logger.error("[FederationHub::Transfer] External transfer failed: #{e.class}: #{e.message}")
       flash[:alert] = t("federation_hub.transfers.external_failed",

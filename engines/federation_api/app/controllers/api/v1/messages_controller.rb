@@ -164,7 +164,12 @@ module Api
       def resolve_local_member(partner, org)
         # Try multiple lookup strategies. Nexus sends recipient_id which is a TO member ID.
         if params[:local_member_id].present?
-          Member.find_by(id: params[:local_member_id], active: true)
+          # Scope to org when available to prevent cross-org member lookups
+          if org
+            org.members.active.find_by(id: params[:local_member_id])
+          else
+            Member.find_by(id: params[:local_member_id], active: true)
+          end
         elsif params[:recipient_id].present?
           if org
             org.members.active.find_by(id: params[:recipient_id]) ||

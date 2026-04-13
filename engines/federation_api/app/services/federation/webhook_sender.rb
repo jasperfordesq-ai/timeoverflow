@@ -52,7 +52,8 @@ module Federation
       validate_url_safety!(@partner.webhook_url)
 
       body = build_body
-      signature = sign(body)
+      timestamp = Time.current.to_i.to_s
+      signature = sign(body, timestamp: timestamp)
 
       log = FederationWebhookLog.create!(
         federation_partner: @partner,
@@ -71,8 +72,6 @@ module Federation
         http.open_timeout = timeout
         http.read_timeout = timeout
         http.write_timeout = timeout if http.respond_to?(:write_timeout=)
-
-        timestamp = Time.current.to_i.to_s
 
         request = Net::HTTP::Post.new(uri.request_uri)
         request["Content-Type"] = "application/json"
@@ -120,13 +119,16 @@ module Federation
       }.to_json
     end
 
-    def sign(body)
+    def sign(body, timestamp:)
       # L1: Explicit blank? guard — .to_s on nil produces an empty key, allowing
       # HMAC forgery by anyone who knows the request format. Fail loudly instead.
       if @partner.webhook_secret.blank?
         raise ArgumentError, "webhook_secret is blank for partner #{@partner.id} — cannot sign webhook"
       end
-      OpenSSL::HMAC.hexdigest("SHA256", @partner.webhook_secret, body)
+      # Bind the timestamp into the signed material so an attacker cannot replay
+      # a captured body+signature with a fresh timestamp header.
+      string_to_sign = "#{timestamp}\n#{body}"
+      OpenSSL::HMAC.hexdigest("SHA256", @partner.webhook_secret, string_to_sign)
     end
 
     # SSRF protection: reject URLs that resolve to private/loopback addresses.

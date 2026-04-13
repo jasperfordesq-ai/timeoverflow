@@ -45,8 +45,16 @@ class FederationTransaction < ActiveRecord::Base
   scope :outbound, -> { where(direction: "outbound") }
   scope :for_organization, ->(org_id) { where(organization_id: org_id) }
 
+  # Normalize empty-string external_transaction_id to nil so that
+  # the uniqueness constraint and idempotency fast-path behave consistently.
+  before_validation :normalize_external_transaction_id
+
   # Auto-populate organization_id from the local account on create.
   before_validation :denormalize_organization_id, on: :create
+
+  private def normalize_external_transaction_id
+    self.external_transaction_id = nil if external_transaction_id.blank?
+  end
 
   private def denormalize_organization_id
     return if organization_id.present?
@@ -62,30 +70,34 @@ class FederationTransaction < ActiveRecord::Base
   public
 
   def complete!(local_transfer: nil)
-    # Idempotency guard — safe to call twice (e.g. webhook delivery retries).
-    return if completed?
+    with_lock do
+      # Idempotency guard — safe to call twice (e.g. webhook delivery retries).
+      return if completed?
 
-    # State guard — only pending transactions can be completed.
-    unless pending?
-      raise "Cannot complete a #{status} federation transaction (id=#{id})"
+      # State guard — only pending transactions can be completed.
+      unless pending?
+        raise "Cannot complete a #{status} federation transaction (id=#{id})"
+      end
+
+      self.status = "completed"
+      self.completed_at = Time.current
+      self.transfer = local_transfer if local_transfer
+      save!
     end
-
-    attrs = { status: "completed", completed_at: Time.current }
-    attrs[:transfer] = local_transfer if local_transfer.present?
-    update!(attrs)
   end
 
   def cancel!(reason: nil)
-    # Guard: only pending transactions can be cancelled.
-    unless pending?
-      raise "Cannot cancel a #{status} federation transaction (id=#{id})"
-    end
+    with_lock do
+      # Guard: only pending transactions can be cancelled.
+      unless pending?
+        raise "Cannot cancel a #{status} federation transaction (id=#{id})"
+      end
 
-    update!(
-      status: "cancelled",
-      cancelled_at: Time.current,
-      metadata: (metadata || {}).merge("cancellation_reason" => reason)
-    )
+      self.status = "cancelled"
+      self.cancelled_at = Time.current
+      self.metadata = (metadata || {}).merge("cancellation_reason" => reason)
+      save!
+    end
   end
 
   def pending?

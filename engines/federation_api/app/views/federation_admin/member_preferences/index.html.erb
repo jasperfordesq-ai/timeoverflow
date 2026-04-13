@@ -12,7 +12,7 @@
       <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
       <input type="hidden" name="organization_id" value="<%= params[:organization_id] %>">
       <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 transition-colors"
-              onclick="return confirm('<%= t('federation_admin.member_preferences.index.opt_in_all_confirm') %>')">
+              onclick="return confirm('<%= j t('federation_admin.member_preferences.index.opt_in_all_confirm') %>')">
         <%= t('federation_admin.member_preferences.index.opt_in_all') %>
       </button>
     </form>

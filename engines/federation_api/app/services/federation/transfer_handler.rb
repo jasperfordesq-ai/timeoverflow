@@ -39,6 +39,18 @@ module Federation
 
       external_transaction_id = payload["external_transaction_id"]
 
+      # Verify federation is enabled for the target org and that the partner
+      # is authorized to push transfers into it. The API controller checks
+      # these for outbound transfers, but the webhook path bypasses that
+      # controller so the checks must be applied here.
+      org = Organization.find(payload["local_organization_id"])
+      unless Federation::AccessControl.org_enabled?(org)
+        raise ArgumentError, "Federation is not enabled for organization #{org.id}"
+      end
+      unless partner.can_access_organization?(org)
+        raise ArgumentError, "Partner is not authorized for organization #{org.id}"
+      end
+
       handler = new(partner: partner)
       reason = payload["reason"]
       reason = reason.to_s[0, 500] if reason.present?
@@ -168,23 +180,39 @@ module Federation
     # is left as "pending" until the remote partner acknowledges the webhook.
     # WebhookDeliveryJob calls complete! on successful delivery. If all
     # retries fail, ReconciliationJob reverses the transfer after 24 hours.
-    def initiate_outbound(local_account:, remote_user_identifier:, amount:, reason: nil)
+    def initiate_outbound(local_account:, remote_user_identifier:, amount:, reason: nil, idempotency_key: nil)
       validate_partner_can_transact!
+
+      # Idempotency check: if caller provides a key, return existing transaction
+      # instead of creating a duplicate (prevents double-click / retry issues).
+      if idempotency_key.present?
+        existing = FederationTransaction.find_by(
+          federation_partner: @partner,
+          external_transaction_id: idempotency_key
+        )
+        return existing if existing
+      end
 
       org = local_account.organization
       raise ArgumentError, "Account has no associated organization" unless org
       raise ArgumentError, "Organization #{org.id} has no account" unless org.account
 
-      # Fix #6: Generate a stable external_transaction_id NOW so that:
-      # (a) the webhook payload and local record use the same reference, and
-      # (b) if Nexus echoes it back in cancellation/completion webhooks,
-      #     we can find the correct local FederationTransaction.
-      external_transaction_id = SecureRandom.uuid
+      # Use the idempotency key as the external_transaction_id if provided,
+      # otherwise generate a new UUID.
+      external_transaction_id = idempotency_key || SecureRandom.uuid
 
       fed_txn = nil
       local_transfer = nil
 
       ActiveRecord::Base.transaction(isolation: :repeatable_read) do
+        # Lock the source account and verify sufficient balance atomically.
+        # This prevents TOCTOU races where balance is checked outside the
+        # transaction and spent between the check and the debit.
+        local_account.lock!
+        if local_account.balance.to_i < amount
+          raise ArgumentError, "Insufficient balance (available: #{local_account.balance.to_i}, required: #{amount})"
+        end
+
         fed_txn = FederationTransaction.create!(
           federation_partner: @partner,
           external_transaction_id: external_transaction_id,
@@ -204,6 +232,12 @@ module Federation
         local_transfer.amount = amount
         local_transfer.reason = "[Federation] #{reason.presence || "Cross-platform transfer"}"
         local_transfer.save!
+
+        # Synchronous double-entry validation (same as inbound path)
+        movements = local_transfer.movements.reload
+        unless movements.size == 2 && movements.sum(&:amount) == 0
+          raise StandardError, "Double-entry violation: #{movements.size} movements, sum=#{movements.sum(&:amount)}"
+        end
 
         # Link transfer to fed_txn so ReconciliationJob can find it for reversal,
         # but leave status as "pending" — complete! is called by WebhookDeliveryJob.

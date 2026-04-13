@@ -35,8 +35,13 @@ module FederationHub
       dest_identifier = params[:destination_member_id].to_s.strip
       selected_id = params[:org_id].to_i
       source_type = params[:source_type]
-      hours = params[:hours].to_i
-      minutes = params[:minutes].to_i
+      # M21: Reject non-numeric input instead of silently converting with to_i
+      unless params[:hours].to_s.match?(/\A\d+(\.\d+)?\z/) && params[:minutes].to_s.match?(/\A\d+(\.\d+)?\z/)
+        flash[:alert] = t("federation_hub.transfers.invalid_amount", default: "Please enter valid numeric values for hours and minutes")
+        redirect_to new_federation_hub_transfer_path(org_id: params[:org_id], source_type: params[:source_type]) and return
+      end
+      hours = params[:hours].to_f.floor
+      minutes = params[:minutes].to_f.floor
       amount = (hours * 3600) + (minutes * 60)
       reason = params[:reason].to_s.strip
 
@@ -127,15 +132,37 @@ module FederationHub
         redirect_to new_federation_hub_transfer_path(org_id: org_id) and return
       end
 
-      transfer = Transfer.new(
-        source: current_member.account,
-        destination: dest_account,
-        amount: amount,
-        reason: reason.presence || t("federation_hub.transfers.default_reason",
-          from_org: current_organization.name, to_org: target_org.name)
-      )
+      # M7: Wrap in explicit transaction with row lock to prevent race conditions
+      # (e.g., concurrent transfers draining balance below zero).
+      ActiveRecord::Base.transaction do
+        current_member.account.lock!
 
-      if transfer.save
+        # Re-check balance under lock to prevent TOCTOU race
+        if current_member.account.balance.to_i < amount
+          flash[:alert] = t("federation_hub.transfers.exceeds_balance")
+          redirect_to new_federation_hub_transfer_path(org_id: org_id) and return
+        end
+
+        transfer = Transfer.new(
+          source: current_member.account,
+          destination: dest_account,
+          amount: amount,
+          reason: reason.presence || t("federation_hub.transfers.default_reason",
+            from_org: current_organization.name, to_org: target_org.name)
+        )
+
+        unless transfer.save
+          flash[:alert] = t("federation_hub.transfers.transfer_failed",
+            default: "Transfer could not be completed. Please try again.")
+          redirect_to new_federation_hub_transfer_path(org_id: org_id) and return
+        end
+
+        # Movement integrity check: verify exactly 2 movements summing to zero
+        movements = transfer.movements.reload
+        unless movements.size == 2 && movements.sum(&:amount) == 0
+          raise ActiveRecord::Rollback, "Movement integrity check failed: #{movements.size} movements, sum=#{movements.sum(&:amount)}"
+        end
+
         Rails.logger.info("[FederationHub::Transfer] Internal cross-org ##{transfer.id}: " \
           "#{current_organization.name} → #{target_org.name}, #{amount}s")
 
@@ -144,11 +171,12 @@ module FederationHub
           recipient: dest_member.user&.username,
           org: target_org.name)
         redirect_to federation_hub_root_path and return
-      else
-        flash[:alert] = t("federation_hub.transfers.transfer_failed",
-          default: "Transfer could not be completed. Please try again.")
-        redirect_to new_federation_hub_transfer_path(org_id: org_id) and return
       end
+
+      # If we reach here, the transaction was rolled back
+      flash[:alert] = t("federation_hub.transfers.transfer_failed",
+        default: "Transfer could not be completed. Please try again.")
+      redirect_to new_federation_hub_transfer_path(org_id: org_id) and return
     end
 
     def create_external_transfer(partner_id, remote_user_id, amount, reason, hours, minutes)

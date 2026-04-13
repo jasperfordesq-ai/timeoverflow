@@ -18,6 +18,33 @@ module Api
       # Maximum transfer amount in seconds (default: 100 hours)
       MAX_AMOUNT = -> { Rails.application.config.federation.max_transfer_amount.then { |v| v > 0 ? v : 360_000 } rescue 360_000 }
 
+      # GET /api/v1/transfers
+      # List federation transactions for the authenticated partner/org.
+      def index
+        require_organization!
+        return if performed?
+
+        scope = FederationTransaction.where(organization_id: current_organization.id)
+
+        # Filter by partner
+        scope = scope.where(federation_partner_id: params[:partner_id]) if params[:partner_id].present?
+        # Filter by status
+        scope = scope.where(status: params[:status]) if params[:status].present? && FederationTransaction::STATUSES.include?(params[:status])
+        # Filter by direction
+        scope = scope.where(direction: params[:direction]) if params[:direction].present? && %w[inbound outbound].include?(params[:direction])
+        # Filter by date range
+        scope = scope.where("created_at >= ?", Time.parse(params[:since])) if params[:since].present? rescue nil
+        scope = scope.where("created_at <= ?", Time.parse(params[:until])) if params[:until].present? rescue nil
+
+        scope = scope.order(created_at: :desc)
+        transactions, meta = paginate(scope)
+
+        respond_with_data(
+          transactions.map { |t| serialize_transaction(t) },
+          meta: meta
+        )
+      end
+
       # GET /api/v1/transfers/:id (or /api/v1/transactions/:id via alias)
       # Returns the status of a federation transaction.
       def show
@@ -112,7 +139,7 @@ module Api
       rescue ActiveRecord::RecordInvalid => e
         Rails.logger.warn("[Federation::Transfer] Validation failed: #{e.message}")
         respond_with_error(I18n.t("federation_api.errors.transfer_validation_failed", default: "Transfer validation failed"), status: :unprocessable_entity,
-                           errors: e.record.errors.full_messages)
+                           errors: e.record.errors.map { |err| { field: err.attribute.to_s, code: err.type.to_s } })
       rescue ActiveRecord::RecordNotFound => e
         respond_with_error(I18n.t("federation_api.errors.resource_not_found", default: "Resource not found"), status: :not_found)
       rescue ArgumentError => e
@@ -180,7 +207,7 @@ module Api
         params[:remote_user_identifier] = params[:sender_id]
         params[:amount] = amount_seconds.to_s
         params[:reason] = params[:description] if params[:reason].blank?
-        params[:external_transaction_id] ||= "nexus_#{Digest::SHA256.hexdigest("#{partner_id}:#{params[:sender_id]}:#{params[:recipient_id]}:#{params[:amount]}:#{params[:description]}")[0..31]}"
+        params[:external_transaction_id] ||= "nexus_#{Digest::SHA256.hexdigest("#{partner_id}:#{params[:sender_id]}:#{params[:recipient_id]}:#{nexus_amount}:#{params[:description]}:#{Time.current.to_i}:#{SecureRandom.hex(4)}")[0..31]}"
       end
 
       def validate_transfer_params!
@@ -271,10 +298,15 @@ module Api
           federation_transaction_id: fed_txn.id,
           transaction_id: fed_txn.id,  # Nexus reads this field
           external_transaction_id: fed_txn.external_transaction_id,
+          federation_partner_id: fed_txn.federation_partner_id,
+          organization_id: fed_txn.organization_id,
           local_transfer_id: fed_txn.transfer_id || local_transfer&.id,
+          remote_user_identifier: fed_txn.remote_user_identifier,
           status: fed_txn.status,
           amount: fed_txn.amount,
+          reason: fed_txn.reason,
           direction: fed_txn.direction,
+          created_at: fed_txn.created_at&.iso8601,
           completed_at: fed_txn.completed_at&.iso8601
         }
       end

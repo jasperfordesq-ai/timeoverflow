@@ -183,16 +183,6 @@ module Federation
     def initiate_outbound(local_account:, remote_user_identifier:, amount:, reason: nil, idempotency_key: nil)
       validate_partner_can_transact!
 
-      # Idempotency check: if caller provides a key, return existing transaction
-      # instead of creating a duplicate (prevents double-click / retry issues).
-      if idempotency_key.present?
-        existing = FederationTransaction.find_by(
-          federation_partner: @partner,
-          external_transaction_id: idempotency_key
-        )
-        return existing if existing
-      end
-
       org = local_account.organization
       raise ArgumentError, "Account has no associated organization" unless org
       raise ArgumentError, "Organization #{org.id} has no account" unless org.account
@@ -204,10 +194,18 @@ module Federation
       fed_txn = nil
       local_transfer = nil
 
+      begin
       ActiveRecord::Base.transaction(isolation: :repeatable_read) do
+        # Idempotency check inside transaction to eliminate TOCTOU window.
+        if idempotency_key.present?
+          existing = FederationTransaction.find_by(
+            federation_partner: @partner,
+            external_transaction_id: idempotency_key
+          )
+          return existing if existing
+        end
+
         # Lock the source account and verify sufficient balance atomically.
-        # This prevents TOCTOU races where balance is checked outside the
-        # transaction and spent between the check and the debit.
         local_account.lock!
         if local_account.balance.to_i < amount
           raise ArgumentError, "Insufficient balance (available: #{local_account.balance.to_i}, required: #{amount})"
@@ -248,6 +246,15 @@ module Federation
             "webhook_queued_at" => nil
           )
         )
+      end
+      rescue ActiveRecord::RecordNotUnique
+        # Concurrent duplicate hit the DB unique constraint — return the winner.
+        existing = FederationTransaction.find_by(
+          federation_partner: @partner,
+          external_transaction_id: external_transaction_id
+        )
+        return existing if existing
+        raise
       end
 
       # Request remote partner to credit the remote user AFTER commit.

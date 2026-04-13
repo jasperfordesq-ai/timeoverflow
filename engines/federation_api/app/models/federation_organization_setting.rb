@@ -7,7 +7,7 @@
 class FederationOrganizationSetting < ActiveRecord::Base
   belongs_to :organization
 
-  validates :organization_id, presence: true, uniqueness: true
+  validates :organization_id, presence: true, uniqueness: true, numericality: { greater_than: 0 }
 
   # Find or create settings for an organization (lazy init with safe defaults).
   def self.for(organization)

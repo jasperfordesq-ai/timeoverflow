@@ -11,6 +11,7 @@
 #
 require "resolv"
 require "ipaddr"
+require "timeout"
 
 module Federation
   class PartnerApiClient
@@ -190,7 +191,7 @@ module Federation
     end
 
     def set_headers(request)
-      request["Authorization"] = "Bearer #{@partner.api_key_hash}" if @partner.api_key_hash.present?
+      request["Authorization"] = "Bearer #{@partner.partner_api_key}" if @partner.partner_api_key.present?
       request["User-Agent"] = "TimeOverflow-Federation/#{FederationApi::VERSION}"
       request["Accept"] = @adapter.content_type
 
@@ -246,8 +247,8 @@ module Federation
       raise ArgumentError, "URL has no host" unless uri.host
 
       begin
-        addresses = Resolv.getaddresses(uri.host)
-      rescue Resolv::ResolvError, Resolv::ResolvTimeout => e
+        addresses = Timeout.timeout(3) { Resolv.getaddresses(uri.host) }
+      rescue Resolv::ResolvError, Resolv::ResolvTimeout, Timeout::Error => e
         raise ArgumentError, "DNS resolution failed for host #{uri.host}: #{e.class}: #{e.message}"
       end
       raise ArgumentError, "Cannot resolve host: #{uri.host}" if addresses.empty?

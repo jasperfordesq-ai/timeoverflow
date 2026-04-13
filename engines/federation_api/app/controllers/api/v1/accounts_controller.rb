@@ -51,9 +51,8 @@ module Api
           flagged: account.flagged,
           max_allowed_balance: account.read_attribute(:max_allowed_balance),
           min_allowed_balance: account.read_attribute(:min_allowed_balance),
-          movements: movements.map { |m| serialize_movement(m) },
-          movements_meta: movements_meta
-        })
+          movements: movements.map { |m| serialize_movement(m) }
+        }, meta: { movements_pagination: movements_meta })
       end
 
       private

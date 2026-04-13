@@ -95,6 +95,28 @@
       <% end %>
     </div>
   </div>
+  <%# M15: Pagination controls %>
+  <% if @total_pages > 1 %>
+    <nav class="mt-6 flex items-center justify-between" aria-label="<%= t('federation_admin.activity.pagination', default: 'Pagination') %>">
+      <div class="flex-1 flex justify-between sm:justify-center gap-2">
+        <% if @current_page > 1 %>
+          <a href="<%= federation_admin_activity_index_path(page: @current_page - 1) %>"
+             class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            &larr; <%= t('federation_admin.common.previous', default: 'Previous') %>
+          </a>
+        <% end %>
+        <span class="relative inline-flex items-center px-4 py-2 text-sm text-gray-500">
+          <%= t('federation_admin.common.page_of', page: @current_page, total: @total_pages, default: "Page %{page} of %{total}") %>
+        </span>
+        <% if @current_page < @total_pages %>
+          <a href="<%= federation_admin_activity_index_path(page: @current_page + 1) %>"
+             class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            <%= t('federation_admin.common.next', default: 'Next') %> &rarr;
+          </a>
+        <% end %>
+      </div>
+    </nav>
+  <% end %>
 <% else %>
   <div class="bg-white shadow rounded-lg overflow-hidden">
     <div class="text-center py-12">

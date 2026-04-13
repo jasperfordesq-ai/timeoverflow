@@ -1,11 +1,14 @@
 module Api
   module V1
     class KomunitinController < BaseController
-      # Komunitin endpoints use JSON:API format (application/vnd.api+json) per the
-      # Komunitin protocol specification, not the standard REST envelope used by
-      # the other API controllers. All responses and errors in this controller
-      # follow the JSON:API structure: { data: [...] } for success and
-      # { errors: [{ status: "4xx", title: "...", detail: "..." }] } for errors.
+      # M10: This controller intentionally bypasses the standard respond_with_data /
+      # respond_with_error envelope used by all other API controllers. The Komunitin
+      # protocol (https://komunitin.org) mandates JSON:API format
+      # (application/vnd.api+json), which uses a different response structure:
+      #   Success: { data: [...] }
+      #   Errors:  { errors: [{ status: "4xx", title: "...", detail: "..." }] }
+      # All responses in this controller use `render json:` directly instead of the
+      # BaseController envelope helpers. This is by design, not an oversight.
       #
       # These endpoints serve TO data in Komunitin JSON:API format.
       # They complement the existing REST endpoints — both coexist.

@@ -17,18 +17,18 @@ module FederationAdmin
         total_inbound: FederationTransaction.completed.inbound.sum(:amount),
         total_outbound: FederationTransaction.completed.outbound.sum(:amount),
         failed_webhooks_24h: FederationWebhookLog.failed.where("created_at > ?", 24.hours.ago).count,
-        messages_total: (FederationMessage.count rescue 0),
-        messages_inbound: (FederationMessage.inbound.count rescue 0),
-        orgs_federation_enabled: (FederationOrganizationSetting.where(federation_enabled: true).count rescue 0),
-        members_opted_in: (FederationMemberPreference.opted_in.count rescue 0)
+        messages_total: (begin; FederationMessage.count; rescue StandardError => e; Rails.logger.warn("[FederationAdmin] messages_total count failed: #{e.class}"); 0; end),
+        messages_inbound: (begin; FederationMessage.inbound.count; rescue StandardError => e; Rails.logger.warn("[FederationAdmin] messages_inbound count failed: #{e.class}"); 0; end),
+        orgs_federation_enabled: (begin; FederationOrganizationSetting.where(federation_enabled: true).count; rescue StandardError => e; Rails.logger.warn("[FederationAdmin] orgs_federation_enabled count failed: #{e.class}"); 0; end),
+        members_opted_in: (begin; FederationMemberPreference.opted_in.count; rescue StandardError => e; Rails.logger.warn("[FederationAdmin] members_opted_in count failed: #{e.class}"); 0; end)
       }
 
       # 7-day trend data for stat cards
       @trends = {
         transactions_7d: FederationTransaction.where("created_at > ?", 7.days.ago).count,
         transactions_prev_7d: FederationTransaction.where(created_at: 14.days.ago..7.days.ago).count,
-        messages_7d: (FederationMessage.where("created_at > ?", 7.days.ago).count rescue 0),
-        messages_prev_7d: (FederationMessage.where(created_at: 14.days.ago..7.days.ago).count rescue 0)
+        messages_7d: (begin; FederationMessage.where("created_at > ?", 7.days.ago).count; rescue StandardError => e; Rails.logger.warn("[FederationAdmin] messages_7d count failed: #{e.class}"); 0; end),
+        messages_prev_7d: (begin; FederationMessage.where(created_at: 14.days.ago..7.days.ago).count; rescue StandardError => e; Rails.logger.warn("[FederationAdmin] messages_prev_7d count failed: #{e.class}"); 0; end)
       }
     end
 

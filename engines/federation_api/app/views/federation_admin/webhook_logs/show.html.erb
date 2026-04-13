@@ -100,7 +100,7 @@
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.webhook_logs.show.response_body') %></dt>
       <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
         <% if @log.response_body.present? %>
-          <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono" style="max-width: 100%; word-break: break-word;"><%= h(begin; JSON.pretty_generate(JSON.parse(@log.response_body)); rescue => e; @log.response_body; end) %></pre>
+          <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono" style="max-width: 100%; word-break: break-word;"><%= h(begin; JSON.pretty_generate(JSON.parse(@log.response_body)); rescue JSON::ParserError; @log.response_body; end) %></pre>
         <% else %>
           <span class="text-gray-400"><%= t('federation_admin.webhook_logs.show.no_response_body') %></span>
         <% end %>

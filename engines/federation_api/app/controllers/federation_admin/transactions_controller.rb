@@ -39,7 +39,9 @@ module FederationAdmin
       transactions = transactions.where("external_transaction_id ILIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(params[:search])}%") if params[:search].present?
 
       # Cap export at 10,000 rows to prevent memory issues.
-      # Order by ID desc (chronological) since find_each overrides order.
+      # Note: find_each cannot be used here because it overrides any custom
+      # ORDER BY clause, forcing order by primary key in batches. We need
+      # id: :desc for correct chronological ordering in the CSV output.
       transactions = transactions.order(id: :desc).limit(10_000)
 
       csv_data = CSV.generate do |csv|

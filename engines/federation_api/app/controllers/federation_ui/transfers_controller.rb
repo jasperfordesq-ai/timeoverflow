@@ -14,17 +14,17 @@ module FederationUi
       # Reason length validation (matches API-level 500-char limit)
       reason_param = params[:reason] || params[:description]
       if reason_param.present? && reason_param.to_s.length > 500
-        return respond_with_error("Reason must be 500 characters or less", status: :unprocessable_entity)
+        return respond_with_error(I18n.t("federation_ui.transfers.reason_too_long", max: 500, default: "Reason must be %{max} characters or less"), status: :unprocessable_entity)
       end
 
       partner = FederationPartner.active.find(params[:partner_id])
 
       unless partner.can_transact?
-        return respond_with_error("Partner is not enabled for transactions", status: :forbidden)
+        return respond_with_error(I18n.t("federation_ui.transfers.partner_cannot_transact", default: "Partner is not enabled for transactions"), status: :forbidden)
       end
 
       unless Federation::AccessControl.member_can_send?(current_member, partner: partner)
-        return respond_with_error("You have not opted in to federation transfers", status: :forbidden)
+        return respond_with_error(I18n.t("federation_ui.transfers.not_opted_in", default: "You have not opted in to federation transfers"), status: :forbidden)
       end
 
       amount_seconds = if params[:amount_hours].present?
@@ -35,7 +35,7 @@ module FederationUi
 
       # Validate amount limits (matches API endpoint behaviour)
       if amount_seconds <= 0
-        return respond_with_error("Amount must be positive", status: :unprocessable_entity)
+        return respond_with_error(I18n.t("federation_ui.transfers.amount_must_be_positive", default: "Amount must be positive"), status: :unprocessable_entity)
       end
       max_amount = begin
         v = Rails.application.config.federation.max_transfer_amount
@@ -44,14 +44,14 @@ module FederationUi
         360_000
       end
       if amount_seconds > max_amount
-        return respond_with_error("Amount exceeds maximum (#{max_amount} seconds / #{(max_amount / 3600.0).round(1)} hours)", status: :unprocessable_entity)
+        return respond_with_error(I18n.t("federation_ui.transfers.amount_exceeds_max", max_seconds: max_amount, max_hours: (max_amount / 3600.0).round(1), default: "Amount exceeds maximum (%{max_seconds} seconds / %{max_hours} hours)"), status: :unprocessable_entity)
       end
 
       # Verify the member has an account (balance check is now atomic
       # inside TransferHandler#initiate_outbound to prevent TOCTOU races).
       source_account = current_member.account
       unless source_account
-        return respond_with_error("No account found for current member", status: :unprocessable_entity)
+        return respond_with_error(I18n.t("federation_ui.transfers.no_account", default: "No account found for current member"), status: :unprocessable_entity)
       end
 
       handler = Federation::TransferHandler.new(partner: partner)

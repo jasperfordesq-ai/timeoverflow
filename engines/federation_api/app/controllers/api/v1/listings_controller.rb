@@ -24,6 +24,11 @@ module Api
                   .includes(:user, :category)
 
         # Only show listings from members who have opted in to federation.
+        # NOTE: Federation::AccessControl does not yet have a listings-specific
+        # visibility method (e.g. listings_visible_member_ids). For now we use
+        # opted_in_member_ids, which checks share_listings implicitly via the
+        # preference model. If a separate share_listings gate is added later,
+        # update this call to use the dedicated method.
         visible_ids = Federation::AccessControl.opted_in_member_ids(current_organization)
         posts = posts.where(user_id: Member.where(id: visible_ids).select(:user_id))
 

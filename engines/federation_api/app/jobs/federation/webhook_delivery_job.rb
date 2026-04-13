@@ -102,8 +102,8 @@ module Federation
           partner_accepted = true
           begin
             begin
-              body = JSON.parse(response.body)
-            rescue JSON::ParserError => json_err
+              body = response.body.present? ? JSON.parse(response.body) : {}
+            rescue JSON::ParserError, TypeError => json_err
               Rails.logger.warn("[Federation::WebhookDelivery] Failed to parse response body as JSON: #{json_err.message}")
               body = nil
             end

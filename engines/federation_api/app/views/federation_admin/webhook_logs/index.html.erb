@@ -44,7 +44,7 @@
     </div>
 
     <div>
-      <button type="submit" class="bg-federation-600 hover:bg-federation-700 text-white px-4 py-2 rounded text-sm font-medium">Filter</button>
+      <button type="submit" class="bg-federation-600 hover:bg-federation-700 text-white px-4 py-2 rounded text-sm font-medium"><%= t('federation_admin.webhook_logs.index.filter', default: 'Filter') %></button>
     </div>
 
     <% if params[:status].present? || params[:direction].present? || params[:partner_id].present? %>

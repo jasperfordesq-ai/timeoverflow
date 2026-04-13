@@ -57,3 +57,8 @@ en:
       transfer_argument_error: "Invalid transfer parameters"
       field_too_long: "Field '%{field}' exceeds maximum length of %{max} characters"
       komunitin_transfers_not_implemented: "Transfer creation via Komunitin protocol is handled through the REST API"
+      internal_server_error: "Internal server error"
+      invalid_content_type: "Content-Type must be application/json"
+      invalid_json: "Invalid JSON in request body"
+      params_too_large: "Request parameters too large"
+      sender_id_required: "sender_id is required for Nexus transfers"

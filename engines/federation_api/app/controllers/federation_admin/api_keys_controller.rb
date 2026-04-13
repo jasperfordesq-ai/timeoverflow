@@ -88,7 +88,15 @@ module FederationAdmin
     end
 
     def bulk_revoke
-      ids = (params[:ids] || []).map(&:to_i).reject(&:zero?)
+      raw_ids = params[:ids] || []
+      if raw_ids.length > 100
+        flash[:alert] = t("federation_admin.flash.bulk_revoke_too_many",
+                          max: 100,
+                          default: "Too many IDs submitted (max %{max}). Please select fewer keys.")
+        redirect_to federation_admin_api_keys_path
+        return
+      end
+      ids = raw_ids.first(100).map(&:to_i).reject(&:zero?)
       if ids.any?
         count = FederationApiKey.where(id: ids, active: true).update_all(active: false)
         audit!("api_key.bulk_revoked", changes_made: { revoked_ids: ids, count: count })

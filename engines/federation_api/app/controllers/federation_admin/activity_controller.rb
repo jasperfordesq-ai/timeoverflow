@@ -49,7 +49,14 @@ module FederationAdmin
 
       # Sort all events by timestamp descending
       @events.sort_by! { |e| e[:timestamp] }.reverse!
-      @events = @events.first(50) # Cap at 50 most recent
+
+      # M15: Pagination — limit to 50 per page
+      per_page = 50
+      @current_page = [(params[:page] || 1).to_i, 1].max
+      @total_pages = (@events.size.to_f / per_page).ceil
+      @total_pages = 1 if @total_pages < 1
+      @current_page = [@current_page, @total_pages].min
+      @events = @events.slice((@current_page - 1) * per_page, per_page) || []
     end
   end
 end

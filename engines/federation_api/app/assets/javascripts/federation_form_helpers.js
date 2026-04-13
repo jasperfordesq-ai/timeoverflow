@@ -52,6 +52,10 @@
         if (shortSpan) {
           shortSpan.style.display = 'none';
           shortSpan.nextElementSibling.style.display = 'inline';
+          // L8: Toggle aria-expanded on the expand/collapse buttons
+          expand.setAttribute('aria-expanded', 'true');
+          var collapseBtn = shortSpan.nextElementSibling.querySelector('.listing-collapse');
+          if (collapseBtn) collapseBtn.setAttribute('aria-expanded', 'true');
         }
         return;
       }
@@ -62,6 +66,10 @@
         if (fullSpan) {
           fullSpan.style.display = 'none';
           fullSpan.previousElementSibling.style.display = 'inline';
+          // L8: Toggle aria-expanded on the expand/collapse buttons
+          collapse.setAttribute('aria-expanded', 'false');
+          var expandBtn = fullSpan.previousElementSibling.querySelector('.listing-expand');
+          if (expandBtn) expandBtn.setAttribute('aria-expanded', 'false');
         }
       }
     });

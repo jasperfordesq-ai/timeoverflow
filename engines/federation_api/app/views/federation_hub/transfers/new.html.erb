@@ -134,8 +134,7 @@
               <% end %>
             </div>
 
-            <button type="submit" class="btn btn-success btn-lg"
-                    data-confirm="<%= t("federation_hub.transfers.confirm_send") %>">
+            <button type="submit" class="btn btn-success btn-lg">
               <%= t("federation_hub.transfers.send_button") %>
             </button>
             <small id="balance-warning" class="text-danger d-none ms-3" data-balance="<%= current_member.account&.balance.to_i %>"></small>
@@ -177,12 +176,11 @@
   hoursEl.addEventListener('input', checkBalance);
   minsEl.addEventListener('input', checkBalance);
 
-  // Confirmation dialog for data-confirm buttons
+  // M13: Single confirmation handler (no duplicate data-confirm attribute on the button)
   var form = hoursEl.closest('form');
   if (form) {
     form.addEventListener('submit', function(e) {
-      var btn = form.querySelector('[data-confirm]');
-      if (btn && !confirm(btn.getAttribute('data-confirm'))) {
+      if (!confirm('<%= j t("federation_hub.transfers.confirm_send") %>')) {
         e.preventDefault();
       }
     });

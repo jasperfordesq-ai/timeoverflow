@@ -21,6 +21,7 @@ module Api
           response.delete(:traders)
           response.delete(:trades)
           response.delete(:volume)
+          response.delete(:validated_window)
           respond_with_data(response)
         end
       end
@@ -66,7 +67,7 @@ module Api
         # Enforce discoverability: only show accounts for members who have opted in
         discoverable_ids = Federation::AccessControl.discoverable_member_ids(current_organization)
         unless discoverable_ids.include?(member.id)
-          return respond_with_error("Not found", status: :not_found)
+          return respond_with_error(I18n.t("federation_api.errors.not_found", default: "Not found"), status: :not_found)
         end
 
         return respond_with_error(I18n.t("federation_api.errors.cc_no_balance", default: "Account has no balance record"), status: :not_found) unless member.account
@@ -112,7 +113,7 @@ module Api
         if txn.organization_id
           org = Organization.find_by(id: txn.organization_id)
           unless org && Federation::AccessControl.org_enabled?(org)
-            return respond_with_error("Not found", status: :not_found)
+            return respond_with_error(I18n.t("federation_api.errors.not_found", default: "Not found"), status: :not_found)
           end
         end
 
@@ -158,7 +159,7 @@ module Api
         if txn.organization_id
           org = Organization.find_by(id: txn.organization_id)
           unless org && Federation::AccessControl.org_enabled?(org)
-            return respond_with_error("Not found", status: :not_found)
+            return respond_with_error(I18n.t("federation_api.errors.not_found", default: "Not found"), status: :not_found)
           end
         end
 

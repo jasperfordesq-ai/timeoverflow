@@ -371,11 +371,13 @@ module Federation
     private
 
     def stale_warning_timeout
-      ENV.fetch("FEDERATION_STALE_WARNING_TIMEOUT", "3600").to_i.seconds
+      # M20: Clamp to minimum 60 seconds to prevent misconfiguration
+      [ENV.fetch("FEDERATION_STALE_WARNING_TIMEOUT", "3600").to_i, 60].max.seconds
     end
 
     def reversal_timeout
-      ENV.fetch("FEDERATION_REVERSAL_TIMEOUT", "86400").to_i.seconds
+      # M20: Clamp to minimum 3600 seconds (1 hour) to prevent premature reversals
+      [ENV.fetch("FEDERATION_REVERSAL_TIMEOUT", "86400").to_i, 3600].max.seconds
     end
 
     # M7: Alerting hook for critical reconciliation findings.

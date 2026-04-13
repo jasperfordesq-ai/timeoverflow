@@ -393,7 +393,10 @@ module Federation
 
       def build_account_path(account, node_slug, txn)
         if account
-          member = Member.find_by(account_id: account.id)
+          # Account belongs_to :accountable (polymorphic) — use the association
+          # rather than querying Member by account_id (Members don't have that column).
+          member = account.respond_to?(:accountable) ? account.accountable : nil
+          member = nil unless member.is_a?(Member) rescue nil
           if member
             "#{node_slug}/#{member.member_uid || member.id}"
           else

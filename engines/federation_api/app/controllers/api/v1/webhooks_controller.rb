@@ -289,10 +289,8 @@ module Api
         case event_type
         when "partnership.activated", "partnership.approved"
           # Nexus sends "partnership.approved"; TO also accepts "partnership.activated".
-          if partner.status == "terminated"
-            Rails.logger.warn("[Federation] Rejected reactivation of terminated partner #{partner.id}")
-          elsif partner.status == "pending"
-            raise ArgumentError, "Pending partners cannot self-activate; admin approval required"
+          if %w[terminated suspended pending].include?(partner.status)
+            Rails.logger.warn("[Federation] Rejected reactivation of #{partner.status} partner #{partner.id} — admin approval required")
           else
             old_status = partner.status
             partner.update!(status: "active")
@@ -309,18 +307,22 @@ module Api
             end
           end
         when "partnership.suspended"
-          old_status = partner.status
-          partner.update!(status: "suspended")
-          begin
-            FederationAuditLog.record!(
-              action: "partner.status_changed",
-              actor: nil,
-              target: partner,
-              changes_made: { status: [old_status, "suspended"], via: "webhook", event: event_type },
-              ip_address: request.remote_ip
-            )
-          rescue => e
-            Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
+          if partner.status == "terminated"
+            Rails.logger.warn("[Federation] Rejected suspension of terminated partner #{partner.id}")
+          else
+            old_status = partner.status
+            partner.update!(status: "suspended")
+            begin
+              FederationAuditLog.record!(
+                action: "partner.status_changed",
+                actor: nil,
+                target: partner,
+                changes_made: { status: [old_status, "suspended"], via: "webhook", event: event_type },
+                ip_address: request.remote_ip
+              )
+            rescue => e
+              Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
+            end
           end
         when "partnership.rejected", "partnership.terminated"
           old_status = partner.status
@@ -381,29 +383,26 @@ module Api
           # completed/cancelled records so we guard here instead of relying
           # on a bare &.cancel! to silently corrupt accounting.
           if fed_txn&.pending?
-            fed_txn.cancel!(reason: payload["reason"])
+            # Wrap cancel + reversal in a single transaction so both succeed
+            # or both roll back atomically. Without this, cancel! could commit
+            # while the reversal fails, leaving the member's balance unrestored.
+            ActiveRecord::Base.transaction do
+              fed_txn.cancel!(reason: payload["reason"])
 
-            # Reverse the local debit for outbound transfers.
-            # When an outbound transfer is cancelled by the partner, the local
-            # member was already debited. We must reverse that debit to restore
-            # their balance. Follows the same pattern as ReconciliationJob.
-            if fed_txn.direction == "outbound" && fed_txn.transfer_id.present?
-              begin
+              # Reverse the local debit for outbound transfers.
+              if fed_txn.direction == "outbound" && fed_txn.transfer_id.present?
                 original = Transfer.find(fed_txn.transfer_id)
-                # Transfer#source/#destination are attr_accessors, nil when loaded
-                # from DB. Use movements to find the actual accounts (same pattern
-                # as ReconciliationJob).
-                debit_movement  = original.movements.find_by("amount < 0") # source (member)
-                credit_movement = original.movements.find_by("amount > 0") # destination (org pool)
+                debit_movement  = original.movements.find_by("amount < 0")
+                credit_movement = original.movements.find_by("amount > 0")
                 if debit_movement && credit_movement
                   reversal = Transfer.new
-                  reversal.source      = credit_movement.account_id  # org pool -> now source
-                  reversal.destination = debit_movement.account_id   # member -> now destination
+                  reversal.source      = credit_movement.account_id
+                  reversal.destination = debit_movement.account_id
                   reversal.amount      = fed_txn.amount
                   reversal.reason      = "[Federation Reversal] Partner cancelled transaction #{fed_txn.external_transaction_id}"
                   reversal.save!
 
-                  fed_txn.update(metadata: (fed_txn.metadata || {}).merge(
+                  fed_txn.update!(metadata: (fed_txn.metadata || {}).merge(
                     "reversal_transfer_id" => reversal.id,
                     "reversed_at" => Time.current.iso8601
                   ))
@@ -411,8 +410,6 @@ module Api
                 else
                   Rails.logger.error("[Federation::Webhook] Cannot reverse cancelled outbound transfer #{fed_txn.id}: missing movements on transfer #{original.id}")
                 end
-              rescue => e
-                Rails.logger.error("[Federation::Webhook] Failed to reverse cancelled outbound transfer #{fed_txn.id}: #{e.class}: #{e.message}")
               end
             end
           elsif fed_txn

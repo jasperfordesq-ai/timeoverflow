@@ -1,0 +1,16 @@
+es:
+  federation_ui:
+    errors:
+      not_authenticated: "No autenticado"
+      manager_required: "Se requiere acceso de administrador"
+      active_membership_required: "Se requiere membresía activa en la organización actual"
+    transfers:
+      reason_too_long: "El motivo debe tener %{max} caracteres o menos"
+      partner_cannot_transact: "El socio no está habilitado para transacciones"
+      not_opted_in: "No has optado por las transferencias federadas"
+      amount_must_be_positive: "La cantidad debe ser positiva"
+      amount_exceeds_max: "La cantidad excede el máximo (%{max_seconds} segundos / %{max_hours} horas)"
+      no_account: "No se encontró cuenta para el miembro actual"
+    messages:
+      body_too_long: "El cuerpo del mensaje debe tener %{max} caracteres o menos"
+      federation_disabled: "La federación no está habilitada para tu organización"

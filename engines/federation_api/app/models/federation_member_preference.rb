@@ -28,9 +28,10 @@ class FederationMemberPreference < ActiveRecord::Base
   def opted_in?
     return false unless opted_in
     # Timestamp consistency: if opted_out_at is present and more recent than
-    # opted_in_at, the boolean flag may be stale. Treat as not opted-in.
+    # opted_in_at, the boolean flag may be stale — auto-repair by clearing
+    # the stale opted_out_at so the boolean is authoritative.
     if opted_out_at.present? && opted_in_at.present? && opted_out_at > opted_in_at
-      return false
+      update_columns(opted_out_at: nil)
     end
     true
   end

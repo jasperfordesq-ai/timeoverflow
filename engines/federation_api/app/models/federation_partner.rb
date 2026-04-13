@@ -31,6 +31,10 @@ class FederationPartner < ActiveRecord::Base
   validates :partnership_level, inclusion: { in: PARTNERSHIP_LEVELS }
   validates :feature_gates, presence: true   # nil feature_gates crashes can_transact? et al.
   validates :api_key_hash, presence: true
+  # api_key_hash stores the raw API key used to authenticate with the partner's
+  # API endpoint (sent as Bearer token). The name is a legacy misnomer — it is
+  # NOT a hash. Alias provides clarity for callers.
+  alias_method :partner_api_key, :api_key_hash
   validate :feature_gates_must_be_hash
   validate :metadata_size_limit
   validate :valid_status_transition, if: :status_changed?
@@ -56,7 +60,7 @@ class FederationPartner < ActiveRecord::Base
   # Multi-org scoping: check if this partner can access a given organization.
   # Empty permitted_organization_ids means unrestricted (all orgs).
   def can_access_organization?(org_or_id)
-    org_id = org_or_id.is_a?(Integer) ? org_or_id : org_or_id.id
+    org_id = org_or_id.is_a?(Integer) ? org_or_id : (org_or_id.respond_to?(:id) ? org_or_id.id : org_or_id.to_i)
     permitted_organization_ids.blank? || permitted_organization_ids.include?(org_id)
   end
 
@@ -141,8 +145,8 @@ class FederationPartner < ActiveRecord::Base
   # Redact sensitive fields from inspect output to prevent accidental
   # exposure in logs, console output, or error reports.
   def inspect
-    super.gsub(/webhook_secret: ".*?"/, 'webhook_secret: "[REDACTED]"')
-         .gsub(/next_webhook_secret: ".*?"/, 'next_webhook_secret: "[REDACTED]"')
+    super.gsub(/webhook_secret: (".*?"|nil)/, 'webhook_secret: "[REDACTED]"')
+         .gsub(/next_webhook_secret: (".*?"|nil)/, 'next_webhook_secret: "[REDACTED]"')
   end
 
   # Stale rotation detection: returns true if a secret rotation was started

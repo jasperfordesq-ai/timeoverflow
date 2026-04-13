@@ -16,6 +16,17 @@
   <input type="hidden" name="_method" value="patch">
   <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
 
+  <% if @settings.errors.any? %>
+    <div class="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
+      <h3 class="text-sm font-semibold text-red-800 mb-2"><%= t('federation_admin.org_settings.edit.errors_title', count: @settings.errors.count, default: '%{count} error(s) prevented saving:') %></h3>
+      <ul class="list-disc list-inside text-sm text-red-700">
+        <% @settings.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
     <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
       <h2 class="text-lg font-semibold text-gray-900"><%= t('federation_admin.org_settings.edit.general') %></h2>

@@ -18,17 +18,17 @@
   </div>
 
   <dl class="divide-y divide-gray-200">
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.id') %></dt>
       <dd class="text-sm text-gray-900 col-span-2 font-mono"><%= @message.id %></dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.partner') %></dt>
       <dd class="text-sm text-gray-900 col-span-2"><%= @message.federation_partner&.name || t("federation_admin.common.not_available", default: "N/A") %></dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.direction') %></dt>
       <dd class="text-sm col-span-2">
         <% if @message.direction == 'inbound' %>
@@ -39,27 +39,27 @@
       </dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.remote_user') %></dt>
       <dd class="text-sm text-gray-900 col-span-2"><%= @message.remote_user_identifier || '-' %></dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.local_member_id') %></dt>
       <dd class="text-sm text-gray-900 col-span-2"><%= @message.local_member_id || '-' %></dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.organization_id') %></dt>
       <dd class="text-sm text-gray-900 col-span-2"><%= @message.organization_id || '-' %></dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.subject') %></dt>
       <dd class="text-sm text-gray-900 col-span-2 font-medium"><%= @message.subject || '-' %></dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.body') %></dt>
       <dd class="text-sm text-gray-900 col-span-2">
         <% if @message.body.present? %>
@@ -70,7 +70,7 @@
       </dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.status') %></dt>
       <dd class="text-sm col-span-2">
         <% case @message.status %>
@@ -88,22 +88,22 @@
       </dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.external_id') %></dt>
       <dd class="text-sm text-gray-900 col-span-2 font-mono"><%= @message.external_message_id || '-' %></dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.delivered_at') %></dt>
       <dd class="text-sm text-gray-900 col-span-2"><%= @message.delivered_at&.then { |t| format_date(t) } || '-' %></dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.read_at') %></dt>
       <dd class="text-sm text-gray-900 col-span-2"><%= @message.read_at&.then { |t| format_date(t) } || '-' %></dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.metadata') %></dt>
       <dd class="text-sm text-gray-900 col-span-2">
         <% if @message.metadata.present? %>
@@ -114,7 +114,7 @@
       </dd>
     </div>
 
-    <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt class="text-sm font-medium text-gray-500"><%= t('federation_admin.messages.show.created_at') %></dt>
       <dd class="text-sm text-gray-900 col-span-2"><%= @message.created_at.then { |t| format_date(t) } %></dd>
     </div>

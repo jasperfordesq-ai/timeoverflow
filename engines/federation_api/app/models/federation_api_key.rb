@@ -13,9 +13,9 @@ class FederationApiKey < ActiveRecord::Base
   validates :key_prefix, presence: true
 
   # Generate a new API key and return the raw key (only available at creation)
-  def self.generate!(name:, organization: nil, permissions: {}, expires_at: nil)
+  def self.generate!(name:, organization: nil, permissions: {}, expires_at: nil, permitted_organization_ids: nil)
     raw_key = "to_fed_#{SecureRandom.hex(32)}"
-    key = create!(
+    key = new(
       name: name,
       key_hash: Digest::SHA256.hexdigest(raw_key),
       key_prefix: raw_key[0..7],
@@ -23,6 +23,8 @@ class FederationApiKey < ActiveRecord::Base
       permissions: permissions,
       expires_at: expires_at
     )
+    key.permitted_organization_ids = permitted_organization_ids if permitted_organization_ids.present?
+    key.save!
     [key, raw_key]
   end
 

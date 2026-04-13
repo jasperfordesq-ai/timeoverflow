@@ -141,7 +141,7 @@ module Api
         end
       rescue ActiveRecord::RecordInvalid => e
         respond_with_error(I18n.t("federation_api.errors.message_validation_failed", default: "Message validation failed"), status: :unprocessable_entity,
-                           errors: e.record.errors.full_messages)
+                           errors: e.record.errors.map { |err| { field: err.attribute.to_s, code: err.type.to_s } })
       end
 
       private

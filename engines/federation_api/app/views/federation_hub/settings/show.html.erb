@@ -16,6 +16,9 @@
   <div class="row">
     <%# === Main form column === %>
     <div class="col-md-8">
+      <%# form_for :settings uses a symbol (not a model instance) so Rails generates
+          flat parameter names (e.g. params[:opted_in]) rather than nested params[:settings][:opted_in].
+          This matches the controller's expectation of top-level param keys. %>
       <%= form_for :settings, url: federation_hub_settings_path, method: :patch do |f| %>
 
         <%# --- Opt-in card --- %>

@@ -215,7 +215,7 @@ module Api
 
       def handle_unexpected_error(exception)
         Rails.logger.error("[Federation::API] Unexpected error: #{exception.class}: #{exception.message}\n#{exception.backtrace&.first(10)&.join("\n")}")
-        respond_with_error("Internal server error", status: :internal_server_error)
+        respond_with_error(I18n.t("federation_api.errors.internal_server_error", default: "Internal server error"), status: :internal_server_error)
       end
 
       # Pagination helper

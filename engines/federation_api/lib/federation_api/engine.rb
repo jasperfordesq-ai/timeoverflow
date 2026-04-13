@@ -84,7 +84,7 @@ module FederationApi
             resources :members, only: [:index, :show]
             resources :offers, only: [:index, :show]
             resources :inquiries, only: [:index, :show]
-            resources :transfers, only: [:create, :show]
+            resources :transfers, only: [:index, :create, :show]
             resources :accounts, only: [:show]
             resources :messages, only: [:index, :create, :show]
             post "webhooks/receive", to: "webhooks#receive"

@@ -1,0 +1,16 @@
+en:
+  federation_ui:
+    errors:
+      not_authenticated: "Not authenticated"
+      manager_required: "Manager access required"
+      active_membership_required: "Active membership in current organization required"
+    transfers:
+      reason_too_long: "Reason must be %{max} characters or less"
+      partner_cannot_transact: "Partner is not enabled for transactions"
+      not_opted_in: "You have not opted in to federation transfers"
+      amount_must_be_positive: "Amount must be positive"
+      amount_exceeds_max: "Amount exceeds maximum (%{max_seconds} seconds / %{max_hours} hours)"
+      no_account: "No account found for current member"
+    messages:
+      body_too_long: "Message body must be %{max} characters or less"
+      federation_disabled: "Federation is not enabled for your organization"

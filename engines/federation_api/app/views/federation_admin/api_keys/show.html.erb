@@ -13,7 +13,7 @@
       <code id="raw-key" class="block flex-1 bg-white border border-yellow-300 rounded-md px-4 py-3 font-mono text-sm text-gray-900 select-all break-all">
         <%= @raw_key %>
       </code>
-      <button onclick="navigator.clipboard.writeText(document.getElementById('raw-key').textContent.trim()); this.textContent='<%= t('federation_admin.api_keys.show.copied') %>'; setTimeout(() => this.textContent='<%= t('federation_admin.api_keys.show.copy') %>', 2000);"
+      <button onclick="var btn=this; try { navigator.clipboard.writeText(document.getElementById('raw-key').textContent.trim()).then(function(){ btn.textContent='<%= t('federation_admin.api_keys.show.copied') %>'; setTimeout(function(){ btn.textContent='<%= t('federation_admin.api_keys.show.copy') %>'; }, 2000); }); } catch(e) { var el=document.getElementById('raw-key'); var range=document.createRange(); range.selectNodeContents(el); var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range); btn.textContent='<%= t('federation_admin.api_keys.show.copied') %>'; setTimeout(function(){ btn.textContent='<%= t('federation_admin.api_keys.show.copy') %>'; }, 2000); }"
               class="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-md text-sm whitespace-nowrap transition-colors">
         <%= t('federation_admin.api_keys.show.copy') %>
       </button>

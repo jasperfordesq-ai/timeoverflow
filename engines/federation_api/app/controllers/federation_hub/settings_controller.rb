@@ -34,10 +34,10 @@ module FederationHub
 
       prefs.update!(attrs)
       redirect_to federation_hub_settings_path, notice: t("federation_hub.settings.updated")
-    rescue => e
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotSaved => e
       Rails.logger.error("[FederationHub::Settings] Update failed: #{e.class}: #{e.message}")
       redirect_to federation_hub_settings_path,
-        alert: t("federation_hub.settings.update_failed_generic", default: "Settings could not be saved. Please try again.")
+        alert: t("federation_hub.settings.update_failed", error: e.message, default: "Settings could not be saved: %{error}")
     end
   end
 end

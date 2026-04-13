@@ -13,7 +13,9 @@
     <%= csrf_meta_tags %>
     <link href="/favicon.ico" rel="icon">
     <%= stylesheet_link_tag 'application', media: 'all' %>
-    <link href="https://fonts.googleapis.com/css?family=Work+Sans:400,500,600,700&display=swap" rel="stylesheet">
+    <%# M22: Google Fonts CDN dependency — required for Work Sans font used in the design.
+        The crossorigin="anonymous" attribute prevents cookies from being sent to Google. %>
+    <link href="https://fonts.googleapis.com/css?family=Work+Sans:400,500,600,700&display=swap" rel="stylesheet" crossorigin="anonymous">
     <%= javascript_include_tag 'libs' %>
     <%= javascript_include_tag 'application' %>
     <script><%= raw File.read(FederationApi::Engine.root.join("app/assets/javascripts/federation_form_helpers.js")) rescue "" %></script>

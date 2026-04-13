@@ -13,55 +13,79 @@
   </div>
   <div class="mt-4 sm:mt-0 flex flex-wrap gap-2">
     <a href="<%= edit_federation_admin_partner_path(@partner) %>"
-       class="inline-flex items-center bg-federation-600 hover:bg-federation-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+       class="inline-flex items-center bg-federation-600 hover:bg-federation-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm">
       <%= t("federation_admin.partners.show.edit") %>
     </a>
-    <form method="post" action="<%= test_webhook_federation_admin_partner_path(@partner) %>" class="inline">
-      <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
-      <button type="submit"
-              class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-              data-disable-with="<%= t("federation_admin.partners.show.test_webhook") %>...">
-        <%= t("federation_admin.partners.show.test_webhook") %>
-      </button>
-    </form>
-    <form method="post" action="<%= regenerate_secret_federation_admin_partner_path(@partner) %>" class="inline"
-          onsubmit="return confirm('<%= j t("federation_admin.partners.show.rotate_confirm") %>');">
-      <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
-      <button type="submit"
-              class="inline-flex items-center bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-md transition-colors">
-        <%= @partner.rotation_in_progress? ? t("federation_admin.partners.show.re_rotate_secret") : t("federation_admin.partners.show.rotate_secret") %>
-      </button>
-    </form>
-    <% if @partner.rotation_in_progress? %>
-      <form method="post" action="<%= complete_rotation_federation_admin_partner_path(@partner) %>" class="inline"
-            onsubmit="return confirm('<%= j t("federation_admin.partners.show.complete_rotation_confirm") %>');">
-        <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
-        <button type="submit"
-                class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-md transition-colors">
-          <%= t("federation_admin.partners.show.complete_rotation") %>
-        </button>
-      </form>
-    <% end %>
     <form method="post" action="<%= health_check_federation_admin_partner_path(@partner) %>" class="inline">
       <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
       <button type="submit"
-              class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+              class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm"
               data-disable-with="<%= t("federation_admin.partners.show.health_check") %>...">
         <%= t("federation_admin.partners.show.health_check") %>
+      </button>
+    </form>
+    <form method="post" action="<%= test_webhook_federation_admin_partner_path(@partner) %>" class="inline">
+      <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+      <button type="submit"
+              class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm"
+              data-disable-with="<%= t("federation_admin.partners.show.test_webhook") %>...">
+        <%= t("federation_admin.partners.show.test_webhook") %>
       </button>
     </form>
   </div>
 </div>
 
-<!-- Partner Info Card -->
-<div class="bg-white shadow rounded-lg p-6 mb-8">
-  <h2 class="text-lg font-semibold text-gray-900 mb-4"><%= t("federation_admin.partners.show.details_title") %></h2>
+<%# ── Card 1: Connection Details ── %>
+<div class="bg-white shadow rounded-lg p-6 mb-6">
+  <h2 class="text-lg font-semibold text-gray-900 mb-4"><%= t("federation_admin.partners.new.section_connection", default: "Connection Details") %></h2>
 
   <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
     <div>
       <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.name") %></dt>
-      <dd class="mt-1 text-sm text-gray-900"><%= @partner.name %></dd>
+      <dd class="mt-1 text-sm text-gray-900 font-medium"><%= @partner.name %></dd>
     </div>
+    <div>
+      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.platform_type") %> / <%= t("federation_admin.partners.show.protocol_type") %></dt>
+      <dd class="mt-1">
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-800">
+          <%= t("federation_admin.common.platform_types.#{@partner.platform_type}", default: @partner.platform_type.capitalize) %>
+        </span>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-federation-100 text-federation-800 ml-1">
+          <%= Federation::Adapters.protocol_labels[@partner.protocol_type] || @partner.protocol_type %>
+        </span>
+      </dd>
+    </div>
+    <div class="sm:col-span-2">
+      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.api_endpoint") %></dt>
+      <dd class="mt-1 text-sm font-mono text-gray-900 break-all"><%= @partner.api_endpoint %></dd>
+    </div>
+    <div>
+      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.browse_base_url") %></dt>
+      <dd class="mt-1 text-sm font-mono text-gray-900 break-all"><%= @partner.browse_base_url.present? ? @partner.browse_base_url : t("federation_admin.partners.show.using_api_endpoint") %></dd>
+    </div>
+    <div>
+      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.webhook_url") %></dt>
+      <dd class="mt-1 text-sm font-mono text-gray-900 break-all"><%= @partner.webhook_url.present? ? @partner.webhook_url : t("federation_admin.partners.show.not_configured") %></dd>
+    </div>
+    <div class="sm:col-span-2">
+      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.new.partner_api_key", default: "Partner API Key") %></dt>
+      <dd class="mt-1">
+        <% if @partner.api_key_hash.present? %>
+          <span class="text-sm font-mono text-gray-900 bg-gray-50 border border-gray-200 rounded px-2 py-1 inline-block break-all"><%= @partner.api_key_hash.first(12) %>...<%= @partner.api_key_hash.last(4) %></span>
+          <span class="ml-2 text-xs text-green-600 font-medium"><%= t("federation_admin.partners.edit.current_key_set", default: "Current key is set") %></span>
+        <% else %>
+          <span class="text-sm text-red-600 font-medium"><%= t("federation_admin.partners.show.not_configured") %></span>
+        <% end %>
+      </dd>
+    </div>
+  </dl>
+</div>
+
+<%# ── Card 2: Status & Access ── %>
+<div class="bg-white shadow rounded-lg p-6 mb-6">
+  <h2 class="text-lg font-semibold text-gray-900 mb-4"><%= t("federation_admin.partners.new.section_access", default: "Access Control") %></h2>
+
+  <dl class="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-4">
     <div>
       <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.status") %></dt>
       <dd class="mt-1">
@@ -81,48 +105,12 @@
       </dd>
     </div>
     <div>
-      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.platform_type") %></dt>
-      <dd class="mt-1 text-sm text-gray-900"><%= t("federation_admin.common.platform_types.#{@partner.platform_type}", default: @partner.platform_type.capitalize) %></dd>
-    </div>
-    <div>
-      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.protocol_type") %></dt>
-      <dd class="mt-1">
-        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-federation-100 text-federation-800">
-          <%= Federation::Adapters.protocol_labels[@partner.protocol_type] || @partner.protocol_type %>
-        </span>
-      </dd>
-    </div>
-    <div>
-      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.api_endpoint") %></dt>
-      <dd class="mt-1 text-sm font-mono text-gray-900 break-all"><%= @partner.api_endpoint %></dd>
-    </div>
-    <div>
-      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.browse_base_url") %></dt>
-      <dd class="mt-1 text-sm font-mono text-gray-900 break-all"><%= @partner.browse_base_url.present? ? @partner.browse_base_url : t("federation_admin.partners.show.using_api_endpoint") %></dd>
-    </div>
-    <div>
-      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.webhook_url") %></dt>
-      <dd class="mt-1 text-sm font-mono text-gray-900 break-all"><%= @partner.webhook_url.present? ? @partner.webhook_url : t("federation_admin.partners.show.not_configured") %></dd>
-    </div>
-    <div>
-      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.webhook_secret") %></dt>
-      <dd class="mt-1 text-sm font-mono text-gray-900">
-        <span class="break-all">&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;<%= @partner.webhook_secret.to_s.last(8) %></span>
-        <span class="ml-2 text-xs text-gray-400"><%= t("federation_admin.partners.show.secret_note", default: "Full secret shown only at creation/rotation.") %></span>
-        <% if @partner.rotation_in_progress? %>
-          <span class="ml-3 inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-800">
-            <%= t("federation_admin.partners.show.rotation_in_progress", date: @partner.secret_rotation_started_at&.then { |t| format_date(t) }) %>
-          </span>
-        <% end %>
-      </dd>
-    </div>
-    <div>
       <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.feature_gates") %></dt>
       <dd class="mt-1">
         <% if @partner.feature_gates.present? %>
           <% gate_labels = { "profiles_enabled" => t("federation_admin.common.profiles"), "listings_enabled" => t("federation_admin.common.listings"), "transactions_enabled" => t("federation_admin.common.transactions"), "messaging_enabled" => t("federation_admin.common.messaging") } %>
           <% @partner.feature_gates.each do |gate, enabled| %>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium mr-1 mb-1 <%= enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500 line-through' %>">
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium mr-1 mb-1 <%= enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500 line-through' %>">
               <%= gate_labels[gate] || gate %>
             </span>
           <% end %>
@@ -131,23 +119,60 @@
         <% end %>
       </dd>
     </div>
-    <div>
+    <div class="sm:col-span-3">
       <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.permitted_orgs") %></dt>
       <dd class="mt-1 text-sm text-gray-900">
         <% if @permitted_orgs.blank? && (@partner.permitted_organization_ids.blank? || @partner.permitted_organization_ids.empty?) %>
           <span class="text-federation-600 font-medium"><%= t("federation_admin.partners.show.all_organizations") %></span>
         <% else %>
           <% (@permitted_orgs || []).each do |org| %>
-            <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 mr-1 mb-1">
-              <%= org.name %>
-            </span>
+            <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 mr-1 mb-1"><%= org.name %></span>
           <% end %>
+        <% end %>
+      </dd>
+    </div>
+  </dl>
+</div>
+
+<%# ── Card 3: Security & Health ── %>
+<div class="bg-white shadow rounded-lg p-6 mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-gray-900"><%= t("federation_admin.partners.show.section_security", default: "Security & Health") %></h2>
+    <div class="flex gap-2">
+      <form method="post" action="<%= regenerate_secret_federation_admin_partner_path(@partner) %>" class="inline"
+            onsubmit="return confirm('<%= j t("federation_admin.partners.show.rotate_confirm") %>');">
+        <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+        <button type="submit" class="inline-flex items-center bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1.5 px-3 rounded-md transition-colors text-xs">
+          <%= @partner.rotation_in_progress? ? t("federation_admin.partners.show.re_rotate_secret") : t("federation_admin.partners.show.rotate_secret") %>
+        </button>
+      </form>
+      <% if @partner.rotation_in_progress? %>
+        <form method="post" action="<%= complete_rotation_federation_admin_partner_path(@partner) %>" class="inline"
+              onsubmit="return confirm('<%= j t("federation_admin.partners.show.complete_rotation_confirm") %>');">
+          <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+          <button type="submit" class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white font-medium py-1.5 px-3 rounded-md transition-colors text-xs">
+            <%= t("federation_admin.partners.show.complete_rotation") %>
+          </button>
+        </form>
+      <% end %>
+    </div>
+  </div>
+
+  <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4">
+    <div>
+      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.webhook_secret") %></dt>
+      <dd class="mt-1 text-sm">
+        <%= @partner.webhook_secret.present? ? raw("&#x2713; " + t("federation_admin.partners.show.secret_configured", default: "Configured")) : raw("&#x2717; " + t("federation_admin.partners.show.secret_not_configured", default: "Not configured")) %>
+        <% if @partner.rotation_in_progress? %>
+          <span class="ml-2 inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">
+            <%= t("federation_admin.partners.show.rotation_in_progress", date: @partner.secret_rotation_started_at&.then { |t| format_date(t) }) %>
+          </span>
         <% end %>
       </dd>
     </div>
     <div>
       <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.consecutive_failures") %></dt>
-      <dd class="mt-1 text-sm text-gray-900">
+      <dd class="mt-1 text-sm">
         <% if @partner.consecutive_failures == 0 %>
           <span class="text-green-600 font-medium">0</span>
         <% elsif @partner.consecutive_failures < 5 %>
@@ -162,18 +187,16 @@
       <dd class="mt-1 text-sm text-gray-900"><%= @partner.last_health_check_at&.then { |t| format_date(t) } || t("federation_admin.partners.show.never") %></dd>
     </div>
     <div>
-      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.created") %></dt>
-      <dd class="mt-1 text-sm text-gray-900"><%= @partner.created_at.then { |t| format_date(t) } %></dd>
-    </div>
-    <div>
-      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.updated") %></dt>
-      <dd class="mt-1 text-sm text-gray-900"><%= @partner.updated_at.then { |t| format_date(t) } %></dd>
+      <dt class="text-sm font-medium text-gray-500"><%= t("federation_admin.partners.show.created") %> / <%= t("federation_admin.partners.show.updated") %></dt>
+      <dd class="mt-1 text-sm text-gray-500">
+        <%= @partner.created_at.then { |t| format_date(t) } %> / <%= @partner.updated_at.then { |t| format_date(t) } %>
+      </dd>
     </div>
   </dl>
 </div>
 
-<!-- Recent Transactions -->
-<div class="bg-white shadow rounded-lg p-6 mb-8">
+<%# ── Card 4: Recent Transactions ── %>
+<div class="bg-white shadow rounded-lg p-6 mb-6">
   <h2 class="text-lg font-semibold text-gray-900 mb-4"><%= t("federation_admin.partners.show.recent_transactions") %></h2>
 
   <% if @recent_transactions.any? %>
@@ -187,7 +210,6 @@
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t("federation_admin.partners.show.table.amount") %></th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t("federation_admin.partners.show.table.remote_user") %></th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t("federation_admin.partners.show.table.status") %></th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t("federation_admin.partners.show.table.external_id") %></th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= t("federation_admin.partners.show.table.created") %></th>
           </tr>
         </thead>
@@ -211,7 +233,6 @@
                   <%= t("federation_admin.common.#{txn.status}", default: txn.status) %>
                 </span>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-500 text-xs"><%= txn.external_transaction_id || "-" %></td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500"><%= txn.created_at.then { |t| format_date(t) } %></td>
             </tr>
           <% end %>
@@ -223,7 +244,7 @@
   <% end %>
 </div>
 
-<!-- Recent Webhooks -->
+<%# ── Card 5: Recent Webhooks ── %>
 <div class="bg-white shadow rounded-lg p-6">
   <h2 class="text-lg font-semibold text-gray-900 mb-4"><%= t("federation_admin.partners.show.recent_webhooks") %></h2>
 

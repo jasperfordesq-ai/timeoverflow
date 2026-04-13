@@ -33,6 +33,8 @@ class FederationMessage < ActiveRecord::Base
   scope :for_organization, ->(org_id) { where(organization_id: org_id) }
 
   def deliver!
+    # M18: Guard against re-delivery — once delivered or read, don't re-deliver
+    return self if %w[delivered read].include?(status)
     update!(status: "delivered", delivered_at: Time.current)
   end
 

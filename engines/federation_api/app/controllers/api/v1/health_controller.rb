@@ -38,7 +38,6 @@ module Api
         health_data = {
           status: all_ok ? "healthy" : "unhealthy",
           platform: "timeoverflow",
-          version: FederationApi::VERSION,
           timestamp: Time.current.iso8601,
           checks: {
             database: db_ok ? "ok" : "error",
@@ -47,15 +46,18 @@ module Api
           }
         }
 
+        # L2: Only expose version info to authenticated requests
+        health_data[:version] = FederationApi::VERSION if @current_api_key
+
         if all_ok
           respond_with_data(health_data, status: status)
         else
-          # When unhealthy, put health data in both `data` and `meta` for client
-          # compatibility: some clients read `data`, others read `meta`.
-          respond_with_data(
-            health_data,
+          # M1: Use respond_with_error for unhealthy status so the 503 response
+          # correctly returns success:false (not success:true with a 503 code).
+          respond_with_error(
+            I18n.t("federation_api.errors.unhealthy", default: "Service unhealthy"),
             status: status,
-            meta: health_data.merge(error: I18n.t("federation_api.errors.unhealthy", default: "Service unhealthy"))
+            errors: health_data[:checks].select { |_, v| v == "error" }.keys
           )
         end
       end

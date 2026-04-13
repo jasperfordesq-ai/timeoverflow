@@ -38,7 +38,7 @@ module FederationAdmin
         "messaging_enabled" => params[:messaging_enabled] == "1"
       }
 
-      @partner = FederationPartner.create!(
+      @partner = FederationPartner.new(
         name: params[:name],
         platform_type: params[:platform_type] || "nexus",
         protocol_type: params[:protocol_type] || "rest",
@@ -51,6 +51,14 @@ module FederationAdmin
         feature_gates: feature_gates,
         permitted_organization_ids: permitted_org_ids
       )
+      # Partner API key: use the admin-provided key, or auto-generate if blank.
+      # This is the key sent as Bearer token when calling the partner's API.
+      if params[:api_key_hash].present?
+        @partner.api_key_hash = params[:api_key_hash].strip
+      elsif @partner.api_key_hash.blank?
+        @partner.api_key_hash = SecureRandom.hex(32)
+      end
+      @partner.save!
 
       audit!("partner.created", target: @partner, changes_made: { name: @partner.name, platform_type: @partner.platform_type })
       flash[:notice] = t("federation_admin.flash.partner_created", name: @partner.name, default: "Partner '%{name}' created successfully. The webhook secret is shown on the partner detail page.")
@@ -84,7 +92,7 @@ module FederationAdmin
         "messaging_enabled" => params[:messaging_enabled] == "1"
       }
 
-      @partner.update!(
+      update_attrs = {
         name: params[:name],
         platform_type: params[:platform_type],
         protocol_type: params[:protocol_type] || @partner.protocol_type,
@@ -95,7 +103,10 @@ module FederationAdmin
         partnership_level: (params[:partnership_level].presence || @partner.partnership_level).to_i.clamp(1, 4),
         feature_gates: feature_gates,
         permitted_organization_ids: permitted_org_ids
-      )
+      }
+      # Allow updating the partner API key (the key we send to their API)
+      update_attrs[:api_key_hash] = params[:api_key_hash].strip if params[:api_key_hash].present?
+      @partner.update!(update_attrs)
 
       audit!("partner.updated", target: @partner, changes_made: @partner.previous_changes.except("updated_at"))
       flash[:notice] = t("federation_admin.flash.partner_updated", name: @partner.name, default: "Partner '%{name}' updated.")

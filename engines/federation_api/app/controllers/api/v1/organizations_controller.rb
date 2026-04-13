@@ -37,7 +37,7 @@ module Api
         # Double-check federation-enabled status (scoped_organizations already filters,
         # but this guards against race conditions where settings change between queries).
         unless Federation::AccessControl.org_enabled?(org)
-          return respond_with_error("Not found", status: :not_found)
+          return respond_with_error(I18n.t("federation_api.errors.not_found", default: "Not found"), status: :not_found)
         end
         respond_with_data(serialize_organization(org, detailed: true))
       end
@@ -90,7 +90,6 @@ module Api
             description: org.description,
             # PII: phone/email excluded from federation API; use admin panel
             account_balance: org.account&.balance,
-            reg_number_seq: org.reg_number_seq,
             active_offers_count: org.offers.active.count,
             active_inquiries_count: org.inquiries.active.count
           )

@@ -61,7 +61,6 @@ module Api
           member_uid: member.member_uid,
           username: user.username,
           active: member.active,
-          manager: member.manager,
           organization_id: member.organization_id,
           account_id: member.account&.id,
           balance: member.account&.balance,

@@ -21,12 +21,12 @@ module FederationUi
     def create
       # Body length validation (matches API-level 10,000-char limit)
       if params[:body].present? && params[:body].to_s.length > 10_000
-        return respond_with_error("Message body must be 10,000 characters or less", status: :unprocessable_entity)
+        return respond_with_error(I18n.t("federation_ui.messages.body_too_long", max: 10_000, default: "Message body must be %{max} characters or less"), status: :unprocessable_entity)
       end
 
       # Org-level federation gate
       unless Federation::AccessControl.org_enabled?(current_organization)
-        return respond_with_error("Federation is not enabled for your organization", status: :forbidden)
+        return respond_with_error(I18n.t("federation_ui.messages.federation_disabled", default: "Federation is not enabled for your organization"), status: :forbidden)
       end
 
       partner = FederationPartner.active.find(params[:partner_id])

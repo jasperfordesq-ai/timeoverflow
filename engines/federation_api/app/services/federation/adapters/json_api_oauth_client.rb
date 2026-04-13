@@ -66,7 +66,12 @@ module Federation
         response = http.request(request)
         return nil unless response.code.to_i == 200
 
-        data = JSON.parse(response.body) rescue nil
+        begin
+          data = response.body.present? ? JSON.parse(response.body) : nil
+        rescue JSON::ParserError => e
+          Rails.logger.error("[Federation::OAuth2] Failed to parse token response: #{e.message}")
+          return nil
+        end
         return nil unless data.is_a?(Hash)
 
         token = data["access_token"]

@@ -61,6 +61,9 @@ module FederationAdmin
 
     def show
       @api_key = FederationApiKey.find(params[:id])
+      # Prevent caching of raw key display (set for both create and show)
+      response.set_header("Cache-Control", "no-store, no-cache, must-revalidate, private")
+      response.set_header("Pragma", "no-cache")
     end
 
     def destroy

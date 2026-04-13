@@ -32,9 +32,17 @@ module Api
         scope = scope.where(status: params[:status]) if params[:status].present? && FederationTransaction::STATUSES.include?(params[:status])
         # Filter by direction
         scope = scope.where(direction: params[:direction]) if params[:direction].present? && %w[inbound outbound].include?(params[:direction])
-        # Filter by date range
-        scope = scope.where("created_at >= ?", Time.parse(params[:since])) if params[:since].present? rescue nil
-        scope = scope.where("created_at <= ?", Time.parse(params[:until])) if params[:until].present? rescue nil
+        # Filter by date range — reject invalid dates with 400 instead of silently ignoring
+        if params[:since].present?
+          since_time = begin; Time.parse(params[:since]); rescue ArgumentError; nil; end
+          return respond_with_error(I18n.t("federation_api.errors.invalid_date_format", field: "since", default: "Invalid date format for '%{field}'"), status: :bad_request) unless since_time
+          scope = scope.where("created_at >= ?", since_time)
+        end
+        if params[:until].present?
+          until_time = begin; Time.parse(params[:until]); rescue ArgumentError; nil; end
+          return respond_with_error(I18n.t("federation_api.errors.invalid_date_format", field: "until", default: "Invalid date format for '%{field}'"), status: :bad_request) unless until_time
+          scope = scope.where("created_at <= ?", until_time)
+        end
 
         scope = scope.order(created_at: :desc)
         transactions, meta = paginate(scope)

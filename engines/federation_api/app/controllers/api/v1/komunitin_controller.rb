@@ -161,7 +161,7 @@ module Api
 
       def serialize_transfer(txn)
         amount_minor = (txn.amount / 3600.0 * 100).round
-        state = { "pending" => "new", "completed" => "committed", "cancelled" => "rejected" }[txn.status] || txn.status
+        state = { "pending" => "new", "completed" => "committed", "cancelled" => "rejected", "disputed" => "pending" }[txn.status] || "pending"
 
         {
           type: "transfers",

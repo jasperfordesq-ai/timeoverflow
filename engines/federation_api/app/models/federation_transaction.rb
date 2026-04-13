@@ -38,6 +38,7 @@ class FederationTransaction < ActiveRecord::Base
   validates :reason, length: { maximum: 500 }, allow_blank: true
   validates :external_transaction_id, uniqueness: { scope: :federation_partner_id },
             allow_nil: true
+  validates :transfer_id, presence: { message: "is required for completed transactions" }, if: :completed?
 
   scope :pending, -> { where(status: "pending") }
   scope :completed, -> { where(status: "completed") }
@@ -57,11 +58,12 @@ class FederationTransaction < ActiveRecord::Base
   end
 
   private def denormalize_organization_id
-    return if organization_id.present?
     if local_account_id.present?
       org_id = Account.where(id: local_account_id).pick(:organization_id)
       if org_id.nil?
         errors.add(:organization_id, "could not be derived: account #{local_account_id} has no associated organization")
+      elsif organization_id.present? && organization_id != org_id
+        errors.add(:organization_id, "does not match the local account's organization (expected #{org_id}, got #{organization_id})")
       else
         self.organization_id = org_id
       end

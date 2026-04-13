@@ -29,8 +29,13 @@ module Api
         # opted_in_member_ids, which checks share_listings implicitly via the
         # preference model. If a separate share_listings gate is added later,
         # update this call to use the dedicated method.
-        visible_ids = Federation::AccessControl.opted_in_member_ids(current_organization)
-        visible_user_ids = Member.where(id: visible_ids).pluck(:user_id)
+        # Use subquery to avoid loading large ID arrays into memory.
+        # Instead of plucking IDs then WHERE IN(...), build a SQL subquery.
+        opted_in_member_ids = FederationMemberPreference
+          .where(organization_id: current_organization.id)
+          .opted_in
+          .select(:member_id)
+        visible_user_ids = Member.where(id: opted_in_member_ids).select(:user_id)
         posts = posts.where(user_id: visible_user_ids)
 
         # Filter by type if requested (case-insensitive comparison)

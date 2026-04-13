@@ -78,9 +78,9 @@ module Api
           # partners need activity data, not personal identifiers. Reducing the
           # PII surface prevents accidental cross-platform data leakage.
           #
-          # Use preloaded associations where available to avoid N+1 queries.
-          offers_count = member.association(:offers).loaded? ? member.offers.count(&:active?) : member.offers.active.count
-          inquiries_count = member.association(:inquiries).loaded? ? member.inquiries.count(&:active?) : member.inquiries.active.count
+          # Always use SQL count — .count(&:active?) loads all records into memory.
+          offers_count = member.offers.active.count
+          inquiries_count = member.inquiries.active.count
           data.merge!(
             description: user.description,
             offers_count: offers_count,

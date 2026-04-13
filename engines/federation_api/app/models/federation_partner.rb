@@ -121,27 +121,35 @@ class FederationPartner < ActiveRecord::Base
 
   # Start a secret rotation: generate a new secret and store it as next_webhook_secret.
   # Both secrets are accepted until complete_secret_rotation! is called.
+  # Uses pessimistic lock to prevent concurrent rotations from overwriting each other.
   def rotate_webhook_secret!
-    if rotation_in_progress?
-      Rails.logger.info("[FederationPartner] Re-rotating secret for partner #{id} (previous rotation not completed)")
+    with_lock do
+      reload
+      if rotation_in_progress?
+        Rails.logger.info("[FederationPartner] Re-rotating secret for partner #{id} (previous rotation not completed)")
+      end
+      new_secret = SecureRandom.hex(32)
+      update!(
+        next_webhook_secret: new_secret,
+        secret_rotation_started_at: Time.current
+      )
+      new_secret
     end
-    new_secret = SecureRandom.hex(32)
-    update!(
-      next_webhook_secret: new_secret,
-      secret_rotation_started_at: Time.current
-    )
-    new_secret
   end
 
   # Complete a rotation: promote next_webhook_secret to webhook_secret
   # and clear the rotation fields.
+  # Uses pessimistic lock for consistency with rotate_webhook_secret!.
   def complete_secret_rotation!
-    raise "No rotation in progress" if next_webhook_secret.blank?
-    update!(
-      webhook_secret: next_webhook_secret,
-      next_webhook_secret: nil,
-      secret_rotation_started_at: nil
-    )
+    with_lock do
+      reload
+      raise "No rotation in progress" if next_webhook_secret.blank?
+      update!(
+        webhook_secret: next_webhook_secret,
+        next_webhook_secret: nil,
+        secret_rotation_started_at: nil
+      )
+    end
   end
 
   def rotation_in_progress?
@@ -153,6 +161,7 @@ class FederationPartner < ActiveRecord::Base
   def inspect
     super.gsub(/webhook_secret: (".*?"|nil)/, 'webhook_secret: "[REDACTED]"')
          .gsub(/next_webhook_secret: (".*?"|nil)/, 'next_webhook_secret: "[REDACTED]"')
+         .gsub(/api_key_hash: (".*?"|nil)/, 'api_key_hash: "[REDACTED]"')
   end
 
   # Stale rotation detection: returns true if a secret rotation was started
@@ -236,9 +245,10 @@ class FederationPartner < ActiveRecord::Base
               break
             end
           end
-        rescue Resolv::ResolvError, Timeout::Error
-          # DNS resolution failed or timed out — allow the URL
-          # (real-time SSRF blocking happens at request time)
+        rescue Resolv::ResolvError, Timeout::Error => e
+          # DNS resolution failed or timed out — reject the URL to prevent
+          # SSRF bypass via DNS timing attacks. Real URLs must resolve.
+          errors.add(attr, "could not be verified: DNS resolution failed for #{host} (#{e.class})")
         end
       rescue URI::InvalidURIError
         errors.add(attr, "is not a valid URL")

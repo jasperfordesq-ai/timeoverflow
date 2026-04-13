@@ -5,16 +5,17 @@
 #
 class FederationAuditLog < ActiveRecord::Base
   validates :action, presence: true
+  validate :must_have_actor_or_system_action
 
   scope :recent, -> { order(created_at: :desc) }
   scope :for_target, ->(type, id) { where(target_type: type, target_id: id) }
 
   validate :changes_made_size_limit
 
-  def self.record!(action:, actor: nil, target: nil, changes_made: {}, ip_address: nil)
+  def self.record!(action:, actor: nil, target: nil, changes_made: {}, ip_address: nil, actor_email: nil)
     create!(
       action: action,
-      actor_email: actor&.email,
+      actor_email: actor_email || actor&.email || "system",
       actor_id: actor&.id,
       target_type: target&.class&.name,
       target_id: target&.id,
@@ -24,6 +25,13 @@ class FederationAuditLog < ActiveRecord::Base
   end
 
   private
+
+  # Every audit log should have an identifiable actor (human or system).
+  # System-initiated actions (reconciliation, cron) use actor_email "system".
+  def must_have_actor_or_system_action
+    return if actor_id.present? || actor_email.present?
+    errors.add(:base, "must have an actor_id or actor_email")
+  end
 
   def changes_made_size_limit
     return if changes_made.blank?

@@ -47,7 +47,16 @@ class FederationOrganizationSetting < ActiveRecord::Base
     enable_internal_federation
   end
 
+  validate :metadata_size_limit
+
   private
+
+  def metadata_size_limit
+    return if metadata.blank?
+    if metadata.to_json.bytesize > 100_000
+      errors.add(:metadata, I18n.t("federation_api.errors.metadata_too_large", max_kb: 100, default: "exceeds %{max_kb} KB size limit"))
+    end
+  end
 
   def sanitize_blocked_partner_ids
     return if blocked_partner_ids.blank?

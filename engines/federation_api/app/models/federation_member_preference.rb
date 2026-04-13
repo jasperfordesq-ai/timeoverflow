@@ -12,6 +12,7 @@ class FederationMemberPreference < ActiveRecord::Base
   validates :member_id, presence: true, uniqueness: true
   validates :organization_id, presence: true
   validates :discoverable, inclusion: { in: [true, false] }
+  validate :discoverable_requires_opt_in
 
   scope :opted_in, -> { where(opted_in: true) }
   scope :discoverable, -> { where(opted_in: true, discoverable: true) }
@@ -26,15 +27,27 @@ class FederationMemberPreference < ActiveRecord::Base
   end
 
   def opted_in?
-    return false unless opted_in
-    # Timestamp consistency: if opted_out_at is present and more recent than
-    # opted_in_at, the boolean flag may be stale — auto-repair by clearing
-    # the stale opted_out_at so the boolean is authoritative.
-    if opted_out_at.present? && opted_in_at.present? && opted_out_at > opted_in_at
-      update_columns(opted_out_at: nil)
-    end
-    true
+    opted_in == true
   end
+
+  # Timestamp consistency repair: if opted_out_at is more recent than
+  # opted_in_at while opted_in is true, the timestamp is stale. Called
+  # from before_validation to keep data consistent without side-effects
+  # in a getter method.
+  before_validation :repair_stale_opt_timestamps
+
+  private def discoverable_requires_opt_in
+    if discoverable && !opted_in
+      self.discoverable = false
+    end
+  end
+
+  private def repair_stale_opt_timestamps
+    if opted_in && opted_out_at.present? && opted_in_at.present? && opted_out_at > opted_in_at
+      self.opted_out_at = nil
+    end
+  end
+  public
 
   def discoverable?
     opted_in? && discoverable

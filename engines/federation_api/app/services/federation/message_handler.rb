@@ -113,7 +113,7 @@ module Federation
       Rails.logger.error("[Federation::MessageHandler] API read timed out for message #{message.id} to partner #{@partner.id}: #{e.message}")
       message.update!(metadata: (message.metadata || {}).merge("delivery_error" => "Read timeout: #{e.message}", "delivery_attempted_at" => Time.current.iso8601))
       false
-    rescue => e
+    rescue StandardError => e
       Rails.logger.error("[Federation::MessageHandler] API delivery error for message #{message.id}: #{e.class}: #{e.message}")
       message.update!(metadata: (message.metadata || {}).merge("delivery_error" => "#{e.class}: #{e.message}", "delivery_attempted_at" => Time.current.iso8601))
       false

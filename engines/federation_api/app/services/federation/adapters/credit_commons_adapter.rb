@@ -99,6 +99,10 @@ module Federation
 
       def from_cc_amount(cc_units)
         rate = BigDecimal(exchange_rate.to_s)
+        if rate <= 0
+          Rails.logger.error("[Federation::CreditCommonsAdapter] Invalid exchange rate #{rate} — using 1.0")
+          rate = BigDecimal("1.0")
+        end
         (BigDecimal(cc_units.to_s) / rate * 3600).round.to_i
       end
 
@@ -171,7 +175,6 @@ module Federation
       def transform_outbound_transfer(payload)
         # payload is expected to be a hash with TO transfer data
         txn = payload[:transaction] || payload["transaction"]
-        transfer = payload[:transfer] || payload["transfer"]
 
         uuid = txn&.external_transaction_id || SecureRandom.uuid
         state = txn ? to_cc_state(txn.status) : "P"
@@ -218,6 +221,18 @@ module Federation
 
         unless STATES.key?(state)
           Rails.logger.warn("[Federation::CreditCommonsAdapter] Unknown CC state '#{state}' in inbound transfer #{data[:uuid] || data["uuid"]} — falling back to 'pending'")
+        end
+
+        # Validate state transition if we have an existing transaction for this UUID
+        if (uuid = data[:uuid] || data["uuid"]).present?
+          existing = FederationTransaction.find_by(external_transaction_id: uuid)
+          if existing
+            existing_cc_state = existing.metadata&.dig("cc_state") || REVERSE_STATES[existing.status] || "P"
+            unless valid_transition?(existing_cc_state, state)
+              Rails.logger.warn("[Federation::CreditCommonsAdapter] Invalid CC state transition #{existing_cc_state}→#{state} for transaction #{uuid} — rejecting")
+              raise ArgumentError, "Invalid CC state transition from #{existing_cc_state} to #{state}"
+            end
+          end
         end
 
         {

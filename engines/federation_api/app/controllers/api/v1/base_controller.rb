@@ -98,7 +98,8 @@ module Api
 
         limit = begin
           [Rails.application.config.federation.rate_limit, 1].max
-        rescue NoMethodError, StandardError
+        rescue NoMethodError, ArgumentError => e
+          Rails.logger.warn("[Federation::API] Rate limit config unavailable (#{e.class}), using default 100")
           100
         end
         now = Time.current.to_i

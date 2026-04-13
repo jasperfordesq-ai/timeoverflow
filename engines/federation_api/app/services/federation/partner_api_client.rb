@@ -130,11 +130,11 @@ module Federation
 
       if response.code.to_i < 300
         @partner.record_success!
-        JSON.parse(response.body)
+        response.body.present? ? JSON.parse(response.body) : { "success" => true }
       else
         { "success" => false, "error" => "Partner returned #{response.code}" }
       end
-    rescue => e
+    rescue StandardError => e
       { "success" => false, "error" => e.message }
     end
 
@@ -167,8 +167,7 @@ module Federation
                       when "PUT"    then Net::HTTP::Put
                       when "DELETE" then Net::HTTP::Delete
                       else
-                        Rails.logger.warn("[Federation::PartnerApiClient] Unknown HTTP method '#{method}', defaulting to POST")
-                        Net::HTTP::Post
+                        raise ArgumentError, "Unsupported HTTP method '#{method}' — only POST, PATCH, PUT, DELETE are allowed"
                       end
       request = request_class.new(uri)
       set_headers(request)
@@ -220,12 +219,12 @@ module Federation
           return { "success" => false, "error" => "Response body too large to parse (#{response.body.bytesize} bytes)" }
         end
         @partner.record_success!
-        JSON.parse(response.body)
+        response.body.present? ? JSON.parse(response.body) : { "success" => true }
       else
         @partner.record_failure!
         { "success" => false, "error" => "Partner returned #{response.code}" }
       end
-    rescue => e
+    rescue StandardError => e
       @partner.record_failure!
       Rails.logger.error("[Federation::PartnerApiClient] Request to #{@partner.name} failed: #{e.class}: #{e.message}")
       { "success" => false, "error" => e.message }

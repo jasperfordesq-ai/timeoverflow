@@ -78,16 +78,16 @@ module FederationHub
       partner_id = params[:partner_id]
       source_type = params[:source_type]
 
+      # Org-level federation gate — check BEFORE any partner lookups
+      unless Federation::AccessControl.org_enabled?(current_organization)
+        flash[:alert] = t("federation_hub.messages.federation_disabled", default: "Federation is not enabled for your organization")
+        redirect_to federation_hub_messages_path and return
+      end
+
       # Body length validation (matches API-level 10,000-char limit)
       if params[:body].present? && params[:body].to_s.length > 10_000
         flash[:alert] = t("federation_hub.messages.body_too_long", default: "Message body must be 10,000 characters or less")
         redirect_to new_federation_hub_message_path(partner_id: partner_id, source_type: source_type) and return
-      end
-
-      # Org-level federation gate
-      unless Federation::AccessControl.org_enabled?(current_organization)
-        flash[:alert] = t("federation_hub.messages.federation_disabled", default: "Federation is not enabled for your organization")
-        redirect_to federation_hub_messages_path and return
       end
 
       # For external partners, use FederationPartner
@@ -113,11 +113,13 @@ module FederationHub
       )
 
       if params[:reply_to].present?
-        # Validate reply_to belongs to current member to prevent open redirect
+        # Validate reply_to belongs to current member AND same partner to prevent
+        # cross-partner conversation threading.
         reply_msg = FederationMessage.find_by(
           id: params[:reply_to],
           organization_id: current_organization.id,
-          local_member_id: current_member.id
+          local_member_id: current_member.id,
+          federation_partner_id: partner.id
         )
         if reply_msg
           redirect_to federation_hub_message_path(reply_msg), notice: t("federation_hub.messages.sent")

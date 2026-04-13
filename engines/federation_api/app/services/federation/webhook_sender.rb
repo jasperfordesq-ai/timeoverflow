@@ -15,7 +15,7 @@ module Federation
     def self.timeout
       val = Rails.application.config.federation.webhook_timeout.to_i
       val > 0 ? [val, MAX_TIMEOUT].min : 10
-    rescue NoMethodError, StandardError
+    rescue NoMethodError, ArgumentError
       10
     end
 
@@ -38,7 +38,7 @@ module Federation
         payload.as_json,
         fed_txn_id
       )
-    rescue => e
+    rescue StandardError => e
       Rails.logger.fatal("[Federation] Failed to queue webhook for partner #{partner.id} event=#{event}: #{e.class}: #{e.message}")
       raise
     end
@@ -101,7 +101,7 @@ module Federation
         end
 
         response
-      rescue => e
+      rescue StandardError => e
         log.update!(status: "failed", response_body: e.message)
         # Do NOT call record_failure! here — network errors will be retried by
         # WebhookDeliveryJob and each retry would increment the counter. The job's

@@ -33,17 +33,22 @@ class FederationMessage < ActiveRecord::Base
   scope :for_organization, ->(org_id) { where(organization_id: org_id) }
 
   def deliver!
-    # M18: Guard against re-delivery — once delivered or read, don't re-deliver
-    return self if %w[delivered read].include?(status)
-    # Prevent failed messages from being marked as delivered — they need
-    # manual intervention or a re-send, not a silent status flip.
-    raise "Cannot deliver a failed message (id=#{id})" if status == "failed"
-    update!(status: "delivered", delivered_at: Time.current)
+    with_lock do
+      # M18: Guard against re-delivery — once delivered or read, don't re-deliver.
+      # Pessimistic lock prevents concurrent webhook deliveries from racing.
+      return self if %w[delivered read].include?(status)
+      # Prevent failed messages from being marked as delivered — they need
+      # manual intervention or a re-send, not a silent status flip.
+      raise "Cannot deliver a failed message (id=#{id})" if status == "failed"
+      update!(status: "delivered", delivered_at: Time.current)
+    end
   end
 
   def mark_read!
-    return if status == "read"
-    update!(status: "read", read_at: Time.current)
+    with_lock do
+      return if status == "read"
+      update!(status: "read", read_at: Time.current)
+    end
   end
 
   def inbound?

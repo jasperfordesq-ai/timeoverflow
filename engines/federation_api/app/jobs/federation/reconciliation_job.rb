@@ -119,6 +119,7 @@ module Federation
             original_txn_id = txn.id
 
             deadlock_retries = 0
+            txn_cancelled = false  # Reset on each retry to prevent stale flag
             ActiveRecord::Base.transaction do
               # Lock the row with FOR UPDATE SKIP LOCKED to prevent concurrent
               # reconciliation runs from processing the same transaction (double-

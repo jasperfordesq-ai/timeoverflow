@@ -11,7 +11,7 @@ module Federation
       when :transfer_sent
         notify_transfer_sent(member, data)
       end
-    rescue => e
+    rescue StandardError => e
       Rails.logger.error("[Federation::NotificationService] Failed to notify member #{member.id}: #{e.class}: #{e.message}")
     end
 
@@ -50,7 +50,7 @@ module Federation
       end
 
       raw_amount = data[:amount]
-      unless raw_amount.is_a?(Numeric) || raw_amount.to_s.match?(/\A\d+(\.\d+)?\z/)
+      unless raw_amount.is_a?(Numeric)
         Rails.logger.warn("[Federation::NotificationService] Invalid or missing amount (#{raw_amount.inspect}) for transfer_received notification — defaulting to 0")
         raw_amount = 0
       end
@@ -79,7 +79,7 @@ module Federation
       end
 
       raw_amount = data[:amount]
-      unless raw_amount.is_a?(Numeric) || raw_amount.to_s.match?(/\A\d+(\.\d+)?\z/)
+      unless raw_amount.is_a?(Numeric)
         Rails.logger.warn("[Federation::NotificationService] Invalid or missing amount (#{raw_amount.inspect}) for transfer_sent notification — defaulting to 0")
         raw_amount = 0
       end

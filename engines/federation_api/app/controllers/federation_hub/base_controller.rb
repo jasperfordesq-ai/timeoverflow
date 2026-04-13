@@ -72,11 +72,12 @@ module FederationHub
     def unread_message_count
       @unread_message_count ||= begin
         return 0 unless current_member && current_organization
-        FederationMessage.where(
+        count = FederationMessage.where(
           organization_id: current_organization.id,
           local_member_id: current_member.id,
           direction: "inbound"
-        ).where(read_at: nil).count
+        ).where(read_at: nil).limit(1000).count
+        count >= 1000 ? 999 : count
       rescue StandardError
         0
       end

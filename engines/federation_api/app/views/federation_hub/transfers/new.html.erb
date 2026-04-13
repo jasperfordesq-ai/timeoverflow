@@ -125,7 +125,7 @@
             <div class="mb-3">
               <p class="text-muted">
                 <%= t("federation_hub.transfers.your_balance") %>:
-                <strong><%= format_federation_hours(current_member.account&.balance) %></strong>
+                <strong><%= format_federation_hours(current_member.account&.balance || 0) %></strong>
               </p>
               <% if @selected_type == "external" %>
                 <p class="text-muted small">
@@ -176,11 +176,19 @@
   hoursEl.addEventListener('input', checkBalance);
   minsEl.addEventListener('input', checkBalance);
 
-  // M13: Single confirmation handler (no duplicate data-confirm attribute on the button)
+  // M13: Single confirmation handler with zero-time validation
   var form = hoursEl.closest('form');
   if (form) {
     form.addEventListener('submit', function(e) {
-      if (!confirm('<%= j t("federation_hub.transfers.confirm_send") %>')) {
+      var hours = parseInt(hoursEl.value, 10) || 0;
+      var mins = parseInt(minsEl.value, 10) || 0;
+      if (hours === 0 && mins === 0) {
+        e.preventDefault();
+        alert('<%= j t("federation_hub.transfers.amount_required", default: "Please enter an amount greater than zero.") %>');
+        return;
+      }
+      var msg = form.getAttribute('data-confirm-msg') || '<%= j t("federation_hub.transfers.confirm_send") %>';
+      if (!confirm(msg)) {
         e.preventDefault();
       }
     });

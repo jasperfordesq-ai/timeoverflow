@@ -284,34 +284,46 @@ module Api
           else
             old_status = partner.status
             partner.update!(status: "active")
-            FederationAuditLog.record!(
-              action: "partner.status_changed",
-              actor: nil,
-              target: partner,
-              changes_made: { status: [old_status, "active"], via: "webhook", event: event_type },
-              ip_address: request.remote_ip
-            ) rescue => e; Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
+            begin
+              FederationAuditLog.record!(
+                action: "partner.status_changed",
+                actor: nil,
+                target: partner,
+                changes_made: { status: [old_status, "active"], via: "webhook", event: event_type },
+                ip_address: request.remote_ip
+              )
+            rescue => e
+              Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
+            end
           end
         when "partnership.suspended", "partnership.rejected"
           old_status = partner.status
           partner.update!(status: "suspended")
-          FederationAuditLog.record!(
-            action: "partner.status_changed",
-            actor: nil,
-            target: partner,
-            changes_made: { status: [old_status, "suspended"], via: "webhook", event: event_type },
-            ip_address: request.remote_ip
-          ) rescue => e; Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
+          begin
+            FederationAuditLog.record!(
+              action: "partner.status_changed",
+              actor: nil,
+              target: partner,
+              changes_made: { status: [old_status, "suspended"], via: "webhook", event: event_type },
+              ip_address: request.remote_ip
+            )
+          rescue => e
+            Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
+          end
         when "partnership.terminated"
           old_status = partner.status
           partner.update!(status: "terminated")
-          FederationAuditLog.record!(
-            action: "partner.status_changed",
-            actor: nil,
-            target: partner,
-            changes_made: { status: [old_status, "terminated"], via: "webhook", event: event_type },
-            ip_address: request.remote_ip
-          ) rescue => e; Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
+          begin
+            FederationAuditLog.record!(
+              action: "partner.status_changed",
+              actor: nil,
+              target: partner,
+              changes_made: { status: [old_status, "terminated"], via: "webhook", event: event_type },
+              ip_address: request.remote_ip
+            )
+          rescue => e
+            Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
+          end
         when "partnership.level_changed"
           level = payload["level"].to_i
           # Fix #11: Only allow level decreases via webhook (downgrades).
@@ -324,13 +336,17 @@ module Api
               old_level = partner.partnership_level
               partner.update!(partnership_level: level)
               Rails.logger.info("[Federation] Partner #{partner.id} level changed to #{level} (downgrade/same)")
-              FederationAuditLog.record!(
-                action: "partner.level_changed",
-                actor: nil,
-                target: partner,
-                changes_made: { partnership_level: [old_level, level], via: "webhook", event: event_type },
-                ip_address: request.remote_ip
-              ) rescue => e; Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
+              begin
+                FederationAuditLog.record!(
+                  action: "partner.level_changed",
+                  actor: nil,
+                  target: partner,
+                  changes_made: { partnership_level: [old_level, level], via: "webhook", event: event_type },
+                  ip_address: request.remote_ip
+                )
+              rescue => e
+                Rails.logger.warn("[Federation] Audit log failed: #{e.message}")
+              end
             else
               Rails.logger.warn("[Federation] Rejected level upgrade attempt for partner #{partner.id}: #{partner.partnership_level} → #{level} (requires admin approval)")
             end

@@ -79,6 +79,12 @@ class FederationTransaction < ActiveRecord::Base
         raise "Cannot complete a #{status} federation transaction (id=#{id})"
       end
 
+      # Integrity guard — a completed transaction must have a backing transfer
+      # to ensure the reconciliation job can verify double-entry movements.
+      if local_transfer.blank? && transfer_id.blank?
+        raise "Cannot complete federation transaction #{id} without a backing transfer"
+      end
+
       self.status = "completed"
       self.completed_at = Time.current
       self.transfer = local_transfer if local_transfer

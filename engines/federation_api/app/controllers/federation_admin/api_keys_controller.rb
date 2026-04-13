@@ -28,11 +28,19 @@ module FederationAdmin
 
       permitted_org_ids = (params[:permitted_organization_ids] || []).reject(&:blank?).map(&:to_i)
 
+      expires_at = params[:expires_at].present? ? Time.zone.parse(params[:expires_at]) : nil
+      if expires_at.present? && expires_at < Time.current
+        flash.now[:alert] = t("federation_admin.flash.expiry_in_past", default: "Expiry date must be in the future.")
+        @organizations = Organization.order(:name)
+        render :new
+        return
+      end
+
       @api_key, @raw_key = FederationApiKey.generate!(
         name: params[:name],
         organization: org,
         permissions: permissions,
-        expires_at: params[:expires_at].present? ? Time.zone.parse(params[:expires_at]) : nil
+        expires_at: expires_at
       )
       # Set permitted_organization_ids after creation (generate! doesn't accept it)
       @api_key.update!(permitted_organization_ids: permitted_org_ids) if permitted_org_ids.any?

@@ -113,7 +113,17 @@ module FederationHub
       )
 
       if params[:reply_to].present?
-        redirect_to federation_hub_message_path(params[:reply_to]), notice: t("federation_hub.messages.sent")
+        # Validate reply_to belongs to current member to prevent open redirect
+        reply_msg = FederationMessage.find_by(
+          id: params[:reply_to],
+          organization_id: current_organization.id,
+          local_member_id: current_member.id
+        )
+        if reply_msg
+          redirect_to federation_hub_message_path(reply_msg), notice: t("federation_hub.messages.sent")
+        else
+          redirect_to federation_hub_messages_path, notice: t("federation_hub.messages.sent")
+        end
       else
         redirect_to federation_hub_messages_path, notice: t("federation_hub.messages.sent")
       end

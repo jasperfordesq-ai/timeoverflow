@@ -118,6 +118,7 @@ module Federation
             txn_cancelled = false
             original_txn_id = txn.id
 
+            deadlock_retries = 0
             ActiveRecord::Base.transaction do
               # Lock the row with FOR UPDATE SKIP LOCKED to prevent concurrent
               # reconciliation runs from processing the same transaction (double-
@@ -202,6 +203,15 @@ module Federation
                 cancelled_at: txn.cancelled_at&.iso8601
               }
             )
+          rescue ActiveRecord::Deadlocked => e
+            deadlock_retries += 1
+            if deadlock_retries < 3
+              Rails.logger.warn("[Federation::Reconciliation] Deadlock on fed_txn #{original_txn_id}, retrying (#{deadlock_retries}/3)")
+              sleep(0.1 * deadlock_retries)
+              retry
+            else
+              Rails.logger.error("[Federation::Reconciliation] Deadlock on fed_txn #{original_txn_id} after 3 retries: #{e.message}")
+            end
           rescue => e
             Rails.logger.error("[Federation::Reconciliation] Failed to cancel/reverse stale fed_txn #{original_txn_id}: #{e.class}: #{e.message}")
           end
@@ -312,6 +322,15 @@ module Federation
       }
       if purged_count > 0 || deleted_count > 0
         Rails.logger.info("[Federation::Reconciliation] Cleared #{purged_count} stale nonces, deleted #{deleted_count} old log rows")
+      end
+
+      # Cap issues array to prevent oversized JSONB records (PostgreSQL limit).
+      max_issues = 5_000
+      if issues.size > max_issues
+        overflow = issues.size - max_issues
+        issues = issues.first(max_issues)
+        issues << { type: "issues_overflow", severity: "warning", message: "#{overflow} additional issue(s) not recorded due to size limit" }
+        Rails.logger.warn("[Federation::Reconciliation] Issues array exceeded #{max_issues}; #{overflow} items dropped")
       end
 
       # Log results

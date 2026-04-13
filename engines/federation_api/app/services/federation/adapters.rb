@@ -17,6 +17,7 @@ module Federation
 
     # Resolve a partner to its protocol adapter instance.
     def self.resolve(partner)
+      raise ArgumentError, "partner cannot be nil" if partner.nil?
       protocol = partner.respond_to?(:protocol_type) ? partner.protocol_type : "rest"
       klass_name = REGISTRY[protocol.to_s]
       raise ArgumentError, "Unknown protocol_type: #{protocol}. Supported: #{REGISTRY.keys.join(', ')}" unless klass_name

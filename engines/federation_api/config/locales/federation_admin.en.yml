@@ -663,6 +663,9 @@ en:
       validation_failed: "Validation failed: %{errors}"
       partner_create_failed: "Failed to create partner. Check the server logs for details."
       partner_update_failed: "Failed to update partner. Check the server logs for details."
+      expiry_in_past: "Expiry date must be in the future."
+      create_failed: "Failed to create API key. Check the server logs for details."
+      bulk_revoke_too_many: "Too many IDs submitted (max %{max}). Please select fewer keys."
 
     common:
       close: "Close"

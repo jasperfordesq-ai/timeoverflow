@@ -463,7 +463,8 @@ module Api
         end
 
         unless member && org
-          raise ArgumentError, "Could not resolve message recipient for webhook payload (org_id=#{org_id}, recipient_id=#{payload['recipient_id']}, local_member_id=#{payload['local_member_id']})"
+          Rails.logger.warn("[Federation::Webhook] Could not resolve message recipient: org_id=#{org_id}, recipient_id=#{payload['recipient_id']}, local_member_id=#{payload['local_member_id']}")
+          raise ArgumentError, "Could not resolve message recipient"
         end
 
         unless Federation::AccessControl.org_enabled?(org)

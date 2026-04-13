@@ -15,7 +15,8 @@ module Api
 
         # Only show inquiries from members who have opted in to federation.
         visible_ids = Federation::AccessControl.opted_in_member_ids(current_organization)
-        inquiries = inquiries.where(user_id: Member.where(id: visible_ids).select(:user_id))
+        visible_user_ids = Member.where(id: visible_ids).pluck(:user_id)
+        inquiries = inquiries.where(user_id: visible_user_ids)
 
         inquiries = inquiries.by_category(params[:category_id]) if params[:category_id].present?
         inquiries = inquiries.search_by_query(params[:search]) if params[:search].present?

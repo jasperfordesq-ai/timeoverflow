@@ -15,7 +15,8 @@ module Api
 
         # Only show offers from members who have opted in to federation.
         visible_ids = Federation::AccessControl.opted_in_member_ids(current_organization)
-        offers = offers.where(user_id: Member.where(id: visible_ids).select(:user_id))
+        visible_user_ids = Member.where(id: visible_ids).pluck(:user_id)
+        offers = offers.where(user_id: visible_user_ids)
 
         offers = offers.by_category(params[:category_id]) if params[:category_id].present?
         offers = offers.search_by_query(params[:search]) if params[:search].present?

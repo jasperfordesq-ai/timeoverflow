@@ -102,8 +102,9 @@ module Federation
           partner_accepted = true
           begin
             begin
-              body = response.body.present? ? JSON.parse(response.body) : {}
-            rescue JSON::ParserError, TypeError => json_err
+              raw_body = response.body.present? ? response.body.dup.force_encoding("UTF-8") : nil
+              body = raw_body ? JSON.parse(raw_body) : {}
+            rescue JSON::ParserError, TypeError, Encoding::InvalidByteSequenceError => json_err
               Rails.logger.warn("[Federation::WebhookDelivery] Failed to parse response body as JSON: #{json_err.message}")
               body = nil
             end

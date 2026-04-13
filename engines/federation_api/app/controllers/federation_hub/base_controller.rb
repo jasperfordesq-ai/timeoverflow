@@ -44,10 +44,12 @@ module FederationHub
     def current_organization
       @current_organization ||= begin
         org_id = session[:current_organization_id]
-        if org_id
-          Organization.find_by(id: org_id)
-        else
-          current_user&.organizations&.first
+        if org_id && current_user
+          # Validate the session org_id against user's actual memberships to
+          # prevent privilege escalation via session manipulation.
+          current_user.organizations.find_by(id: org_id) || current_user.organizations.first
+        elsif current_user
+          current_user.organizations.first
         end
       end
     end

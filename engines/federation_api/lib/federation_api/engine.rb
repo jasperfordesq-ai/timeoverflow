@@ -38,21 +38,27 @@ module FederationApi
       app.config.federation.enabled       = ENV.fetch("FEDERATION_ENABLED", "false") == "true"
 
       # Timeout for outbound webhook HTTP requests (seconds). Clamped to 1..300.
-      app.config.federation.webhook_timeout    = [[ENV.fetch("FEDERATION_WEBHOOK_TIMEOUT", "10").to_i, 1].max, 300].min
+      wh_timeout_raw = ENV.fetch("FEDERATION_WEBHOOK_TIMEOUT", "10").to_i
+      app.config.federation.webhook_timeout = [[wh_timeout_raw, 1].max, 300].min
 
       # Maximum allowed transfer amount in seconds. 360000 = 100 hours. Clamped to 0..1_000_000.
-      app.config.federation.max_transfer_amount = [[ENV.fetch("FEDERATION_MAX_TRANSFER_AMOUNT", "360000").to_i, 0].max, 1_000_000].min
+      max_transfer_raw = ENV.fetch("FEDERATION_MAX_TRANSFER_AMOUNT", "360000").to_i
+      app.config.federation.max_transfer_amount = [[max_transfer_raw, 0].max, 1_000_000].min
 
       # API rate limit: max requests per minute per API key. Clamped to 1..10_000.
-      app.config.federation.rate_limit          = [[ENV.fetch("FEDERATION_RATE_LIMIT", "100").to_i, 1].max, 10_000].min
+      rate_limit_raw = ENV.fetch("FEDERATION_RATE_LIMIT", "100").to_i
+      app.config.federation.rate_limit = [[rate_limit_raw, 1].max, 10_000].min
 
       # Startup validation: warn about misconfigured ENV vars so ops can
       # catch issues at deploy time rather than at runtime.
       if app.config.federation.enabled
         warnings = []
         warnings << "FEDERATION_WEBHOOK_TIMEOUT=#{ENV['FEDERATION_WEBHOOK_TIMEOUT']} is not a positive integer" if ENV.key?("FEDERATION_WEBHOOK_TIMEOUT") && ENV["FEDERATION_WEBHOOK_TIMEOUT"].to_i <= 0
+        warnings << "FEDERATION_WEBHOOK_TIMEOUT=#{wh_timeout_raw} exceeds max 300; clamped to #{app.config.federation.webhook_timeout}" if wh_timeout_raw > 300
         warnings << "FEDERATION_MAX_TRANSFER_AMOUNT=#{ENV['FEDERATION_MAX_TRANSFER_AMOUNT']} is not a positive integer" if ENV.key?("FEDERATION_MAX_TRANSFER_AMOUNT") && ENV["FEDERATION_MAX_TRANSFER_AMOUNT"].to_i <= 0
+        warnings << "FEDERATION_MAX_TRANSFER_AMOUNT=#{max_transfer_raw} exceeds max 1000000; clamped to #{app.config.federation.max_transfer_amount}" if max_transfer_raw > 1_000_000
         warnings << "FEDERATION_RATE_LIMIT=#{ENV['FEDERATION_RATE_LIMIT']} is not a positive integer" if ENV.key?("FEDERATION_RATE_LIMIT") && ENV["FEDERATION_RATE_LIMIT"].to_i <= 0
+        warnings << "FEDERATION_RATE_LIMIT=#{rate_limit_raw} exceeds max 10000; clamped to #{app.config.federation.rate_limit}" if rate_limit_raw > 10_000
         warnings.each { |w| Rails.logger.warn("[FederationApi] Config warning: #{w}") } if warnings.any?
       end
     end

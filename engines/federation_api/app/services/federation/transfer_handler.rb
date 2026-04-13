@@ -195,58 +195,58 @@ module Federation
       local_transfer = nil
 
       begin
-      ActiveRecord::Base.transaction(isolation: :repeatable_read) do
-        # Idempotency check inside transaction to eliminate TOCTOU window.
-        if idempotency_key.present?
-          existing = FederationTransaction.find_by(
+        ActiveRecord::Base.transaction(isolation: :repeatable_read) do
+          # Idempotency check inside transaction to eliminate TOCTOU window.
+          if idempotency_key.present?
+            existing = FederationTransaction.find_by(
+              federation_partner: @partner,
+              external_transaction_id: idempotency_key
+            )
+            return existing if existing
+          end
+
+          # Lock the source account and verify sufficient balance atomically.
+          local_account.lock!
+          if local_account.balance.to_i < amount
+            raise ArgumentError, "Insufficient balance (available: #{local_account.balance.to_i}, required: #{amount})"
+          end
+
+          fed_txn = FederationTransaction.create!(
             federation_partner: @partner,
-            external_transaction_id: idempotency_key
+            external_transaction_id: external_transaction_id,
+            direction: "outbound",
+            local_account_id: local_account.id,
+            organization_id: org.id,
+            remote_user_identifier: remote_user_identifier,
+            amount: amount,
+            reason: reason
+            # status defaults to "pending" — NOT completed yet
           )
-          return existing if existing
-        end
 
-        # Lock the source account and verify sufficient balance atomically.
-        local_account.lock!
-        if local_account.balance.to_i < amount
-          raise ArgumentError, "Insufficient balance (available: #{local_account.balance.to_i}, required: #{amount})"
-        end
+          # Debit local member to org's federation pool
+          local_transfer = Transfer.new
+          local_transfer.source = local_account.id
+          local_transfer.destination = org.account.id
+          local_transfer.amount = amount
+          local_transfer.reason = "[Federation] #{reason.presence || "Cross-platform transfer"}"
+          local_transfer.save!
 
-        fed_txn = FederationTransaction.create!(
-          federation_partner: @partner,
-          external_transaction_id: external_transaction_id,
-          direction: "outbound",
-          local_account_id: local_account.id,
-          organization_id: org.id,
-          remote_user_identifier: remote_user_identifier,
-          amount: amount,
-          reason: reason
-          # status defaults to "pending" — NOT completed yet
-        )
+          # Synchronous double-entry validation (same as inbound path)
+          movements = local_transfer.movements.reload
+          unless movements.size == 2 && movements.sum(&:amount) == 0
+            raise StandardError, "Double-entry violation: #{movements.size} movements, sum=#{movements.sum(&:amount)}"
+          end
 
-        # Debit local member to org's federation pool
-        local_transfer = Transfer.new
-        local_transfer.source = local_account.id
-        local_transfer.destination = org.account.id
-        local_transfer.amount = amount
-        local_transfer.reason = "[Federation] #{reason.presence || "Cross-platform transfer"}"
-        local_transfer.save!
-
-        # Synchronous double-entry validation (same as inbound path)
-        movements = local_transfer.movements.reload
-        unless movements.size == 2 && movements.sum(&:amount) == 0
-          raise StandardError, "Double-entry violation: #{movements.size} movements, sum=#{movements.sum(&:amount)}"
-        end
-
-        # Link transfer to fed_txn so ReconciliationJob can find it for reversal,
-        # but leave status as "pending" — complete! is called by WebhookDeliveryJob.
-        fed_txn.update!(
-          transfer: local_transfer,
-          metadata: (fed_txn.metadata || {}).merge(
-            "local_transfer_id" => local_transfer.id,
-            "webhook_queued_at" => nil
+          # Link transfer to fed_txn so ReconciliationJob can find it for reversal,
+          # but leave status as "pending" — complete! is called by WebhookDeliveryJob.
+          fed_txn.update!(
+            transfer: local_transfer,
+            metadata: (fed_txn.metadata || {}).merge(
+              "local_transfer_id" => local_transfer.id,
+              "webhook_queued_at" => nil
+            )
           )
-        )
-      end
+        end
       rescue ActiveRecord::RecordNotUnique
         # Concurrent duplicate hit the DB unique constraint — return the winner.
         existing = FederationTransaction.find_by(
@@ -255,7 +255,7 @@ module Federation
         )
         return existing if existing
         raise
-      end
+      end  # begin/rescue
 
       # Request remote partner to credit the remote user AFTER commit.
       # Pass fed_txn_id so the delivery job can call complete! on success.

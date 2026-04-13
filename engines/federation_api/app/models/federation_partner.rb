@@ -113,14 +113,18 @@ class FederationPartner < ActiveRecord::Base
   # Stale rotations (>7 days) are excluded — the old next_webhook_secret is
   # no longer valid, forcing completion or restart of the rotation.
   def valid_webhook_secrets
-    secrets = [webhook_secret]
-    secrets << next_webhook_secret unless rotation_stale?
-    secrets.compact.reject(&:blank?)
+    secrets = []
+    secrets << webhook_secret if webhook_secret.present? && webhook_secret.length >= 32
+    secrets << next_webhook_secret if next_webhook_secret.present? && next_webhook_secret.length >= 32 && !rotation_stale?
+    secrets
   end
 
   # Start a secret rotation: generate a new secret and store it as next_webhook_secret.
   # Both secrets are accepted until complete_secret_rotation! is called.
   def rotate_webhook_secret!
+    if rotation_in_progress?
+      Rails.logger.info("[FederationPartner] Re-rotating secret for partner #{id} (previous rotation not completed)")
+    end
     new_secret = SecureRandom.hex(32)
     update!(
       next_webhook_secret: new_secret,

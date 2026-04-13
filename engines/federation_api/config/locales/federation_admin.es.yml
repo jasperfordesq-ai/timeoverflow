@@ -663,6 +663,9 @@ es:
       validation_failed: "Error de validación: %{errors}"
       partner_create_failed: "Error al crear el socio. Consulte los registros del servidor para más detalles."
       partner_update_failed: "Error al actualizar el socio. Consulte los registros del servidor para más detalles."
+      expiry_in_past: "La fecha de expiración debe ser en el futuro."
+      create_failed: "Error al crear la clave API. Consulte los registros del servidor para más detalles."
+      bulk_revoke_too_many: "Demasiados IDs enviados (máximo %{max}). Por favor, seleccione menos claves."
 
     common:
       close: "Cerrar"

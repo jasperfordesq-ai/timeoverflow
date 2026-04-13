@@ -97,11 +97,11 @@
                 <% desc = listing["description"].to_s %>
                 <% if desc.length > 200 %>
                   <p class="text-muted mb-2">
-                    <span class="listing-desc-short"><%= sanitize(truncate(desc, length: 200), tags: []) %>
-                      <button type="button" class="btn btn-link text-info p-0 align-baseline listing-expand" aria-expanded="false"><%= t("federation_hub.listings.read_more", default: "Read more") %></button>
+                    <span class="listing-desc-short" id="listing-short-<%= listing["id"] %>"><%= sanitize(truncate(desc, length: 200), tags: []) %>
+                      <button type="button" class="btn btn-link text-info p-0 align-baseline listing-expand" aria-expanded="false" aria-controls="listing-full-<%= listing["id"] %>"><%= t("federation_hub.listings.read_more", default: "Read more") %></button>
                     </span>
-                    <span class="listing-desc-full" style="display:none"><%= simple_format(sanitize(desc, tags: []), {}, wrapper_tag: "span") %>
-                      <button type="button" class="btn btn-link text-info p-0 align-baseline listing-collapse" aria-expanded="true"><%= t("federation_hub.listings.read_less", default: "Show less") %></button>
+                    <span class="listing-desc-full" id="listing-full-<%= listing["id"] %>" style="display:none"><%= simple_format(sanitize(desc, tags: []), {}, wrapper_tag: "span") %>
+                      <button type="button" class="btn btn-link text-info p-0 align-baseline listing-collapse" aria-expanded="true" aria-controls="listing-short-<%= listing["id"] %>"><%= t("federation_hub.listings.read_less", default: "Show less") %></button>
                     </span>
                   </p>
                 <% else %>

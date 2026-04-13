@@ -30,7 +30,8 @@ module Api
         # preference model. If a separate share_listings gate is added later,
         # update this call to use the dedicated method.
         visible_ids = Federation::AccessControl.opted_in_member_ids(current_organization)
-        posts = posts.where(user_id: Member.where(id: visible_ids).select(:user_id))
+        visible_user_ids = Member.where(id: visible_ids).pluck(:user_id)
+        posts = posts.where(user_id: visible_user_ids)
 
         # Filter by type if requested (case-insensitive comparison)
         type_filter = params[:type].to_s.downcase.strip

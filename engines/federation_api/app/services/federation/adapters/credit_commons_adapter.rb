@@ -118,26 +118,29 @@ module Federation
           debit_movement  = movements.detect { |m| m.amount.negative? }
           credit_movement = movements.detect { |m| m.amount.positive? }
 
+          if movements.size != 2
+            Rails.logger.error("[Federation::CreditCommonsAdapter] Expected 2 movements for transaction #{txn.id}, got #{movements.size}")
+            return []
+          end
+
           unless debit_movement && credit_movement
             Rails.logger.error("[Federation::CreditCommonsAdapter] Missing movements for transaction #{txn.id}: debit=#{debit_movement.present?}, credit=#{credit_movement.present?}")
             return []
           end
 
-          if debit_movement && credit_movement
-            payer_account = debit_movement.account
-            payee_account = credit_movement.account
+          payer_account = debit_movement.account
+          payee_account = credit_movement.account
 
-            payer_path = build_account_path(payer_account, node_slug, txn)
-            payee_path = build_account_path(payee_account, node_slug, txn)
+          payer_path = build_account_path(payer_account, node_slug, txn)
+          payee_path = build_account_path(payee_account, node_slug, txn)
 
-            entries << {
-              payer: payer_path,
-              payee: payee_path,
-              quant: to_cc_amount(credit_movement.amount.abs),
-              description: txn.transfer.respond_to?(:reason) ? txn.transfer.reason.to_s : "",
-              uuid: txn.external_transaction_id || SecureRandom.uuid
-            }
-          end
+          entries << {
+            payer: payer_path,
+            payee: payee_path,
+            quant: to_cc_amount(credit_movement.amount.abs),
+            description: txn.transfer.respond_to?(:reason) ? txn.transfer.reason.to_s : "",
+            uuid: txn.external_transaction_id || SecureRandom.uuid
+          }
         else
           # No linked transfer — build a synthetic entry from the transaction record
           local_path = "#{node_slug}/#{txn.local_account_id}"

@@ -137,7 +137,7 @@
             <button type="submit" class="btn btn-success btn-lg">
               <%= t("federation_hub.transfers.send_button") %>
             </button>
-            <small id="balance-warning" class="text-danger d-none ms-3" data-balance="<%= current_member.account&.balance.to_i %>"></small>
+            <small id="balance-warning" class="text-danger d-none ms-3" data-balance="<%= current_member.account&.balance.to_i %>" data-warning-text="<%= t("federation_hub.transfers.exceeds_balance") %>"></small>
             <a href="<%= federation_hub_root_path %>" class="btn btn-outline-secondary btn-lg ms-2">
               <%= t("federation_hub.transfers.cancel") %>
             </a>
@@ -166,7 +166,7 @@
     var mins = minsEl ? parseInt(minsEl.value, 10) || 0 : 0;
     var amount = hours * 3600 + mins * 60;
     if (amount > 0 && amount > balanceSeconds) {
-      warning.textContent = '<%= j t("federation_hub.transfers.exceeds_balance") %>';
+      warning.textContent = warning.getAttribute('data-warning-text');
       warning.classList.remove('d-none');
     } else {
       warning.classList.add('d-none');

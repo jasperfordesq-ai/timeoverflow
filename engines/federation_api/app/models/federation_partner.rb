@@ -33,8 +33,10 @@ class FederationPartner < ActiveRecord::Base
   validates :api_key_hash, presence: true
   # api_key_hash stores the raw API key used to authenticate with the partner's
   # API endpoint (sent as Bearer token). The name is a legacy misnomer — it is
-  # NOT a hash. Alias provides clarity for callers.
-  alias_method :partner_api_key, :api_key_hash
+  # NOT a hash. This method provides a clearer name for callers.
+  def partner_api_key
+    api_key_hash
+  end
   validate :feature_gates_must_be_hash
   validate :metadata_size_limit
   validate :valid_status_transition, if: :status_changed?
